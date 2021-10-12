@@ -2,11 +2,11 @@
 #include "matrix.h"
 
 int main() {
-	vector a = vector{1, 2, 3};
-	vector b = vector{1, 2, 3, 4};
-	matrix x = outer(a, b);
+	auto *a = new vector{1, 2, 3};
+	auto *b = new vector{1, 2, 3, 4};
+	matrix *x = outer(a, b);
 
-	x.print();
+	x->print();
 
 	return 0;
 }
