@@ -12,6 +12,7 @@ class matrix : public matrix_t {
 
 public:
 	void print();
+	bool equal(matrix b);
 };
 
 matrix outer(vector a, vector b);
