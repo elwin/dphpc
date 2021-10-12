@@ -26,6 +26,10 @@ This assumes you're located in `/code` (`cd code`)
 
 Targets are defined in the [`CMakeLists.txt`](code/CMakeLists.txt) file, take a look there for additional stuff.
 
+I use Jetbrain's CLion - it nicely recognises all targets from the `CMakeLists.txt` file and allows to run & debug tests
+individually. I can recommend it, but other approaches should of course also work (perhaps even better, let me know if
+so).
+
 ### Etiquette rules
 
 - To the `master` branch, only push code that builds with succeeding tests, perhaps make your own branch such
