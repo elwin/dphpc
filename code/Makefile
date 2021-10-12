@@ -4,7 +4,7 @@ build:
 	cmake -S . -B ${OUT}
 	cmake --build ${OUT}
 
-tests: build
+test: build
 	cd ${OUT} && ctest
 
 main: build
