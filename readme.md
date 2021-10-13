@@ -1,4 +1,9 @@
 # Distributed Sum of Outer Product (DSOP)
+## Project Description
+The goal of this project is to study the problem of Distributed Sum of Outer Product. In this problem we have P hosts p1, p2, ..., pp, and each pi has two vectors Ai and Bi.
+We are interested in computing the sum of all outer products of Ai and Bi.
+
+At the end of the computation, each of the P hosts needs to have a copy of the matrix G. The main goal of this project is to design and implement (with MPI) different efficient algorithms to compute G. The students should provide a cost model for their algorithms, and benchmark them on real systems. The algorithms could take into account heterogeneity in the interconnection network (i.e., different links might have a different bandwidth), and/or the sparsity of the input vectors Ai and Bi.
 
 ## Meetings
 
