@@ -8,4 +8,4 @@ test: build
 	cd ${OUT} && ctest
 
 main: build
-	./build/main
+	./${OUT}/main

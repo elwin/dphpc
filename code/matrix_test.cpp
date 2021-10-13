@@ -17,17 +17,17 @@ TEST(OuterTest, BasicAssertions) {
 }
 
 TEST(AddTest, BasicAssertions) {
-	auto *x = new matrix{
+	auto x = new matrix{
 			vector{1, 2},
 			vector{2, 4},
 	};
 
-	auto *y = new matrix{
+	auto y = new matrix{
 			vector{3, 2},
 			vector{2, 0},
 	};
 
-	auto *z = new matrix{
+	auto z = new matrix{
 			vector{4, 4},
 			vector{4, 4},
 	};

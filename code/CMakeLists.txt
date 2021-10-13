@@ -27,6 +27,19 @@ add_executable(
         matrix_test.cpp
         matrix.cpp
 )
+
+add_executable(
+        dsop_test
+        dsop_test.cpp
+        matrix.cpp
+        dsop_single.cpp
+)
+
+target_link_libraries(
+        dsop_test
+        gtest_main
+)
+
 target_link_libraries(
         matrix_test
         gtest_main
@@ -34,3 +47,4 @@ target_link_libraries(
 
 include(GoogleTest)
 gtest_discover_tests(matrix_test)
+gtest_discover_tests(dsop_test)
