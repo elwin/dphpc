@@ -4,9 +4,23 @@ project(code)
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_EXPORT_COMPILE_COMMANDS on)
 
+set(cxx_flags -Wall -Wextra -Wpedantic -Wsuggest-override)
+set(cxx_linker_flags ${cxx_flags})
 
-add_executable(main main.cpp vector.cpp matrix.cpp)
+set(MAIN_SOURCES
+    vector.cpp
+    matrix.cpp
+    dsop_single.cpp
+)
 
+add_library(dphpc STATIC EXCLUDE_FROM_ALL ${MAIN_SOURCES})
+target_compile_options(dphpc PUBLIC ${cxx_flags})
+target_link_options(dphpc PUBLIC ${cxx_linker_flags})
+
+add_executable(main main.cpp)
+target_compile_options(main PUBLIC ${cxx_flags})
+target_link_options(main PUBLIC ${cxx_linker_flags})
+target_link_libraries(main dphpc)
 
 ###################
 # Testing Framework
@@ -21,30 +35,30 @@ FetchContent_MakeAvailable(googletest)
 ###################
 
 enable_testing()
-
-add_executable(
-        matrix_test
-        matrix_test.cpp
-        matrix.cpp
-)
-
-add_executable(
-        dsop_test
-        dsop_test.cpp
-        matrix.cpp
-        dsop_single.cpp
-)
-
-target_link_libraries(
-        dsop_test
-        gtest_main
-)
-
-target_link_libraries(
-        matrix_test
-        gtest_main
-)
-
 include(GoogleTest)
-gtest_discover_tests(matrix_test)
-gtest_discover_tests(dsop_test)
+
+function(add_unit_test source_file)
+  string(REPLACE "/" "_" testname ${source_file})
+  set(name "unit_test.${testname}")
+
+  set(fname "${source_file}.cpp")
+
+  add_executable(${name} ${fname})
+
+  # Link against gmock (this automatically links against gtest)
+  target_link_libraries(${name} dphpc gmock_main)
+  gtest_discover_tests(${name})
+endfunction()
+
+add_unit_test(matrix_test)
+add_unit_test(dsop_test)
+
+file(GLOB_RECURSE ALL_SOURCE_FILES *.c *.cpp *.h *.hpp)
+
+add_custom_target(
+        clangformat
+        COMMAND /usr/bin/clang-format
+        -style=file
+        -i
+        ${ALL_SOURCE_FILES}
+        )
