@@ -1,3 +1,4 @@
 cmake-build-debug
+build
 build_output
 compile_commands.json
