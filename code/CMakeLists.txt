@@ -37,6 +37,10 @@ FetchContent_MakeAvailable(googletest)
 enable_testing()
 include(GoogleTest)
 
+# Compile all unit tests with 'make all_unit_tests'
+add_custom_target(all_unit_tests
+    COMMENT "Building all unit test")
+
 function(add_unit_test source_file)
   string(REPLACE "/" "_" testname ${source_file})
   set(name "unit_test.${testname}")
@@ -48,12 +52,15 @@ function(add_unit_test source_file)
   # Link against gmock (this automatically links against gtest)
   target_link_libraries(${name} dphpc gmock_main)
   gtest_discover_tests(${name})
+
+  add_dependencies(all_unit_tests ${name})
 endfunction()
 
 add_unit_test(matrix_test)
 add_unit_test(dsop_test)
 
 file(GLOB_RECURSE ALL_SOURCE_FILES *.c *.cpp *.h *.hpp)
+list(FILTER ALL_SOURCE_FILES EXCLUDE REGEX "${CMAKE_BINARY_DIR}/.*")
 
 add_custom_target(
         clangformat
@@ -62,3 +69,9 @@ add_custom_target(
         -i
         ${ALL_SOURCE_FILES}
         )
+
+# Run make check to build and run all unit tests
+add_custom_target(check
+  COMMAND GTEST_COLOR=1 ctest --output-on-failure
+  DEPENDS all_unit_tests
+  )
