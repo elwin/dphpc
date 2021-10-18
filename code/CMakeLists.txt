@@ -14,6 +14,7 @@ set(MAIN_SOURCES
     vector.cpp
     matrix.cpp
     dsop_single.cpp
+    util.cpp
 )
 
 add_library(dphpc STATIC EXCLUDE_FROM_ALL ${MAIN_SOURCES})

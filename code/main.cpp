@@ -1,12 +1,16 @@
 #include <mpi.h>
 
+#include "util.hpp"
+
 #include <algorithm>
 #include <cmath>
 #include <iostream>
 #include <iterator>
 #include <memory>
-#include <random>
 #include <vector>
+
+#define RANGE_START -1.0
+#define RANGE_END 1.0
 
 static constexpr int N = 3;
 static constexpr int M = 3;
@@ -21,25 +25,19 @@ int main(int argc, char* argv[]) {
 
   bool is_root = rank == 0;
 
-  // Use the rank as the seed
-  std::mt19937_64 gen{(uint64_t)rank};
-  std::uniform_real_distribution<double> dist(-1.0, 1.0);
-
   printf("Starting rank=%d size=%d\n", rank, numprocs);
-
-  auto A = std::make_unique<double[]>(N);
-  auto B = std::make_unique<double[]>(M);
+  // Use the rank as the seed
+  auto A = get_random((uint64_t) rank, N, RANGE_START, RANGE_END);
+  auto B = get_random((uint64_t) rank, M, RANGE_START, RANGE_END);
 
   printf("A_%d = [", rank);
   for (int i = 0; i < N; i++) {
-    A[i] = dist(gen);
     printf("%f ", A[i]);
   }
   printf("]\n");
 
   printf("B_%d = [", rank);
   for (int i = 0; i < M; i++) {
-    B[i] = dist(gen);
     printf("%f ", B[i]);
   }
   printf("]\n");
