@@ -9,7 +9,7 @@ std::unique_ptr<double[]> get_random(uint64_t seed, int size, double range_start
   auto v = std::make_unique<double[]>(size);
 
   for (int i = 0; i < size; i++) {
-      v[i] = dist(gen);
+    v[i] = dist(gen);
   }
 
   return v;

@@ -11,17 +11,20 @@ if(CMAKE_COMPILER_IS_GNUCXX)
 endif(CMAKE_COMPILER_IS_GNUCXX)
 
 set(MAIN_SOURCES
-    vector.cpp
-    matrix.cpp
-    dsop_single.cpp
-    util.cpp
+    src/vector.cpp
+    src/matrix.cpp
+    src/dsop_single.cpp
+    src/util.cpp
 )
+
+set(INCLUDE_DIRS include)
 
 add_library(dphpc STATIC EXCLUDE_FROM_ALL ${MAIN_SOURCES})
 target_compile_options(dphpc PUBLIC ${cxx_flags})
 target_link_options(dphpc PUBLIC ${cxx_linker_flags})
+target_include_directories(dphpc PUBLIC ${INCLUDE_DIRS})
 
-add_executable(main main.cpp)
+add_executable(main src/main.cpp)
 target_compile_options(main PUBLIC ${cxx_flags})
 target_link_options(main PUBLIC ${cxx_linker_flags})
 target_link_libraries(main dphpc)
@@ -49,7 +52,7 @@ function(add_unit_test source_file)
   string(REPLACE "/" "_" testname ${source_file})
   set(name "unit_test.${testname}")
 
-  set(fname "${source_file}.cpp")
+  set(fname "tests/${source_file}.cpp")
 
   add_executable(${name} ${fname})
 

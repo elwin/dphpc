@@ -1,13 +1,13 @@
 #include <mpi.h>
 
-#include "util.hpp"
-
 #include <algorithm>
 #include <cmath>
 #include <iostream>
 #include <iterator>
 #include <memory>
 #include <vector>
+
+#include "util.hpp"
 
 #define RANGE_START -1.0
 #define RANGE_END 1.0
@@ -27,8 +27,8 @@ int main(int argc, char* argv[]) {
 
   printf("Starting rank=%d size=%d\n", rank, numprocs);
   // Use the rank as the seed
-  auto A = get_random((uint64_t) rank, N, RANGE_START, RANGE_END);
-  auto B = get_random((uint64_t) rank, M, RANGE_START, RANGE_END);
+  auto A = get_random((uint64_t)rank, N, RANGE_START, RANGE_END);
+  auto B = get_random((uint64_t)rank, M, RANGE_START, RANGE_END);
 
   printf("A_%d = [", rank);
   for (int i = 0; i < N; i++) {
