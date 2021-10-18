@@ -1,35 +1,35 @@
 #ifndef CODE_MATRIX_H
 #define CODE_MATRIX_H
 
-#include <vector>
 #include <memory>
+#include <vector>
 
 #include "common.h"
 #include "vector.h"
 
 class matrix {
-   private:
-	std::unique_ptr<double[]> data;
-	int rows;
-	int columns;
+ private:
+  std::unique_ptr<double[]> data;
+  int rows;
+  int columns;
 
-   public:
-	matrix(int rows, int columns);
-	matrix(int rows, int columns, std::vector<std::vector<double>>);
+ public:
+  matrix(int rows, int columns);
+  matrix(int rows, int columns, std::vector<std::vector<double>>);
 
-	void print();
+  void print();
 
-	bool equal(matrix* b);
+  bool equal(matrix* b);
 
-	// Add matrix b to `this` in place
-	void add(matrix* b);
+  // Add matrix b to `this` in place
+  void add(matrix* b);
 
-	// Add matrices a and b to a new matrix
-	static matrix* add(matrix* a, matrix* b);
+  // Add matrices a and b to a new matrix
+  static matrix* add(matrix* a, matrix* b);
 
-	bool matchesDimensions(matrix* b);
+  bool matchesDimensions(matrix* b);
 
-	static matrix* outer(std::vector<double> a, std::vector<double> b);
+  static matrix* outer(std::vector<double> a, std::vector<double> b);
 };
 
 #endif // CODE_MATRIX_H

@@ -18,4 +18,4 @@ std::unique_ptr<double[]> run(
   return G;
 }
 
-} // namespace impl::allreduce
+} // namespace impls::allreduce
