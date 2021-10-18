@@ -4,8 +4,11 @@ project(code)
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_EXPORT_COMPILE_COMMANDS on)
 
-set(cxx_flags -Wall -Wextra -Wpedantic -Wsuggest-override)
-set(cxx_linker_flags ${cxx_flags})
+# Only add GCC flags if using GCC
+if(CMAKE_COMPILER_IS_GNUCXX)
+    set(cxx_flags -Wall -Wextra -Wpedantic -Wsuggest-override)
+    set(cxx_linker_flags ${cxx_flags})
+endif(CMAKE_COMPILER_IS_GNUCXX)
 
 set(MAIN_SOURCES
     vector.cpp
