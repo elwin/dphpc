@@ -1,4 +1,4 @@
-OUT="build_output"
+OUT="build"
 
 build:
 	CXX=mpic++ cmake -S . -B ${OUT}
