@@ -20,6 +20,8 @@ set(MAIN_SOURCES
 
 set(INCLUDE_DIRS include)
 
+include_directories(/Users/elwin/opt/usr/local/include) # todo fix
+
 add_library(dphpc STATIC EXCLUDE_FROM_ALL ${MAIN_SOURCES})
 target_compile_options(dphpc PUBLIC ${cxx_flags})
 target_link_options(dphpc PUBLIC ${cxx_linker_flags})
