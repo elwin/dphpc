@@ -19,57 +19,68 @@ int main(int argc, char* argv[]) {
 	MPI_Comm_size(MPI_COMM_WORLD, &numprocs);
 	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
-	bool is_root = rank == 0;
-
 	// Use the rank as the seed
 	std::mt19937_64 gen{(uint64_t)rank};
 	std::uniform_real_distribution<double> dist(-1.0, 1.0);
 
 	printf("Starting rank=%d size=%d\n", rank, numprocs);
 
-	auto A = std::make_unique<double[]>(N);
-	auto B = std::make_unique<double[]>(M);
+	auto vector = std::make_unique<double[]>(N + M);
 
 	printf("A_%d = [", rank);
 	for (int i = 0; i < N; i++) {
-		A[i] = dist(gen);
-		printf("%f ", A[i]);
+		vector[i] = dist(gen);
+		printf("%f ", vector[i]);
 	}
 	printf("]\n");
 
 	printf("B_%d = [", rank);
-	for (int i = 0; i < M; i++) {
-		B[i] = dist(gen);
-		printf("%f ", B[i]);
+	for (int i = N; i < M; i++) {
+		vector[i] = dist(gen);
+		printf("%f ", vector[i]);
 	}
 	printf("]\n");
 
 	double t = -MPI_Wtime();
-	auto G = std::make_unique<double[]>(N * M);
+	// TODO: Does this work with MPI_Allgather?
+	auto vectors = (double*)malloc((numprocs * (N + M) * sizeof(double)));
 
-//	for (int i = 0; i < N; i++) {
-//		for (int j = 0; j < M; j++) {
-//			G[i * N + j] = A[i] * B[j];
-//		}
-//	}
-//
-//	auto result = std::make_unique<double[]>(N * M);
-//	MPI_Allreduce(G.get(), result.get(), N * M, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+	// Use MPI_Allgather to collect all vectors on all nodes into 'vectors'
+	MPI_Allgather(vector.get(), 1, MPI_DOUBLE, vectors, 1, MPI_DOUBLE, MPI_COMM_WORLD);
 
-/*  Distribute vectors to all nodes and then compute the whole SOP on each node
- *
- *  1. Maybe use MPI_SCATTER to distribute the vectors
- *  2. Cacluate SOP on each node (how?)
- *  3. Gather results (and check if they all computed the same?)
- * */
+    // Calculate sum of products on all nodes
+    auto S = std::make_unique<double[]>(N * M);
+	for (int i = 0; i < numprocs; i++) {
+        auto A = std::make_unique<double[]>(N);
+        auto B = std::make_unique<double[]>(M);
+
+        for (int j = 0; j < N+M; j++) {
+            if (j < N) {
+                A[i] = vectors[i * (N + M) + j];
+            } else {
+                B[i] = vectors[i * (N + M) + j];
+            }
+        }
+
+        auto T = std::make_unique<double[]>(N * M);
+        for (int k = 0; k < N; k++) {
+            for (int l = 0; l < M; l++) {
+                T[k * N + l] = A[k] * B[l];
+            }
+        }
+
+        // TODO: matrix addition
+        S += T
+	}
 
 	t += MPI_Wtime();
 
-	if (is_root) {
+    // Print result only once
+	if (rank == 0) {
 		printf("result:\n");
 		for (int i = 0; i < N; i++) {
 			for (int j = 0; j < M; j++) {
-				printf("%f ", result[i * N + j]);
+				printf("%f ", S[i * N + j]);
 			}
 			printf("\n");
 		}
