@@ -15,6 +15,7 @@ set(MAIN_SOURCES
     src/matrix.cpp
     src/dsop_single.cpp
     src/util.cpp
+    src/allreduce/impl.cpp
 )
 
 set(INCLUDE_DIRS include)
