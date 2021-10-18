@@ -1,7 +1,7 @@
 OUT="build_output"
 
 build:
-	cmake -S . -B ${OUT}
+	CXX=mpic++ cmake -S . -B ${OUT}
 	cmake --build ${OUT}
 
 test: build

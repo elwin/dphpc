@@ -19,7 +19,7 @@ All code related to solving DSOP is located in the folder [`/code`](code).
 You'll need the following, perhaps also a bit more:
 
 - [cmake](https://cmake.org/install/) with a somewhat recent version (I have 3.21.0)
-- C++, standard 14 or higher would be nice (gcc, clang, ... should work)
+- C++, standard 17 or higher would be nice (gcc, clang, ... should work)
 - Something to execute `Makefile`'s (probably already installed)
 
 ### Run targets
