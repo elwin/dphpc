@@ -1,4 +1,6 @@
-OUT="build"
+# cannot be named "build", otherwise clashes with the target
+# and never re-builds once created
+OUT="build_output"
 
 build:
 	CXX=mpic++ cmake -S . -B ${OUT}
