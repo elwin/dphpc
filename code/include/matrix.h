@@ -2,12 +2,12 @@
 #define CODE_MATRIX_H
 
 #include <vector>
+#include <memory>
 
 #include "common.h"
 #include "vector.h"
 
 class matrix {
-	//	using matrix_t::matrix_t;
    private:
 	std::unique_ptr<double[]> data;
 	int rows;
