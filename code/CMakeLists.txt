@@ -72,7 +72,7 @@ list(FILTER ALL_SOURCE_FILES EXCLUDE REGEX "${CMAKE_BINARY_DIR}/.*")
 
 add_custom_target(
         clangformat
-        COMMAND /usr/bin/clang-format
+        COMMAND clang-format
         -style=file
         -i
         ${ALL_SOURCE_FILES}

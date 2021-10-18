@@ -8,9 +8,6 @@ TEST(OuterTest, BasicAssertions) {
 
   auto* y = new matrix(3, 4, {{1, 2, 3, 4}, {2, 4, 6, 8}, {3, 6, 9, 12}});
 
-  x->print();
-  y->print();
-
   EXPECT_TRUE(x->equal(y));
 }
 

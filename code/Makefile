@@ -9,3 +9,6 @@ test: build
 
 main: build
 	./${OUT}/main
+
+format: build
+	cd build; make clangformat
