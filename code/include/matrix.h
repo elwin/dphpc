@@ -10,12 +10,12 @@
 class matrix {
  private:
   std::unique_ptr<double[]> data;
-  int rows;
-  int columns;
+  size_t rows;
+  size_t columns;
 
  public:
-  matrix(int rows, int columns);
-  matrix(int rows, int columns, std::vector<std::vector<double>>);
+  matrix(size_t rows, size_t columns);
+  matrix(size_t rows, size_t columns, std::vector<std::vector<double>>);
 
   void print();
 

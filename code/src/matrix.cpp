@@ -3,13 +3,13 @@
 #include <cassert>
 #include <iostream>
 
-matrix::matrix(int rows, int columns) {
+matrix::matrix(size_t rows, size_t columns) {
   this->data = std::make_unique<double[]>(rows * columns);
   this->rows = rows;
   this->columns = columns;
 }
 
-matrix::matrix(int rows, int columns, std::vector<std::vector<double>> data) : matrix(rows, columns) {
+matrix::matrix(size_t rows, size_t columns, std::vector<std::vector<double>> data) : matrix(rows, columns) {
   for (size_t i = 0; i < rows; i++) {
     for (size_t j = 0; j < columns; j++) {
       this->data[i * columns + j] = data.at(i).at(j);
