@@ -9,15 +9,15 @@
 typedef std::vector<vector> matrix_t;
 
 class matrix : public matrix_t {
-	using matrix_t::matrix_t;
+  using matrix_t::matrix_t;
 
-   public:
-	void print();
+ public:
+  void print();
 
-	bool equal(matrix* b);
+  bool equal(matrix* b);
 
-	// Add matrix b to `this` in place
-	void add(matrix* b);
+  // Add matrix b to `this` in place
+  void add(matrix* b);
 };
 
 matrix* outer(vector* a, vector* b);

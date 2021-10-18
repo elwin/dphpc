@@ -3,9 +3,7 @@ Language: Cpp
 Standard: c++17
 BasedOnStyle: Google
 ColumnLimit: 120
-IndentWidth: 4
-TabWidth: 4
-UseTab: Always
+UseTab: Never
 NamespaceIndentation: Inner
 AlignAfterOpenBracket: DontAlign
 AllowShortFunctionsOnASingleLine: Empty
