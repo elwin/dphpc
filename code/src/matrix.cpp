@@ -3,40 +3,36 @@
 #include <cassert>
 #include <iostream>
 
-matrix* outer(vector* a, vector* b) {
-  auto* out = new matrix(a->size());
+matrix::matrix(int rows, int columns) {
+  this->data = std::make_unique<double[]>(rows * columns);
+  this->rows = rows;
+  this->columns = columns;
+}
 
-  for (size_t i = 0; i < a->size(); i++) {
-    out->at(i) = vector(b->size());
+matrix::matrix(int rows, int columns, std::vector<std::vector<double>> data) : matrix(rows, columns) {
+  for (size_t i = 0; i < rows; i++) {
+    for (size_t j = 0; j < columns; j++) {
+      this->data[i * columns + j] = data.at(i).at(j);
+    }
+  }
+}
 
-    for (size_t j = 0; j < b->size(); j++) {
-      out->at(i).at(j) = a->at(i) * b->at(j);
+matrix* matrix::outer(std::vector<double> a, std::vector<double> b) {
+  auto* out = new matrix(a.size(), b.size());
+
+  for (size_t i = 0; i < a.size(); i++) {
+    for (size_t j = 0; j < b.size(); j++) {
+      out->data[i * out->columns + j] = a.at(i) * b.at(j);
     }
   }
 
   return out;
 }
 
-matrix* add(matrix* a, matrix* b) {
-  assert(a->size() == b->size());
-
-  auto* c = new matrix(a->size());
-  for (size_t i = 0; i < a->size(); i++) {
-    assert(a->at(i).size() == b->at(i).size());
-    c->at(i) = vector(a->at(i).size());
-
-    for (size_t j = 0; j < a->at(i).size(); j++) {
-      c->at(i).at(j) = a->at(i).at(j) + b->at(i).at(j);
-    }
-  }
-
-  return c;
-}
-
 void matrix::print() {
-  for (size_t i = 0; i < this->size(); i++) {
-    for (size_t j = 0; j < this->at(i).size(); j++) {
-      std::cout << this->at(i).at(j) << " ";
+  for (size_t i = 0; i < this->rows; i++) {
+    for (size_t j = 0; j < this->columns; j++) {
+      std::cout << this->data[i * this->columns + j] << " ";
     }
 
     std::cout << std::endl;
@@ -44,29 +40,35 @@ void matrix::print() {
 }
 
 void matrix::add(matrix* b) {
-  assert(this->size() == b->size());
+  assert(this->matchesDimensions(b));
 
-  for (size_t i = 0; i < this->size(); i++) {
-    assert(this->at(i).size() == b->at(i).size());
-
-    for (size_t j = 0; j < this->at(i).size(); j++) {
-      this->at(i).at(j) += b->at(i).at(j);
-    }
+  for (size_t i = 0; i < this->rows * this->columns; i++) {
+    this->data[i] += b->data[i];
   }
 }
 
-bool matrix::equal(matrix* b) {
-  if (this->size() != b->size())
-    return false;
-  for (size_t i = 0; i < this->size(); i++) {
-    if (this->at(i).size() != b->at(i).size())
-      return false;
+matrix* matrix::add(matrix* a, matrix* b) {
+  assert(a->matchesDimensions(b));
 
-    for (size_t j = 0; j < this->at(i).size(); j++) {
-      if (this->at(i).at(j) != b->at(i).at(j))
-        return false;
-    }
+  auto c = new matrix(a->rows, a->columns);
+  for (size_t i = 0; i < a->rows * a->columns; i++) {
+    c->data[i] = a->data[i] + b->data[i];
+  }
+
+  return c;
+}
+
+bool matrix::equal(matrix* b) {
+  if (!this->matchesDimensions(b))
+    return false;
+
+  for (size_t i = 0; i < this->rows * this->columns; i++) {
+    if (this->data[i] != b->data[i])
+      return false;
   }
 
   return true;
+}
+bool matrix::matchesDimensions(matrix* b) {
+  return this->rows = b->rows && this->columns == b->columns;
 }
