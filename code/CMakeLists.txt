@@ -5,18 +5,16 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_EXPORT_COMPILE_COMMANDS on)
 
 # Only add GCC flags if using GCC
-if(CMAKE_COMPILER_IS_GNUCXX)
-    set(cxx_flags -Wall -Wextra -Wpedantic -Wsuggest-override)
-    set(cxx_linker_flags ${cxx_flags})
-endif(CMAKE_COMPILER_IS_GNUCXX)
+set(cxx_flags -Wall -Wextra -Wpedantic -Wsuggest-override)
+set(cxx_linker_flags ${cxx_flags})
 
 set(MAIN_SOURCES
-    src/vector.cpp
-    src/matrix.cpp
-    src/dsop_single.cpp
-    src/util.cpp
-    src/allreduce/impl.cpp
-)
+        src/vector.cpp
+        src/matrix.cpp
+        src/dsop_single.cpp
+        src/util.cpp
+        src/allreduce/impl.cpp
+        )
 
 set(INCLUDE_DIRS include)
 
@@ -49,7 +47,7 @@ include(GoogleTest)
 
 # Compile all unit tests with 'make all_unit_tests'
 add_custom_target(all_unit_tests
-    COMMENT "Building all unit test")
+        COMMENT "Building all unit test")
 
 function(add_unit_test source_file)
   string(REPLACE "/" "_" testname ${source_file})
@@ -78,10 +76,10 @@ add_custom_target(
         -style=file
         -i
         ${ALL_SOURCE_FILES}
-        )
+)
 
 # Run make check to build and run all unit tests
 add_custom_target(check
-  COMMAND GTEST_COLOR=1 ctest --output-on-failure
-  DEPENDS all_unit_tests
-  )
+        COMMAND GTEST_COLOR=1 ctest --output-on-failure
+        DEPENDS all_unit_tests
+        )
