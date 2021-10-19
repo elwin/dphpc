@@ -12,7 +12,7 @@ matrix::matrix(size_t rows, size_t columns) {
 matrix::matrix(size_t rows, size_t columns, std::vector<vector> data) : matrix(rows, columns) {
   for (size_t i = 0; i < rows; i++) {
     for (size_t j = 0; j < columns; j++) {
-      this->data[i * columns + j] = data.at(i).at(j);
+      this->data[i * columns + j] = data[i][j];
     }
   }
 }
@@ -22,7 +22,7 @@ matrix* matrix::outer(vector a, vector b) {
 
   for (size_t i = 0; i < a.size(); i++) {
     for (size_t j = 0; j < b.size(); j++) {
-      out->data[i * out->columns + j] = a.at(i) * b.at(j);
+      out->data[i * out->columns + j] = a[i] * b[j];
     }
   }
 
@@ -79,5 +79,5 @@ size_t matrix::dimension() const {
 }
 
 double* matrix::get_ptr() {
-  return std::move(this->data).get(); // fixme: probably don't want to be moved
+  return data.get();
 }

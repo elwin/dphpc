@@ -96,13 +96,13 @@ int main(int argc, char* argv[]) {
   if (is_root) {
     std::cout << "A" << std::endl;
     for (int i = 0; i < numprocs; i++) {
-      a_vec->at(i).print();
+      (*a_vec)[i].print();
       std::cout << std::endl;
     }
 
     std::cout << "B" << std::endl;
     for (int i = 0; i < numprocs; i++) {
-      b_vec->at(i).print();
+      (*b_vec)[i].print();
       std::cout << std::endl;
     }
   }

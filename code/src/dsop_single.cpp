@@ -8,10 +8,10 @@ void dsop_single::load(std::vector<vector>* a_in, std::vector<vector>* b_in) {
 }
 
 matrix* dsop_single::compute() {
-  matrix* result = matrix::outer(this->a->at(0), this->b->at(0));
+  matrix* result = matrix::outer((*a)[0], (*b)[0]);
   assert(this->a->size() == this->b->size());
   for (size_t i = 1; i < this->a->size(); i++) {
-    result->add(matrix::outer(this->a->at(i), this->b->at(i)));
+    result->add(matrix::outer((*a)[i], (*b)[i]));
   }
 
   return result;

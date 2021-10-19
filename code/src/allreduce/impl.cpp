@@ -2,7 +2,6 @@
 
 #include <iostream>
 
-#include "dsop.h"
 namespace impls::allreduce {
 
 matrix* allreduce::compute() {

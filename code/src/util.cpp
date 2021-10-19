@@ -25,10 +25,10 @@ std::vector<vector>* get_random_vectors(uint64_t seed, int n, int p) {
   auto out = new std::vector<vector>(p);
 
   for (int i = 0; i < p; i++) {
-    out->at(i) = vector(n);
+    (*out)[i] = vector(n);
 
     for (int j = 0; j < n; j++) {
-      out->at(i).at(j) = dist(gen);
+      (*out)[i][j] = dist(gen);
     }
   }
 

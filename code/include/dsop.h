@@ -19,8 +19,8 @@ class dsop {
   dsop() {}
 
   virtual void load(std::vector<vector>* a_in, std::vector<vector>* b_in) {
-    this->a = std::move(a_in->at(this->rank));
-    this->b = std::move(b_in->at(this->rank));
+    this->a = (*a_in)[this->rank];
+    this->b = (*b_in)[this->rank];
   };
 
   virtual matrix* compute() = 0;
