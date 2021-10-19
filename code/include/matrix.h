@@ -15,11 +15,15 @@ class matrix {
 
  public:
   matrix(size_t rows, size_t columns);
-  matrix(size_t rows, size_t columns, std::vector<std::vector<double>>);
+  matrix(size_t rows, size_t columns, std::vector<vector>);
 
   void print();
 
   bool equal(matrix* b);
+
+  size_t dimension() const;
+
+  double* get_ptr();
 
   // Add matrix b to `this` in place
   void add(matrix* b);
@@ -29,7 +33,7 @@ class matrix {
 
   bool matchesDimensions(matrix* b);
 
-  static matrix* outer(std::vector<double> a, std::vector<double> b);
+  static matrix* outer(vector a, vector b);
 };
 
 #endif // CODE_MATRIX_H

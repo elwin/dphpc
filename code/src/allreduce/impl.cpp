@@ -1,6 +1,23 @@
 #include "allreduce/impl.hpp"
 
+#include <iostream>
+
+#include "dsop.h"
 namespace impls::allreduce {
+
+void allreduce::load(std::vector<vector>* a, std::vector<vector>* b) {
+  this->a = std::move(a->at(this->rank));
+  this->b = std::move(b->at(this->rank));
+}
+
+matrix* allreduce::compute() {
+  matrix* current = matrix::outer(this->a, this->b);
+  auto result = new matrix(this->a.size(), this->b.size());
+
+  MPI_Allreduce(current->get_ptr(), result->get_ptr(), result->dimension(), MPI_DOUBLE, MPI_SUM, this->comm);
+
+  return result;
+}
 
 std::unique_ptr<double[]> run(
     MPI_Comm comm, std::unique_ptr<double[]> A, int N, std::unique_ptr<double[]> B, int M, int, int) {

@@ -11,6 +11,7 @@
 
 #include "allreduce/impl.hpp"
 #include "util.hpp"
+#include "vector.h"
 
 #define RANGE_START -1.0
 #define RANGE_END 1.0
@@ -18,7 +19,7 @@
 static const std::vector<std::string> implementations{"allreduce"};
 
 static void print_usage(const char* exec) {
-  fprintf(stderr, "Usage: %s -n N -M m [-v] -i name\n", exec);
+  fprintf(stderr, "Usage: %s -n N -m M [-v] -i name\n", exec);
 }
 
 int main(int argc, char* argv[]) {
@@ -67,7 +68,7 @@ int main(int argc, char* argv[]) {
   auto it = std::find(implementations.begin(), implementations.end(), impl);
 
   if (it == implementations.end()) {
-    fprintf(stderr, "Invalid implementation '%s', available implemenations: [", impl.c_str());
+    fprintf(stderr, "Invalid implementation '%s', available implementations: [", impl.c_str());
 
     for (const auto& s : implementations) {
       fprintf(stderr, "%s, ", s.c_str());
@@ -89,37 +90,39 @@ int main(int argc, char* argv[]) {
 
   printf("%d: Starting numprocs=%d N=%d, M=%d impl=%s\n", rank, numprocs, N, M, impl.c_str());
 
-  // Use the rank as the seed
-  auto A = get_random((uint64_t)rank, N, RANGE_START, RANGE_END);
-  auto B = get_random((uint64_t)rank, M, RANGE_START, RANGE_END);
+  auto a_vec = get_random_vectors(0, N, numprocs);
+  auto b_vec = get_random_vectors(1, M, numprocs);
 
-  printf("A_%d = [", rank);
-  for (int i = 0; i < N; i++) {
-    printf("%f ", A[i]);
-  }
-  printf("]\n");
+  if (is_root) {
+    std::cout << "A" << std::endl;
+    for (int i = 0; i < numprocs; i++) {
+      a_vec->at(i).print();
+      std::cout << std::endl;
+    }
 
-  printf("B_%d = [", rank);
-  for (int i = 0; i < M; i++) {
-    printf("%f ", B[i]);
+    std::cout << "B" << std::endl;
+    for (int i = 0; i < numprocs; i++) {
+      b_vec->at(i).print();
+      std::cout << std::endl;
+    }
   }
-  printf("]\n");
 
   const auto COMM = MPI_COMM_WORLD;
 
+  auto x = impls::allreduce::allreduce(COMM, rank, numprocs);
+  x.load(a_vec, b_vec);
+
   double t = -MPI_Wtime();
-  auto result = impls::allreduce::run(COMM, std::move(A), N, std::move(B), M, rank, numprocs);
+  auto result = x.compute();
   t += MPI_Wtime();
 
   if (is_root) {
     printf("result:\n");
-    for (int i = 0; i < N; i++) {
-      for (int j = 0; j < M; j++) {
-        printf("%f ", result[i * M + j]);
-      }
-      printf("\n");
-    }
+    result->print();
     printf("time: %f\n", t);
   }
+
   MPI_Finalize();
+
+  return EXIT_SUCCESS;
 }

@@ -9,7 +9,7 @@ matrix::matrix(size_t rows, size_t columns) {
   this->columns = columns;
 }
 
-matrix::matrix(size_t rows, size_t columns, std::vector<std::vector<double>> data) : matrix(rows, columns) {
+matrix::matrix(size_t rows, size_t columns, std::vector<vector> data) : matrix(rows, columns) {
   for (size_t i = 0; i < rows; i++) {
     for (size_t j = 0; j < columns; j++) {
       this->data[i * columns + j] = data.at(i).at(j);
@@ -17,7 +17,7 @@ matrix::matrix(size_t rows, size_t columns, std::vector<std::vector<double>> dat
   }
 }
 
-matrix* matrix::outer(std::vector<double> a, std::vector<double> b) {
+matrix* matrix::outer(vector a, vector b) {
   auto* out = new matrix(a.size(), b.size());
 
   for (size_t i = 0; i < a.size(); i++) {
@@ -69,6 +69,15 @@ bool matrix::equal(matrix* b) {
 
   return true;
 }
+
 bool matrix::matchesDimensions(matrix* b) {
   return this->rows = b->rows && this->columns == b->columns;
+}
+
+size_t matrix::dimension() const {
+  return this->rows * this->columns;
+}
+
+double* matrix::get_ptr() {
+  return std::move(this->data).get(); // fixme: probably don't want to be moved
 }

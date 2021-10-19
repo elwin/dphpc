@@ -1,10 +1,25 @@
 #pragma once
 
+#include <dsop.h>
 #include <mpi.h>
 
 #include <memory>
 
+#include "vector.h"
+
 namespace impls::allreduce {
-std::unique_ptr<double[]> run(
-    MPI_Comm comm, std::unique_ptr<double[]> A, int N, std::unique_ptr<double[]> B, int M, int rank, int numprocs);
-}
+
+class allreduce : dsop {
+  using dsop::dsop;
+
+ private:
+  vector a;
+  vector b;
+
+ public:
+  // todo why tf are those entire declarations even needed?
+  void load(std::vector<vector>* a, std::vector<vector>* b) override;
+  matrix* compute() override;
+};
+
+} // namespace impls::allreduce
