@@ -11,12 +11,17 @@ class dsop {
   MPI_Comm comm;
   int rank;
   int num_procs;
+  vector a;
+  vector b;
 
  public:
   dsop(MPI_Comm comm, int rank, int num_procs) : comm(comm), rank(rank), num_procs(num_procs) {}
   dsop() {}
 
-  virtual void load(std::vector<vector>* a, std::vector<vector>* b) = 0;
+  virtual void load(std::vector<vector>* a_in, std::vector<vector>* b_in) {
+    this->a = std::move(a_in->at(this->rank));
+    this->b = std::move(b_in->at(this->rank));
+  };
 
   virtual matrix* compute() = 0;
 };

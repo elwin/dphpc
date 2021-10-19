@@ -2,9 +2,9 @@
 
 #include <cassert>
 
-void dsop_single::load(std::vector<vector>* a, std::vector<vector>* b) {
-  this->a = a;
-  this->b = b;
+void dsop_single::load(std::vector<vector>* a_in, std::vector<vector>* b_in) {
+  this->a = a_in;
+  this->b = b_in;
 }
 
 matrix* dsop_single::compute() {
