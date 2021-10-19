@@ -14,3 +14,7 @@ main: build
 
 format: build
 	cd ${OUT}; make clangformat
+
+# only temporary until we have a proper build thing in place
+mpi_tmp: build
+	mpiexec ${OUT}/main -n 8 -m 8 -i allreduce
