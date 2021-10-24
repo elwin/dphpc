@@ -10,6 +10,7 @@
 #include <type_traits>
 #include <vector>
 
+#include "allgather/impl.hpp"
 #include "allreduce/impl.hpp"
 #include "dsop_single.h"
 #include "util.hpp"
@@ -38,6 +39,8 @@ template <typename... Args>
 static std::unique_ptr<dsop> get_impl(const std::string& name, Args&&... args) {
   if (name == "allreduce") {
     return std::make_unique<impls::allreduce::allreduce>(std::forward<Args>(args)...);
+  } else if (name == "allgather") {
+    return std::make_unique<impls::allgather::allgather>(std::forward<Args>(args)...);
   } else {
     throw std::runtime_error("Unknown implementation '" + name + "'");
   }
