@@ -19,13 +19,12 @@ set(MAIN_SOURCES
 set(INCLUDE_DIRS include)
 
 find_package(MPI REQUIRED)
-include_directories(SYSTEM ${MPI_INCLUDE_PATH})
 
 add_library(dphpc STATIC EXCLUDE_FROM_ALL ${MAIN_SOURCES})
 target_compile_options(dphpc PUBLIC ${cxx_flags})
 target_link_options(dphpc PUBLIC ${cxx_linker_flags})
 target_include_directories(dphpc PUBLIC ${INCLUDE_DIRS})
-target_link_libraries(dphpc ${MPI_C_LIBRARIES})
+target_link_libraries(dphpc PUBLIC MPI::MPI_CXX)
 
 add_executable(main src/main.cpp)
 target_compile_options(main PUBLIC ${cxx_flags})

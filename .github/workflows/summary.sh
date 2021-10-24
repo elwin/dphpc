@@ -3,6 +3,7 @@
 set -euo pipefail
 
 set -x
+mpirun --version
 "${CXX}" --version
 cmake --version
 set +x

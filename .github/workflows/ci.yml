@@ -12,7 +12,7 @@ jobs:
   build:
     runs-on: ubuntu-20.04
     env:
-      CXX: "mpic++"
+      CXX: "g++"
       BUILD_TYPE: "Release"
       BUILD_DIR: "${{ github.workspace}}/code/build"
       MAKEFLAGS: "-j4"
@@ -39,12 +39,3 @@ jobs:
         run: |
           cd "$BUILD_DIR"
           make check
-      - name: Upload Logs
-        if: failure()
-        uses: actions/upload-artifact@v2
-        with:
-          name: cmake
-          path: |
-            build/CMakeFiles/CMakeError.log
-            build/CMakeFiles/CMakeOutput.log
-          retention-days: 2
