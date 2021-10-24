@@ -18,6 +18,7 @@ class dsop {
  public:
   dsop(MPI_Comm comm, int rank, int num_procs) : comm(comm), rank(rank), num_procs(num_procs) {}
   dsop() {}
+  virtual ~dsop() = default;
 
   virtual void load(const std::vector<vector>& a_in, const std::vector<vector>& b_in) {
     a = a_in[rank];
