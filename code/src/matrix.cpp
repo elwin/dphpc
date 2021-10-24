@@ -9,73 +9,77 @@ matrix::matrix(size_t rows, size_t columns) {
   this->columns = columns;
 }
 
+double& matrix::get(int x, int y) const {
+  return data[x * columns + y];
+}
+
 matrix::matrix(size_t rows, size_t columns, std::vector<vector> data) : matrix(rows, columns) {
   for (size_t i = 0; i < rows; i++) {
     for (size_t j = 0; j < columns; j++) {
-      this->data[i * columns + j] = data[i][j];
+      get(i, j) = data[i][j];
     }
   }
 }
 
-matrix* matrix::outer(vector a, vector b) {
-  auto* out = new matrix(a.size(), b.size());
+matrix matrix::outer(const vector& a, const vector& b) {
+  auto out = matrix(a.size(), b.size());
 
   for (size_t i = 0; i < a.size(); i++) {
     for (size_t j = 0; j < b.size(); j++) {
-      out->data[i * out->columns + j] = a[i] * b[j];
+      out.get(i, j) = a[i] * b[j];
     }
   }
 
   return out;
 }
 
-void matrix::print() {
-  for (size_t i = 0; i < this->rows; i++) {
-    for (size_t j = 0; j < this->columns; j++) {
-      std::cout << this->data[i * this->columns + j] << " ";
+void matrix::print() const {
+  for (size_t i = 0; i < rows; i++) {
+    for (size_t j = 0; j < columns; j++) {
+      std::cout << get(i, j) << " ";
     }
 
     std::cout << std::endl;
   }
 }
 
-void matrix::add(matrix* b) {
-  assert(this->matchesDimensions(b));
+void matrix::add(const matrix& b) {
+  assert(matchesDimensions(b));
 
-  for (size_t i = 0; i < this->rows * this->columns; i++) {
-    this->data[i] += b->data[i];
+  for (size_t i = 0; i < rows * columns; i++) {
+    data[i] += b.data[i];
   }
 }
 
-matrix* matrix::add(matrix* a, matrix* b) {
-  assert(a->matchesDimensions(b));
+matrix matrix::add(const matrix& a, const matrix& b) {
+  assert(a.matchesDimensions(b));
 
-  auto c = new matrix(a->rows, a->columns);
-  for (size_t i = 0; i < a->rows * a->columns; i++) {
-    c->data[i] = a->data[i] + b->data[i];
+  auto c = matrix(a.rows, a.columns);
+  for (size_t i = 0; i < a.rows * a.columns; i++) {
+    c.data[i] = a.data[i] + b.data[i];
   }
 
   return c;
 }
 
-bool matrix::equal(matrix* b) {
-  if (!this->matchesDimensions(b))
+bool matrix::operator==(const matrix& b) const {
+  if (!matchesDimensions(b))
     return false;
 
-  for (size_t i = 0; i < this->rows * this->columns; i++) {
-    if (this->data[i] != b->data[i])
+  for (size_t i = 0; i < rows * columns; i++) {
+    if (data[i] != b.data[i])
       return false;
   }
 
   return true;
 }
 
-bool matrix::matchesDimensions(matrix* b) {
-  return this->rows = b->rows && this->columns == b->columns;
+bool matrix::matchesDimensions(const matrix& b) const {
+  return rows == b.rows && columns == b.columns;
 }
 
 size_t matrix::dimension() const {
-  return this->rows * this->columns;
+  return rows * columns;
 }
 
 double* matrix::get_ptr() {

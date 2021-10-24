@@ -2,11 +2,11 @@
 
 namespace impls::allreduce {
 
-matrix* allreduce::compute() {
-  matrix* current = matrix::outer(this->a, this->b);
-  auto result = new matrix(this->a.size(), this->b.size());
+matrix allreduce::compute() {
+  auto current = matrix::outer(a, b);
+  auto result = matrix(a.size(), b.size());
 
-  MPI_Allreduce(current->get_ptr(), result->get_ptr(), result->dimension(), MPI_DOUBLE, MPI_SUM, this->comm);
+  MPI_Allreduce(current.get_ptr(), result.get_ptr(), result.dimension(), MPI_DOUBLE, MPI_SUM, comm);
 
   return result;
 }

@@ -17,23 +17,25 @@ class matrix {
   matrix(size_t rows, size_t columns);
   matrix(size_t rows, size_t columns, std::vector<vector>);
 
-  void print();
+  void print() const;
 
-  bool equal(matrix* b);
+  bool operator==(const matrix& b) const;
+
+  double& get(int x, int y) const;
 
   size_t dimension() const;
 
   double* get_ptr();
 
   // Add matrix b to `this` in place
-  void add(matrix* b);
+  void add(const matrix& b);
 
   // Add matrices a and b to a new matrix
-  static matrix* add(matrix* a, matrix* b);
+  static matrix add(const matrix& a, const matrix& b);
 
-  bool matchesDimensions(matrix* b);
+  bool matchesDimensions(const matrix& b) const;
 
-  static matrix* outer(vector a, vector b);
+  static matrix outer(const vector& a, const vector& b);
 };
 
 #endif // CODE_MATRIX_H

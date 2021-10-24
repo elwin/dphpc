@@ -14,7 +14,7 @@ class allreduce : public dsop {
 
  public:
   // todo why tf are those entire declarations even needed?
-  matrix* compute() override;
+  matrix compute() override;
 };
 
 } // namespace impls::allreduce

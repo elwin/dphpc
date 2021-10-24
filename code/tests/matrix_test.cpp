@@ -4,30 +4,30 @@
 #include "vector.h"
 
 TEST(OuterTest, BasicAssertions) {
-  matrix* x = matrix::outer({1, 2, 3}, {1, 2, 3, 4});
+  auto x = matrix::outer({1, 2, 3}, {1, 2, 3, 4});
 
-  auto* y = new matrix(3, 4, {{1, 2, 3, 4}, {2, 4, 6, 8}, {3, 6, 9, 12}});
+  auto y = matrix(3, 4, {{1, 2, 3, 4}, {2, 4, 6, 8}, {3, 6, 9, 12}});
 
-  EXPECT_TRUE(x->equal(y));
+  EXPECT_EQ(x, y);
 }
 
 TEST(AddTest, BasicAssertions) {
-  auto x = new matrix(2, 2, {{1, 2}, {2, 4}});
+  auto x = matrix(2, 2, {{1, 2}, {2, 4}});
 
-  auto y = new matrix(2, 2, {{3, 2}, {2, 0}});
+  auto y = matrix(2, 2, {{3, 2}, {2, 0}});
 
-  auto z = new matrix(2, 2, {{4, 4}, {4, 4}});
+  auto z = matrix(2, 2, {{4, 4}, {4, 4}});
 
-  EXPECT_TRUE(matrix::add(x, y)->equal(z));
+  EXPECT_EQ(matrix::add(x, y), z);
 }
 
 TEST(AddTestInPlace, BasicAssertions) {
-  auto x = new matrix(2, 2, {{1, 2}, {2, 4}});
+  auto x = matrix(2, 2, {{1, 2}, {2, 4}});
 
-  auto y = new matrix(2, 2, {{3, 2}, {2, 0}});
-  x->add(y);
+  auto y = matrix(2, 2, {{3, 2}, {2, 0}});
+  x.add(y);
 
-  auto z = new matrix(2, 2, {{4, 4}, {4, 4}});
+  auto z = matrix(2, 2, {{4, 4}, {4, 4}});
 
-  EXPECT_TRUE(x->equal(z));
+  EXPECT_EQ(x, z);
 }

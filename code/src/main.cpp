@@ -16,10 +16,16 @@
 #define RANGE_START -1.0
 #define RANGE_END 1.0
 
-static const std::vector<std::string> implementations{"allreduce"};
-
 static void print_usage(const char* exec) {
   fprintf(stderr, "Usage: %s -n N -m M [-v] -i name\n", exec);
+}
+
+static std::unique_ptr<dsop> get_impl(const std::string& name, MPI_Comm comm, int rank, int num_procs) {
+  if (name == "allreduce") {
+    return std::make_unique<impls::allreduce::allreduce>(comm, rank, num_procs);
+  } else {
+    throw std::runtime_error("Unknown implementation '" + name + "'");
+  }
 }
 
 int main(int argc, char* argv[]) {
@@ -30,7 +36,7 @@ int main(int argc, char* argv[]) {
   bool has_N = false;
   bool has_M = false;
 
-  std::string impl;
+  std::string name;
   bool has_impl;
 
   int opt;
@@ -49,7 +55,7 @@ int main(int argc, char* argv[]) {
         break;
       case 'i':
         has_impl = true;
-        impl = std::string(optarg);
+        name = std::string(optarg);
         break;
       default: /* '?' */
         print_usage(argv[0]);
@@ -65,60 +71,46 @@ int main(int argc, char* argv[]) {
   assert(N > 0);
   assert(M > 0);
 
-  auto it = std::find(implementations.begin(), implementations.end(), impl);
-
-  if (it == implementations.end()) {
-    fprintf(stderr, "Invalid implementation '%s', available implementations: [", impl.c_str());
-
-    for (const auto& s : implementations) {
-      fprintf(stderr, "%s, ", s.c_str());
-    }
-
-    fprintf(stderr, "]\n");
-
-    return EXIT_FAILURE;
-  }
-
   int rank;
   int numprocs;
+  const auto COMM = MPI_COMM_WORLD;
 
   MPI_Init(&argc, &argv);
-  MPI_Comm_size(MPI_COMM_WORLD, &numprocs);
-  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  MPI_Comm_size(COMM, &numprocs);
+  MPI_Comm_rank(COMM, &rank);
 
   bool is_root = rank == 0;
 
-  printf("%d: Starting numprocs=%d N=%d, M=%d impl=%s\n", rank, numprocs, N, M, impl.c_str());
+  auto impl = get_impl(name, COMM, rank, numprocs);
+
+  printf("%d: Starting numprocs=%d N=%d, M=%d impl=%s\n", rank, numprocs, N, M, name.c_str());
 
   auto a_vec = get_random_vectors(0, N, numprocs);
   auto b_vec = get_random_vectors(1, M, numprocs);
 
   if (is_root) {
-    std::cout << "A" << std::endl;
+    std::cout << "A_" << rank << std::endl;
     for (int i = 0; i < numprocs; i++) {
-      (*a_vec)[i].print();
+      a_vec[i].print();
       std::cout << std::endl;
     }
 
-    std::cout << "B" << std::endl;
+    std::cout << "B_" << rank << std::endl;
     for (int i = 0; i < numprocs; i++) {
-      (*b_vec)[i].print();
+      b_vec[i].print();
       std::cout << std::endl;
     }
   }
 
-  const auto COMM = MPI_COMM_WORLD;
-
-  auto x = impls::allreduce::allreduce(COMM, rank, numprocs);
-  x.load(a_vec, b_vec);
+  impl->load(a_vec, b_vec);
 
   double t = -MPI_Wtime();
-  auto result = x.compute();
+  auto result = impl->compute();
   t += MPI_Wtime();
 
   if (is_root) {
     printf("result:\n");
-    result->print();
+    result.print();
     printf("time: %f\n", t);
   }
 

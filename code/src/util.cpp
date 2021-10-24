@@ -18,17 +18,17 @@ std::unique_ptr<double[]> get_random(uint64_t seed, int size, double range_start
   return v;
 }
 
-std::vector<vector>* get_random_vectors(uint64_t seed, int n, int p) {
+std::vector<vector> get_random_vectors(uint64_t seed, int n, int p) {
   std::mt19937_64 gen{seed};
   std::uniform_real_distribution<double> dist(-1, 1);
 
-  auto out = new std::vector<vector>(p);
+  std::vector<vector> out(p);
 
   for (int i = 0; i < p; i++) {
-    (*out)[i] = vector(n);
+    out[i] = vector(n);
 
     for (int j = 0; j < n; j++) {
-      (*out)[i][j] = dist(gen);
+      out[i][j] = dist(gen);
     }
   }
 
