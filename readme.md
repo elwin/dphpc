@@ -65,6 +65,8 @@ VPN. As soon as we are inside the network, we can connect to the Euler cluster v
 As git is available on the cluster, you can simply clone this repository into you personal home directory on the
 cluster: `git clone https://github.com/elwin/dphpc`
 
+> You can also send [@elwin](mailto:elwin.stephan@gmail.com) a copy of your public key on your Euler account and he'll add it as a deploy key to the repository. Afterwards, you can `git clone git@github.com:elwin/dphpc.git` without having to do any further authorization :crystal_ball:
+
 ### Preparations
 
 Before we can build and run our code, we have to prepare the environment to use the correct versions of our build tools.
