@@ -3,7 +3,13 @@
 #include "iostream"
 
 void vector::print() {
-  for (size_t i = 0; i < this->size(); i++) {
-    std::cout << (*this)[i] << " ";
+  std::cout << "[";
+  for (size_t i = 0; i < size(); i++) {
+    if (i != 0) {
+      std::cout << ", ";
+    }
+
+    std::cout << operator[](i);
   }
+  std::cout << "]";
 }

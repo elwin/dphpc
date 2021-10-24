@@ -10,12 +10,16 @@
 class matrix {
  private:
   std::unique_ptr<double[]> data;
-  size_t rows;
-  size_t columns;
 
  public:
   matrix(size_t rows, size_t columns);
   matrix(size_t rows, size_t columns, std::vector<vector>);
+  matrix(const matrix& other);
+
+  matrix& operator=(const matrix& other);
+
+  size_t rows;
+  size_t columns;
 
   void print() const;
 
@@ -25,7 +29,7 @@ class matrix {
 
   size_t dimension() const;
 
-  double* get_ptr();
+  double* get_ptr() const;
 
   // Add matrix b to `this` in place
   void add(const matrix& b);

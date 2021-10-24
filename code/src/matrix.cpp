@@ -1,12 +1,11 @@
 #include "matrix.h"
 
 #include <cassert>
+#include <cstring>
 #include <iostream>
 
-matrix::matrix(size_t rows, size_t columns) {
+matrix::matrix(size_t rows, size_t columns) : rows(rows), columns(columns) {
   this->data = std::make_unique<double[]>(rows * columns);
-  this->rows = rows;
-  this->columns = columns;
 }
 
 double& matrix::get(int x, int y) const {
@@ -20,6 +19,18 @@ matrix::matrix(size_t rows, size_t columns, std::vector<vector> data) : matrix(r
     }
   }
 }
+
+matrix::matrix(const matrix& other) : matrix(other.rows, other.columns) {
+  memcpy(get_ptr(), other.get_ptr(), other.dimension() * sizeof(double));
+}
+
+matrix& matrix::operator=(const matrix& other) {
+  data = std::make_unique<double[]>(other.dimension());
+  rows = other.rows;
+  columns = other.columns;
+  memcpy(get_ptr(), other.get_ptr(), other.dimension() * sizeof(double));
+  return *this;
+};
 
 matrix matrix::outer(const vector& a, const vector& b) {
   auto out = matrix(a.size(), b.size());
@@ -82,6 +93,6 @@ size_t matrix::dimension() const {
   return rows * columns;
 }
 
-double* matrix::get_ptr() {
+double* matrix::get_ptr() const {
   return data.get();
 }

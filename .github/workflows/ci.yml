@@ -39,3 +39,8 @@ jobs:
         run: |
           cd "$BUILD_DIR"
           make check
+      - name: Run Implementations
+        run: |
+          cd "$BUILD_DIR"
+          mpirun ./main -q -v -n 2 -m 3 -i allreduce
+
