@@ -3,6 +3,7 @@ project(code)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_EXPORT_COMPILE_COMMANDS on)
+message(STATUS "Using compiler: ${CMAKE_CXX_COMPILER_ID}")
 
 # Only add GCC flags if using GCC
 set(cxx_flags -Wall -Wextra -Wpedantic -Wsuggest-override)
