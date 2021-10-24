@@ -1,0 +1,41 @@
+name: CI
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: 'ref'
+        required: false
+  push:
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-20.04
+    env:
+      CXX: "g++"
+      BUILD_TYPE: "Release"
+      BUILD_DIR: "${{ github.workspace}}/code/build"
+      MAKEFLAGS: "-j4"
+      COLOR: "ON"
+      CXXFLAGS: "-Werror"
+    steps:
+      - name: Install Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libopenmpi-dev
+      - uses: actions/checkout@v2
+      - name: Summary
+        run: ./.github/workflows/summary.sh
+      - name: Configure
+        run: |
+          mkdir "$BUILD_DIR"
+          cd "$BUILD_DIR"
+          cmake -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DCMAKE_CXX_FLAGS="${CXXFLAGS}" ..
+      - name: Build
+        run: |
+          cd "$BUILD_DIR"
+          make
+      - name: Tests
+        run: |
+          cd "$BUILD_DIR"
+          make check

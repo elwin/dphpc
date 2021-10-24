@@ -114,6 +114,11 @@ int main(int argc, char* argv[]) {
     printf("time: %f\n", t);
   }
 
+  if (validate) {
+    std::cout << "Validation turned on" << std::endl;
+    // TODO validate results against sequential implementation
+  }
+
   MPI_Finalize();
 
   return EXIT_SUCCESS;

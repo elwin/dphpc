@@ -1,9 +1,10 @@
 #ifndef CODE_DSOP_H
 #define CODE_DSOP_H
 
+#include <mpi.h>
+
 #include "common.h"
 #include "matrix.h"
-#include "mpi.h"
 
 // dsop is the interface that dsop implementations should satisfy
 class dsop {
