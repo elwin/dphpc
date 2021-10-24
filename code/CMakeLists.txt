@@ -1,26 +1,32 @@
 cmake_minimum_required(VERSION 3.19)
 project(code)
 
-set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_EXPORT_COMPILE_COMMANDS on)
 
 # Only add GCC flags if using GCC
-if(CMAKE_COMPILER_IS_GNUCXX)
-    set(cxx_flags -Wall -Wextra -Wpedantic -Wsuggest-override)
-    set(cxx_linker_flags ${cxx_flags})
-endif(CMAKE_COMPILER_IS_GNUCXX)
+set(cxx_flags -Wall -Wextra -Wpedantic -Wsuggest-override)
+set(cxx_linker_flags ${cxx_flags})
 
 set(MAIN_SOURCES
-    vector.cpp
-    matrix.cpp
-    dsop_single.cpp
-)
+        src/vector.cpp
+        src/matrix.cpp
+        src/dsop_single.cpp
+        src/util.cpp
+        src/allreduce/impl.cpp
+        )
+
+set(INCLUDE_DIRS include)
+
+find_package(MPI REQUIRED)
 
 add_library(dphpc STATIC EXCLUDE_FROM_ALL ${MAIN_SOURCES})
 target_compile_options(dphpc PUBLIC ${cxx_flags})
 target_link_options(dphpc PUBLIC ${cxx_linker_flags})
+target_include_directories(dphpc PUBLIC ${INCLUDE_DIRS})
+target_link_libraries(dphpc PUBLIC MPI::MPI_CXX)
 
-add_executable(main main.cpp)
+add_executable(main src/main.cpp)
 target_compile_options(main PUBLIC ${cxx_flags})
 target_link_options(main PUBLIC ${cxx_linker_flags})
 target_link_libraries(main dphpc)
@@ -42,13 +48,13 @@ include(GoogleTest)
 
 # Compile all unit tests with 'make all_unit_tests'
 add_custom_target(all_unit_tests
-    COMMENT "Building all unit test")
+        COMMENT "Building all unit test")
 
 function(add_unit_test source_file)
   string(REPLACE "/" "_" testname ${source_file})
   set(name "unit_test.${testname}")
 
-  set(fname "${source_file}.cpp")
+  set(fname "tests/${source_file}.cpp")
 
   add_executable(${name} ${fname})
 
@@ -67,14 +73,14 @@ list(FILTER ALL_SOURCE_FILES EXCLUDE REGEX "${CMAKE_BINARY_DIR}/.*")
 
 add_custom_target(
         clangformat
-        COMMAND /usr/bin/clang-format
+        COMMAND clang-format
         -style=file
         -i
         ${ALL_SOURCE_FILES}
-        )
+)
 
 # Run make check to build and run all unit tests
 add_custom_target(check
-  COMMAND GTEST_COLOR=1 ctest --output-on-failure
-  DEPENDS all_unit_tests
-  )
+        COMMAND GTEST_COLOR=1 ctest --output-on-failure
+        DEPENDS all_unit_tests
+        )

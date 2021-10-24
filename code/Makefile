@@ -1,3 +1,5 @@
+# cannot be named "build", otherwise clashes with the target
+# and never re-builds once created
 OUT="build_output"
 
 build:
@@ -9,3 +11,10 @@ test: build
 
 main: build
 	./${OUT}/main
+
+format: build
+	cd ${OUT}; make clangformat
+
+# only temporary until we have a proper build thing in place
+mpi_tmp: build
+	mpiexec ${OUT}/main -n 8 -m 8 -i allreduce

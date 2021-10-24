@@ -1,9 +1,16 @@
 # Distributed Sum of Outer Product (DSOP)
-## Project Description
-The goal of this project is to study the problem of Distributed Sum of Outer Product. In this problem we have P hosts p1, p2, ..., pp, and each pi has two vectors Ai and Bi.
-We are interested in computing the sum of all outer products of Ai and Bi.
 
-At the end of the computation, each of the P hosts needs to have a copy of the matrix G. The main goal of this project is to design and implement (with MPI) different efficient algorithms to compute G. The students should provide a cost model for their algorithms, and benchmark them on real systems. The algorithms could take into account heterogeneity in the interconnection network (i.e., different links might have a different bandwidth), and/or the sparsity of the input vectors Ai and Bi.
+## Project Description
+
+The goal of this project is to study the problem of Distributed Sum of Outer Product. In this problem we have P hosts
+p1, p2, ..., pp, and each pi has two vectors Ai and Bi. We are interested in computing the sum of all outer products of
+Ai and Bi.
+
+At the end of the computation, each of the P hosts needs to have a copy of the matrix G. The main goal of this project
+is to design and implement (with MPI) different efficient algorithms to compute G. The students should provide a cost
+model for their algorithms, and benchmark them on real systems. The algorithms could take into account heterogeneity in
+the interconnection network (i.e., different links might have a different bandwidth), and/or the sparsity of the input
+vectors Ai and Bi.
 
 ## Meetings
 
@@ -19,7 +26,7 @@ All code related to solving DSOP is located in the folder [`/code`](code).
 You'll need the following, perhaps also a bit more:
 
 - [cmake](https://cmake.org/install/) with a somewhat recent version (I have 3.21.0)
-- C++, standard 14 or higher would be nice (gcc, clang, ... should work)
+- C++, standard 17 or higher would be nice (gcc, clang, ... should work)
 - Something to execute `Makefile`'s (probably already installed)
 
 ### Run targets
@@ -35,6 +42,45 @@ I use Jetbrain's CLion - it nicely recognises all targets from the `CMakeLists.t
 individually. I can recommend it, but other approaches should of course also work (perhaps even better, let me know if
 so).
 
+## Running on the cluster
+
+First, before accessing the cluster, one must be inside the ETH network. This can easily be achieved by using the ETH
+VPN. As soon as we are inside the network, we can connect to the Euler cluster via SSH: `<nethz username>@euler.ethz.ch`
+
+### Checking out the codebase
+
+As git is available on the cluster, you can simply clone this repository into you personal home directory on the
+cluster: `git clone https://github.com/elwin/dphpc`
+
+### Preparations
+
+Before we can build and run our code, we have to prepare the environment to use the correct versions of our build tools.
+To do this, we will first switch to the new software stack by running:
+
+```shell
+env2lmod
+```
+
+Then we can load the required modules by using:
+
+```shell
+module load gcc/8.2.0 cmake/3.20.3 openmpi/4.0.2
+```
+Then you should be able to build the project with `make <target>`
+
+### Running
+```shell
+# Directly run it on the local node
+mpirun -np <number of processes> <binary>
+# So for example:
+mpirun -np 4 ./main -n 5 -m 5 -i allreduce
+
+# You can also run it as a job on the cluster
+bsub -n <number of processes> mpirun -np <number of processes> <binary>
+# Example:
+bsub -n 4 mpirun -np 4 ./main -n 5 -m 5 -i allreduce
+```
+
 ### Etiquette rules
 
 - To the `master` branch, only push code that builds with succeeding tests, perhaps make your own branch such
@@ -45,3 +91,4 @@ so).
 
 - [Getting started with clusters (ETH)](https://scicomp.ethz.ch/wiki/Getting_started_with_clusters)
 - [Scientific Benchmarking of Parallel Computing Systems](http://spcl.inf.ethz.ch/Teaching/2021-dphpc/hoefler-scientific-benchmarking.pdf)
+- [MPI Tutorials](https://mpitutorial.com/)
