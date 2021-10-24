@@ -26,7 +26,7 @@ All code related to solving DSOP is located in the folder [`/code`](code).
 You'll need the following, perhaps also a bit more:
 
 - [cmake](https://cmake.org/install/) with a somewhat recent version (I have 3.21.0)
-- C++, standard 17 or higher would be nice (gcc, clang, ... should work)
+- C++, standard 17 or higher would be nice ~~(gcc, clang, ... should work)~~ (gcc 11)
 - Something to execute `Makefile`'s (probably already installed)
 
 ### Run targets
@@ -41,6 +41,19 @@ Targets are defined in the [`CMakeLists.txt`](code/CMakeLists.txt) file, take a 
 I use Jetbrain's CLion - it nicely recognises all targets from the `CMakeLists.txt` file and allows to run & debug tests
 individually. I can recommend it, but other approaches should of course also work (perhaps even better, let me know if
 so).
+
+### Use GCC
+
+In case you get some unexpected error and you're not using gcc 11, perhaps it might be worth a try to switch. For that,
+after installing the compiler, you must set the following env variables:
+
+```shell
+CXX=/usr/local/bin/g++-11
+CC=gcc-11
+```
+
+e.g. by adding those to your `~/.zshrc` / `~/.bashrc` using `export CXX=...` or simply setting them in your current
+shell, e.g. `CXX=/usr/local/bin/g++-11  CC=gcc-11 make test`.
 
 ## Running on the cluster
 
@@ -66,9 +79,11 @@ Then we can load the required modules by using:
 ```shell
 module load gcc/8.2.0 cmake/3.20.3 openmpi/4.0.2
 ```
+
 Then you should be able to build the project with `make <target>`
 
 ### Running
+
 ```shell
 # Directly run it on the local node
 mpirun -np <number of processes> <binary>
