@@ -30,7 +30,7 @@ matrix& matrix::operator=(const matrix& other) {
   columns = other.columns;
   memcpy(get_ptr(), other.get_ptr(), other.dimension() * sizeof(double));
   return *this;
-};
+}
 
 matrix matrix::outer(const vector& a, const vector& b) {
   auto out = matrix(a.size(), b.size());
