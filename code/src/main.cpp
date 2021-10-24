@@ -9,6 +9,7 @@
 #include <memory>
 #include <vector>
 
+#include "allgather/impl.hpp"
 #include "allreduce/impl.hpp"
 #include "util.hpp"
 #include "vector.h"
@@ -23,6 +24,8 @@ static void print_usage(const char* exec) {
 static std::unique_ptr<dsop> get_impl(const std::string& name, MPI_Comm comm, int rank, int num_procs) {
   if (name == "allreduce") {
     return std::make_unique<impls::allreduce::allreduce>(comm, rank, num_procs);
+  } else if (name == "allgather") {
+    return std::make_unique<impls::allgather::allgather>(comm, rank, num_procs);
   } else {
     throw std::runtime_error("Unknown implementation '" + name + "'");
   }
