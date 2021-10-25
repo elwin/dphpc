@@ -30,7 +30,6 @@ if(NOT json_POPULATED)
   add_subdirectory(${json_SOURCE_DIR} ${json_BINARY_DIR} EXCLUDE_FROM_ALL)
 endif()
 
-find_package(nlohmann_json 3 REQUIRED)
 find_package(MPI REQUIRED)
 
 add_library(dphpc STATIC EXCLUDE_FROM_ALL ${MAIN_SOURCES})
