@@ -143,7 +143,8 @@ for IMPLEMENTATION in "${names[@]}"; do
 
           echo "$(mpirun -np ${N_THREADS} ${BUILD_DIR}/main -n $n -m $m -i $IMPLEMENTATION)" >>$OUTPUT_PATH
         elif [[ $EXECUTION_MODE == $CLUSTER_MODE ]]; then
-          eval "$(bsub -n ${N_THREADS} -o ${OUTPUT_PATH} mpirun -np ${N_THREADS} ${BUILD_DIR}/main -n $n -m $m -i $IMPLEMENTATION)"
+          echo "$(bsub -o ${OUTPUT_PATH} -n ${N_THREADS} mpirun -np ${N_THREADS} ${BUILD_DIR}/main -n $n -m $m -i $IMPLEMENTATION)"
+          echo "Issued n_threads=$N_THREADS, i=$IMPLEMENTATION, n=$n, m=$m, repetition=$rep"
         fi
 
       done
