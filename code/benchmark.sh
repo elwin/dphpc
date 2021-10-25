@@ -1,10 +1,11 @@
 #!/bin/bash
 
 set -e # Exit on first failure
+
 # Constants and variable init
 EQUAL_MODE="eq"         # N=M --> only loop through values of N
 UNEQUAL_MODE="neq"      # all combinations of N,M
-LOCAL_MODE="local"      # execute on local node
+LOCAL_MODE="local"      # execute on local computer
 CLUSTER_MODE="cluster"  # execute on cluster
 CLEAN=0
 
@@ -86,6 +87,8 @@ while getopts "hm:e:t:r:i:c" option; do
 done
 echo "[BENCHMARK CONFIGURATION] NM_MODE=$nm_mode, EXECUTION_MODE=$EXECUTION_MODE, N_THREADS=$N_THREADS, N_REPETITIONS=$N_REPETITIONS, IMPLEMENTATIONS=(${names[*]}), clean=$CLEAN"
 
+exit
+
 ############################################################
 ############################################################
 # Main program                                             #
@@ -94,19 +97,23 @@ echo "[BENCHMARK CONFIGURATION] NM_MODE=$nm_mode, EXECUTION_MODE=$EXECUTION_MODE
 
 # Experiment Configuration
 BUILD_DIR=build_output
-OUTPUT_DIR=results
+OUTPUT_DIR=results/$(date "+%Y.%m.%d-%H.%M.%S")
+mkdir -p ${OUTPUT_DIR}
+JOB_OVERVIEW_FILE='${OUTPUT_DIR}/jobs.txt'
+
+# prepare environment if in cluster mode
+if [[ $EXECUTION_MODE == $CLUSTER_MODE ]]; then
+  env2lmod
+  module load gcc/8.2.0 cmake/3.20.3 openmpi/4.0.2
+fi
 
 if [ $CLEAN -eq 1 ]; then
   echo "CLEANING UP"
-  rm -rf ${BUILD_DIR}
-  rm -rf cmake-build-debug
-  rm -rf ${OUTPUT_DIR}
+  make clean
 fi
 
 # build
-mkdir -p ${OUTPUT_DIR}
-cmake -S . -B ${BUILD_DIR}
-cmake --build ${BUILD_DIR}
+make build
 
 # run experiment over all implementations
 for IMPLEMENTATION in "${names[@]}"; do
@@ -117,7 +124,6 @@ for IMPLEMENTATION in "${names[@]}"; do
 
     # for mode with all combinations
     if [[ $nm_mode == $UNEQUAL_MODE ]]; then
-      echo "UNEQUAL MODE"
       for ((mi = 1; mi <= $STEPS_M; mi += 1)); do
 
         # val=$[$START_M ** $mi]
@@ -140,13 +146,19 @@ for IMPLEMENTATION in "${names[@]}"; do
           echo "Running n_threads=$N_THREADS, i=$IMPLEMENTATION, n=$n, m=$m, repetition=$rep"
 
           echo "$(mpirun -np ${N_THREADS} ${BUILD_DIR}/main -n $n -m $m -i $IMPLEMENTATION)" >>$OUTPUT_PATH
+
         elif [[ $EXECUTION_MODE == $CLUSTER_MODE ]]; then
-          echo "$(bsub -o ${OUTPUT_PATH} -n ${N_THREADS} mpirun -np ${N_THREADS} ${BUILD_DIR}/main -n $n -m $m -i $IMPLEMENTATION)"
+          jobMsg=$(bsub -o ${OUTPUT_PATH} -n ${N_THREADS} mpirun -np ${N_THREADS} ${BUILD_DIR}/main -n $n -m $m -i $IMPLEMENTATION)
+          jobID=$(echo $(echo $jobMsg | tr "<" "\n")[1] | tr ">" "\n")[0]
+
+          echo $jobID >> $JOB_OVERVIEW_FILE
+
+          echo "[BSUB OUT] ${jobID} [SBUB OUT FIN]"
+
           echo "Issued n_threads=$N_THREADS, i=$IMPLEMENTATION, n=$n, m=$m, repetition=$rep"
         fi
 
       done
-
     done
   done
 done
