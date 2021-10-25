@@ -112,22 +112,22 @@ int main(int argc, char* argv[]) {
 
   auto impl = get_impl(name, COMM, rank, numprocs);
 
-  printf("%d: Starting numprocs=%d N=%d, M=%d impl=%s\n", rank, numprocs, N, M, name.c_str());
+  fprintf(stderr, "%d: Starting numprocs=%d N=%d, M=%d impl=%s\n", rank, numprocs, N, M, name.c_str());
 
   auto a_vec = get_random_vectors(0, N, numprocs);
   auto b_vec = get_random_vectors(1, M, numprocs);
 
   if (is_root && !quiet) {
     for (int i = 0; i < numprocs; i++) {
-      std::cout << "A_" << i << " ";
+      std::cerr << "A_" << i << " ";
       a_vec[i].print();
-      std::cout << std::endl;
+      std::cerr << std::endl;
     }
 
     for (int i = 0; i < numprocs; i++) {
-      std::cout << "B_" << i << " ";
+      std::cerr << "B_" << i << " ";
       b_vec[i].print();
-      std::cout << std::endl;
+      std::cerr << std::endl;
     }
   }
 
@@ -148,14 +148,14 @@ int main(int argc, char* argv[]) {
     }
 
     if (!quiet) {
-      printf("result:\n");
+      fprintf(stderr, "result:\n");
       result.print();
 
       for (int i = 0; i < numprocs; i++) {
-        printf("time %d: %f\n", i, timings[i] / 1e6);
+        fprintf(stderr, "time %d: %f\n", i, timings[i] / 1e6);
       }
     }
-    printf("time: %f\n", t / 1e6);
+    fprintf(stderr, "time: %f\n", t / 1e6);
   } else {
     MPI_Send(&t, 1, MPI_INT64_T, ROOT, TAG_TIMING, COMM);
   }
@@ -164,7 +164,7 @@ int main(int argc, char* argv[]) {
     int num_elements = result.dimension();
 
     if (is_root) {
-      std::cout << "Validation turned on" << std::endl;
+      std::cerr << "Validation turned on" << std::endl;
       std::vector<matrix> results(numprocs, matrix{result.rows, result.columns});
       std::vector<MPI_Request> reqs;
       for (int i = 0; i < numprocs; i++) {
