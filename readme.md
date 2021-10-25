@@ -45,10 +45,10 @@ so).
 ### Use GCC
 
 In case you get some unexpected error and you're not using gcc 11, perhaps it might be worth a try to switch. For that,
-after installing the compiler, you must set the following env variables:
+after installing the compiler, you must set the following env variables (perhaps you must change the path to the compiler):
 
 ```shell
-CXX=/usr/local/bin/g++-11
+CXX=g++-11
 CC=gcc-11
 ```
 
