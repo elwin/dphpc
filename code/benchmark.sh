@@ -153,7 +153,7 @@ for IMPLEMENTATION in "${names[@]}"; do
           read -a jobMsgSplit <<< "$jobMsg"
           IFS='<'
           read -a jobID <<< "$jobMsgSplit"
-          echo $jobID >> $JOB_OVERVIEW_FILE
+          echo "${jobID[1]}}" >> $JOB_OVERVIEW_FILE
 
           echo "Issued n_threads=$N_THREADS, i=$IMPLEMENTATION, n=$n, m=$m, repetition=$rep"
         fi
