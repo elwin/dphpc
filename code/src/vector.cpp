@@ -3,13 +3,13 @@
 #include "iostream"
 
 void vector::print() {
-  std::cout << "[";
+  std::cerr << "[";
   for (size_t i = 0; i < size(); i++) {
     if (i != 0) {
-      std::cout << ", ";
+      std::cerr << ", ";
     }
 
-    std::cout << operator[](i);
+    std::cerr << operator[](i);
   }
-  std::cout << "]";
+  std::cerr << "]";
 }
