@@ -23,8 +23,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y \
-            libopenmpi-dev \
-            nlohmann-json3-dev
+            libopenmpi-dev
       - uses: actions/checkout@v2
       - name: Summary
         run: ./.github/workflows/summary.sh
