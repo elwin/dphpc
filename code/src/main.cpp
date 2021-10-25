@@ -114,6 +114,11 @@ int main(int argc, char* argv[]) {
 
   fprintf(stderr, "%d: Starting numprocs=%d N=%d, M=%d impl=%s\n", rank, numprocs, N, M, name.c_str());
 
+  auto itt = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+  std::ostringstream ss;
+  ss << std::put_time(localtime(&itt), "%FT%TZ%z");
+  auto timestamp = ss.str();
+
   auto a_vec = get_random_vectors(0, N, numprocs);
   auto b_vec = get_random_vectors(1, M, numprocs);
 
@@ -156,14 +161,20 @@ int main(int argc, char* argv[]) {
       }
     }
     fprintf(stderr, "time: %f\n", t / 1e6);
-  } else {
-    MPI_Send(&t, 1, MPI_INT64_T, ROOT, TAG_TIMING, COMM);
-  }
 
-  if (validate) {
-    int num_elements = result.dimension();
+    json result_dump;
 
-    if (is_root) {
+    result_dump["timestamp"] = timestamp;
+    result_dump["name"] = name;
+    result_dump["N"] = N;
+    result_dump["M"] = M;
+    result_dump["numprocs"] = numprocs;
+    result_dump["runtime"] = *std::max_element(timings.begin(), timings.end());
+    result_dump["runtimes"] = timings;
+
+    if (validate) {
+      int num_elements = result.dimension();
+
       std::cerr << "Validation turned on" << std::endl;
       std::vector<matrix> results(numprocs, matrix{result.rows, result.columns});
       std::vector<MPI_Request> reqs;
@@ -177,6 +188,11 @@ int main(int argc, char* argv[]) {
       }
       MPI_Waitall(reqs.size(), reqs.data(), MPI_STATUSES_IGNORE);
 
+      /*
+       * Check that all produced matrices are exactly the same
+       *
+       * TODO can processes get slightly different matrices?
+       */
       for (int i = 1; i < numprocs; i++) {
         if (results.front() != results[i]) {
           throw std::runtime_error("Result of process " + std::to_string(i) + " differs from result of process 0");
@@ -200,7 +216,14 @@ int main(int argc, char* argv[]) {
         throw std::runtime_error("Result does not match sequential result: error=" + std::to_string(diff));
       }
 
-    } else {
+      // Since we require all matrices to be the same, the error is the same for all processes.
+      result_dump["errors"] = std::vector<double>(numprocs, diff);
+    }
+    std::cout << result_dump << std::endl;
+  } else {
+    MPI_Send(&t, 1, MPI_INT64_T, ROOT, TAG_TIMING, COMM);
+    if (validate) {
+      int num_elements = result.dimension();
       MPI_Send(result.get_ptr(), num_elements, MPI_DOUBLE, ROOT, TAG_VALIDATE, COMM);
     }
   }
