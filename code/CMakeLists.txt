@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.19)
 project(code)
 
+include(FetchContent)
+
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_EXPORT_COMPILE_COMMANDS on)
 message(STATUS "Using compiler: ${CMAKE_CXX_COMPILER_ID}")
@@ -20,6 +22,14 @@ set(MAIN_SOURCES
 
 set(INCLUDE_DIRS include)
 
+FetchContent_Declare(json URL https://github.com/nlohmann/json/archive/refs/tags/v3.10.4.zip)
+
+FetchContent_GetProperties(json)
+if(NOT json_POPULATED)
+  FetchContent_Populate(json)
+  add_subdirectory(${json_SOURCE_DIR} ${json_BINARY_DIR} EXCLUDE_FROM_ALL)
+endif()
+
 find_package(nlohmann_json 3 REQUIRED)
 find_package(MPI REQUIRED)
 
@@ -37,7 +47,6 @@ target_link_libraries(main dphpc)
 
 ###################
 # Testing Framework
-include(FetchContent)
 FetchContent_Declare(
         googletest
         URL https://github.com/google/googletest/archive/609281088cfefc76f9d0ce82e1ff6c30cc3591e5.zip
