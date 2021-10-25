@@ -25,9 +25,11 @@ All code related to solving DSOP is located in the folder [`/code`](code).
 
 You'll need the following, perhaps also a bit more:
 
-- [cmake](https://cmake.org/install/) with a somewhat recent version (I have 3.21.0)
-- C++, standard 17 or higher would be nice ~~(gcc, clang, ... should work)~~ (gcc 11)
+- [cmake](https://cmake.org/install/) >= 3.19
+- C++17 compiler ~~(gcc, clang, ... should work)~~ (gcc 11)
 - Something to execute `Makefile`'s (probably already installed)
+- [Open MPI](https://www.open-mpi.org/) >= 4
+- [`nlohmann-json`](https://github.com/nlohmann/json) >= 3
 
 ### Run targets
 
