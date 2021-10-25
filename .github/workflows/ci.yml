@@ -42,5 +42,5 @@ jobs:
       - name: Run Implementations
         run: |
           cd "$BUILD_DIR"
-          mpirun ./main -q -v -n 2 -m 3 -i allreduce
-
+          mpirun ./main -q -v -n 1000 -m 2000 -i allreduce
+          mpirun ./main -q -v -n 1000 -m 2000 -i allgather

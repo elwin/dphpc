@@ -18,7 +18,7 @@ matrix allgather::compute() {
   auto rec_vector = vector(rec_vector_length);
 
   // Distribute all vectors to all nodes
-  MPI_Allgather(&send_vector[0], send_vector_length, MPI_DOUBLE, &rec_vector[0], rec_vector_length, MPI_DOUBLE, comm);
+  MPI_Allgather(&send_vector[0], send_vector_length, MPI_DOUBLE, &rec_vector[0], send_vector_length, MPI_DOUBLE, comm);
 
   // Calculate sum of products on all nodes
   auto result = matrix(a.size(), b.size());
