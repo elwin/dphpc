@@ -31,11 +31,11 @@ using json = nlohmann::json;
 #define TAG_TIMING TAG_BASE + 2
 
 static void print_usage(const char* exec) {
-  fprintf(stderr, "Usage: %s -n N -m M [-v] [-q] [-h] -i name\n", exec);
+  fprintf(stderr, "Usage: %s -n N -m M [-hvc] -i name\n", exec);
   fprintf(stderr, "\n");
   fprintf(stderr, "  -h        Display this help and exit\n");
-  fprintf(stderr, "  -v        Validate run against sequential implementation\n");
-  fprintf(stderr, "  -q        Be quiet. Will not print vectors and matrices\n");
+  fprintf(stderr, "  -v        Verbose mode\n");
+  fprintf(stderr, "  -c        Check results against sequential implementation\n");
   fprintf(stderr, "  -n        Size of vector A\n");
   fprintf(stderr, "  -m        Size of vector B\n");
   fprintf(stderr, "  -i        Name of implementation to run\n");
@@ -60,13 +60,13 @@ int main(int argc, char* argv[]) {
   bool has_N = false;
   bool has_M = false;
 
-  bool quiet = false;
+  bool verbose = false;
 
   std::string name;
   bool has_impl;
 
   int opt;
-  while ((opt = getopt(argc, argv, "hn:m:vi:q")) != -1) {
+  while ((opt = getopt(argc, argv, "hn:m:vi:c")) != -1) {
     switch (opt) {
       case 'n':
         has_N = true;
@@ -76,15 +76,15 @@ int main(int argc, char* argv[]) {
         has_M = true;
         M = std::stoi(optarg);
         break;
-      case 'v':
+      case 'c':
         validate = true;
         break;
       case 'i':
         has_impl = true;
         name = std::string(optarg);
         break;
-      case 'q':
-        quiet = true;
+      case 'v':
+        verbose = true;
         break;
       case 'h':
         print_usage(argv[0]);
@@ -125,7 +125,7 @@ int main(int argc, char* argv[]) {
   auto a_vec = get_random_vectors(0, N, numprocs);
   auto b_vec = get_random_vectors(1, M, numprocs);
 
-  if (is_root && !quiet) {
+  if (is_root && verbose) {
     for (int i = 0; i < numprocs; i++) {
       std::cerr << "A_" << i << " ";
       a_vec[i].print();
@@ -155,7 +155,7 @@ int main(int argc, char* argv[]) {
       }
     }
 
-    if (!quiet) {
+    if (verbose) {
       fprintf(stderr, "result:\n");
       result.print();
 
