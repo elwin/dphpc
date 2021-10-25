@@ -20,6 +20,7 @@ set(MAIN_SOURCES
 
 set(INCLUDE_DIRS include)
 
+find_package(nlohmann_json 3 REQUIRED)
 find_package(MPI REQUIRED)
 
 add_library(dphpc STATIC EXCLUDE_FROM_ALL ${MAIN_SOURCES})
@@ -27,6 +28,7 @@ target_compile_options(dphpc PUBLIC ${cxx_flags})
 target_link_options(dphpc PUBLIC ${cxx_linker_flags})
 target_include_directories(dphpc PUBLIC ${INCLUDE_DIRS})
 target_link_libraries(dphpc PUBLIC MPI::MPI_CXX)
+target_link_libraries(dphpc PUBLIC nlohmann_json::nlohmann_json)
 
 add_executable(main src/main.cpp)
 target_compile_options(main PUBLIC ${cxx_flags})

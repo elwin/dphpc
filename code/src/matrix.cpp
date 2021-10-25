@@ -85,6 +85,10 @@ bool matrix::operator==(const matrix& b) const {
   return true;
 }
 
+bool matrix::operator!=(const matrix& b) const {
+  return !(*this == b);
+}
+
 bool matrix::matchesDimensions(const matrix& b) const {
   return rows == b.rows && columns == b.columns;
 }

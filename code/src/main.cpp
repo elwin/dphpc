@@ -7,6 +7,7 @@
 #include <iostream>
 #include <iterator>
 #include <memory>
+#include <nlohmann/json.hpp>
 #include <type_traits>
 #include <vector>
 
@@ -15,6 +16,8 @@
 #include "dsop_single.h"
 #include "util.hpp"
 #include "vector.h"
+
+using json = nlohmann::json;
 
 #define ROOT 0
 

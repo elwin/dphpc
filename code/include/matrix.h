@@ -24,6 +24,7 @@ class matrix {
   void print() const;
 
   bool operator==(const matrix& b) const;
+  bool operator!=(const matrix& b) const;
 
   double& get(int x, int y) const;
 
