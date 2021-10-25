@@ -52,7 +52,7 @@ Help()
    exit 1;
 }
 
-while getopts ":h:m:e:t:r:i:c" option; do
+while getopts "hm:e:t:r:i:c" option; do
    case $option in
       h) # display Help
           Help
@@ -85,6 +85,8 @@ while getopts ":h:m:e:t:r:i:c" option; do
    esac
 done
 echo "[BENCHMARK CONFIGURATION] NM_MODE=$nm_mode, EXECUTION_MODE=$EXECUTION_MODE, N_THREADS=$N_THREADS, N_REPETITIONS=$N_REPETITIONS, IMPLEMENTATIONS=(${names[*]}), clean=$CLEAN"
+
+exit
 
 ############################################################
 ############################################################
