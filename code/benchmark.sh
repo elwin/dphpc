@@ -86,8 +86,6 @@ while getopts "hm:e:t:r:i:c" option; do
 done
 echo "[BENCHMARK CONFIGURATION] NM_MODE=$nm_mode, EXECUTION_MODE=$EXECUTION_MODE, N_THREADS=$N_THREADS, N_REPETITIONS=$N_REPETITIONS, IMPLEMENTATIONS=(${names[*]}), clean=$CLEAN"
 
-exit
-
 ############################################################
 ############################################################
 # Main program                                             #
