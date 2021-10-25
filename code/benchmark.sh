@@ -2,8 +2,10 @@
 
 set -e # Exit on first failure
 # Constants and variable init
-EQUAL_MODE="eq"
-UNEQUAL_MODE="neq"
+EQUAL_MODE="eq"         # N=M --> only loop through values of N
+UNEQUAL_MODE="neq"      # all combinations of N,M
+LOCAL_MODE="local"      # execute on local node
+CLUSTER_MODE="cluster"  # execute on cluster
 CLEAN=0
 
 ############################################################
@@ -12,16 +14,22 @@ CLEAN=0
 ############################################################
 ############################################################
 
+# Number of threads to run with
+N_THREADS=8
+# Execution Mode (local node or on cluster)
+EXECUTION_MODE=$LOCAL_MODE
+# Number of repeated executions
+N_REPETITIONS=2
 # Start values and number of iterations for N,M
 # N,M are powers of 2
-START_POWER_N=2
+START_POWER_N=10
 STEPS_N=2
-START_POWER_M=2
+START_POWER_M=10
 STEPS_M=2
 # name of implementations, can be overwritten by commandline argument
-declare -a names=(allreduce allreduce2)
+declare -a names=(allreduce)
 # combination mode for n,m. Values {unequal, equal}
-mode=$UNEQUAL_MODE
+nm_mode=$UNEQUAL_MODE
 
 ############################################################
 # Help                                                     #
@@ -31,27 +39,40 @@ Help()
    # Display Help
    echo "Benchmark Bash Script"
    echo
-   echo "Usage: name [-h] [-m MODE] -i NAME [-c]"
+   echo "Usage: name [-h] [-m NM_MODE] [-e EXECUTION_MODE] [-t N_THREADS] [-r N_REPETITIONS] -i NAME [-c]"
    echo "options:"
    echo "h     Print this Help."
+   echo "m     Set input size mode. Values are {$EQUAL_MODE, $UNEQUAL_MODE} (either equal (N=M) or unequal (all combinations))."
+   echo "e     Set execution mode. Values are {$LOCAL_MODE, $CLUSTER_MODE} (run on local node or using bsub on euler cluster)."
+   echo "t     Number of Threads."
+   echo "r     Number of repeated experiments to issue."
    echo "c     Delete old build before building again."
-   echo "m     Set mode. Values are {$EQUAL_MODE, $UNEQUAL_MODE} (either equal (N=M) or unequal (all combinations))."
    echo "i     Can set implementation name, when wanting to run a single implementation"
    echo
    exit 1;
 }
 
-while getopts ":h:m:i:c" option; do
+while getopts ":h:m:e:t:r:i:c" option; do
    case $option in
       h) # display Help
           Help
           exit;;
       m) # set mode
-          mode=${OPTARG}
-          if [[ ! ( $mode == $EQUAL_MODE || $mode == $UNEQUAL_MODE ) ]]; then
+          nm_mode=${OPTARG}
+          if [[ ! ( $nm_mode == $EQUAL_MODE || $nm_mode == $UNEQUAL_MODE ) ]]; then
             Help
           fi
           ;;
+      e) # execution mode
+          EXECUTION_MODE=${OPTARG}
+          if [[ ! ( $EXECUTION_MODE == $LOCAL_MODE || $EXECUTION_MODE == $CLUSTER_MODE ) ]]; then
+            Help
+          fi
+          ;;
+      t) # number of threads
+          N_THREADS=("${OPTARG}");;
+      r) # repetitions
+          N_REPETITIONS=("${OPTARG}");;
       i) # Enter an implementation name
           names=("${OPTARG}");;
       c) # Clean old build
@@ -63,6 +84,7 @@ while getopts ":h:m:i:c" option; do
           exit;;
    esac
 done
+echo "[BENCHMARK CONFIGURATION] NM_MODE=$nm_mode, EXECUTION_MODE=$EXECUTION_MODE, N_THREADS=$N_THREADS, N_REPETITIONS=$N_REPETITIONS, IMPLEMENTATIONS=(${names[*]}), clean=$CLEAN"
 
 ############################################################
 ############################################################
@@ -73,7 +95,6 @@ done
 # Experiment Configuration
 BUILD_DIR=build_output
 OUTPUT_DIR=results
-OUTPUT_PATH=${OUTPUT_DIR}/output.csv
 
 if [ $CLEAN -eq 1 ]; then
   echo "CLEANING UP"
@@ -95,7 +116,7 @@ for IMPLEMENTATION in "${names[@]}"; do
     declare -a mValues=()
 
     # for mode with all combinations
-    if [[ $mode == $UNEQUAL_MODE ]]; then
+    if [[ $nm_mode == $UNEQUAL_MODE ]]; then
       echo "UNEQUAL MODE"
       for ((mi = 1; mi <= $STEPS_M; mi += 1)); do
 
@@ -104,16 +125,27 @@ for IMPLEMENTATION in "${names[@]}"; do
         mValues+=("${val}")
 
       done
-    elif [[ $mode == $EQUAL_MODE ]]; then
+    elif [[ $nm_mode == $EQUAL_MODE ]]; then
       mValues+=($n)
     fi
 
     # Execute
     for m in "${mValues[@]}"; do
-      echo "Running n=$n, m=$m, i=$IMPLEMENTATION"
-      # TODO: Make output fitting to the output format
-      echo "Executing: mpiexec ${BUILD_DIR}/main -n $n -m $m -i $IMPLEMENTATION"
-      echo "$(mpiexec ${BUILD_DIR}/main -n $n -m $m -i $IMPLEMENTATION)" >>$OUTPUT_PATH
+      # Execute different repetitions
+      for ((rep = 1; rep <= $N_REPETITIONS; rep += 1)); do
+        OUTPUT_PATH=${OUTPUT_DIR}/output_i_${IMPLEMENTATION}_t_${N_THREADS}_n_${n}_m_${m}_rep_${rep}.txt
+
+        # Run locally or on cluster
+        if [[ $EXECUTION_MODE == $LOCAL_MODE ]]; then
+          echo "Running n_threads=$N_THREADS, i=$IMPLEMENTATION, n=$n, m=$m, repetition=$rep"
+
+          echo "$(mpirun -np ${N_THREADS} ${BUILD_DIR}/main -n $n -m $m -i $IMPLEMENTATION)" >>$OUTPUT_PATH
+        elif [[ $EXECUTION_MODE == $CLUSTER_MODE ]]; then
+          eval "$(bsub -n ${N_THREADS} -o ${OUTPUT_PATH} mpirun -np ${N_THREADS} ${BUILD_DIR}/main -n $n -m $m -i $IMPLEMENTATION)"
+        fi
+
+      done
+
     done
   done
 done
