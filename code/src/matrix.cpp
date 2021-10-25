@@ -47,10 +47,10 @@ matrix matrix::outer(const vector& a, const vector& b) {
 void matrix::print() const {
   for (size_t i = 0; i < rows; i++) {
     for (size_t j = 0; j < columns; j++) {
-      std::cout << get(i, j) << " ";
+      std::cerr << get(i, j) << " ";
     }
 
-    std::cout << std::endl;
+    std::cerr << std::endl;
   }
 }
 
