@@ -151,7 +151,7 @@ for IMPLEMENTATION in "${names[@]}"; do
           jobMsg=$(bsub -o ${OUTPUT_PATH} -n ${N_THREADS} mpirun -np ${N_THREADS} ${BUILD_DIR}/main -n $n -m $m -i $IMPLEMENTATION)
           jobID=$(echo $(echo $jobMsg | tr "<" "\n")[1] | tr ">" "\n")[0]
 
-          echo $jobID >> $JOB_OVERVIEW_FILE
+          echo $jobMsg >> $JOB_OVERVIEW_FILE
 
           echo "[BSUB OUT] ${jobID} [SBUB OUT FIN]"
 
