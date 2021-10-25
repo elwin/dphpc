@@ -87,8 +87,6 @@ while getopts "hm:e:t:r:i:c" option; do
 done
 echo "[BENCHMARK CONFIGURATION] NM_MODE=$nm_mode, EXECUTION_MODE=$EXECUTION_MODE, N_THREADS=$N_THREADS, N_REPETITIONS=$N_REPETITIONS, IMPLEMENTATIONS=(${names[*]}), clean=$CLEAN"
 
-exit
-
 ############################################################
 ############################################################
 # Main program                                             #
@@ -98,12 +96,13 @@ exit
 # Experiment Configuration
 BUILD_DIR=build_output
 OUTPUT_DIR=results/$(date "+%Y.%m.%d-%H.%M.%S")
+mkdir -p results
 mkdir -p ${OUTPUT_DIR}
-JOB_OVERVIEW_FILE='${OUTPUT_DIR}/jobs.txt'
+JOB_OVERVIEW_FILE="$OUTPUT_DIR/jobs.txt"
 
 # prepare environment if in cluster mode
 if [[ $EXECUTION_MODE == $CLUSTER_MODE ]]; then
-  env2lmod
+  source /cluster/apps/local/env2lmod.sh
   module load gcc/8.2.0 cmake/3.20.3 openmpi/4.0.2
 fi
 
@@ -149,11 +148,12 @@ for IMPLEMENTATION in "${names[@]}"; do
 
         elif [[ $EXECUTION_MODE == $CLUSTER_MODE ]]; then
           jobMsg=$(bsub -o ${OUTPUT_PATH} -n ${N_THREADS} mpirun -np ${N_THREADS} ${BUILD_DIR}/main -n $n -m $m -i $IMPLEMENTATION)
-          jobID=$(echo $(echo $jobMsg | tr "<" "\n")[1] | tr ">" "\n")[0]
 
+          IFS='>'
+          read -a jobMsgSplit <<< "$jobMsg"
+          IFS='<'
+          read -a jobID <<< "$jobMsgSplit"
           echo $jobMsg >> $JOB_OVERVIEW_FILE
-
-          echo "[BSUB OUT] ${jobID} [SBUB OUT FIN]"
 
           echo "Issued n_threads=$N_THREADS, i=$IMPLEMENTATION, n=$n, m=$m, repetition=$rep"
         fi
