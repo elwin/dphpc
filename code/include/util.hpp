@@ -16,17 +16,10 @@ std::vector<vector> get_random_vectors(uint64_t seed, int n, int p);
  *
  * Writes the runtime in microseconds into the second argument
  */
-template <typename R>
-R timer(std::function<R(void)> fun, int64_t& us) {
-  auto start = MPI_Wtime();
-  auto res = fun();
-  auto finish = MPI_Wtime();
-  us = static_cast<int64_t>((finish - start) * 1e6);
-  return res;
-}
+int64_t timer(std::function<void(void)> fun);
 
 template <typename T>
-T nrm_sqr_diff(T* x, T* y, int n) {
+T nrm_sqr_diff(const T* x, const T* y, int n) {
   T nrm_sqr = 0;
 
   for (int i = 0; i < n; i++) {

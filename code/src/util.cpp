@@ -26,5 +26,5 @@ int64_t timer(std::function<void(void)> fun) {
   auto start = MPI_Wtime();
   fun();
   auto finish = MPI_Wtime();
-  return static_cast<int64_t>((finish - start) * 1000);
+  return static_cast<int64_t>((finish - start) * 1e6);
 }

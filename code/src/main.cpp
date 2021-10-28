@@ -63,7 +63,7 @@ int main(int argc, char* argv[]) {
   bool verbose = false;
 
   std::string name;
-  bool has_impl;
+  bool has_impl = false;
 
   int opt;
   while ((opt = getopt(argc, argv, "hn:m:vi:c")) != -1) {
@@ -113,7 +113,7 @@ int main(int argc, char* argv[]) {
 
   bool is_root = rank == ROOT;
 
-  auto impl = get_impl(name, COMM, rank, numprocs);
+  auto impl = get_impl(name, COMM, rank, numprocs, N, M);
 
   fprintf(stderr, "%d: Starting numprocs=%d N=%d, M=%d impl=%s\n", rank, numprocs, N, M, name.c_str());
 
@@ -139,10 +139,8 @@ int main(int argc, char* argv[]) {
     }
   }
 
-  impl->load(a_vec, b_vec);
-
-  int64_t t;
-  auto result = timer<matrix>([&]() { return impl->compute(); }, t);
+  auto result = matrix(N, M);
+  int64_t t = timer([&]() { return impl->compute(a_vec, b_vec, result); });
 
   if (is_root) {
     std::vector<int64_t> timings(numprocs);
@@ -163,7 +161,7 @@ int main(int argc, char* argv[]) {
         fprintf(stderr, "time %d: %f\n", i, timings[i] / 1e6);
       }
     }
-    fprintf(stderr, "time: %f\n", t / 1e6);
+    fprintf(stderr, "time: %fs\n", t / 1e6);
 
     json result_dump;
 
@@ -202,9 +200,9 @@ int main(int argc, char* argv[]) {
         }
       }
 
-      auto sequential = dsop_single();
-      sequential.load(a_vec, b_vec);
-      auto expected = sequential.compute();
+      auto sequential = dsop_single(COMM, rank, numprocs, N, M);
+      auto expected = matrix(N, M);
+      sequential.compute(a_vec, b_vec, expected);
 
       auto& r = results.front();
 

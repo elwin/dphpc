@@ -9,23 +9,18 @@
 // dsop is the interface that dsop implementations should satisfy
 class dsop {
  protected:
-  MPI_Comm comm;
-  int rank;
-  int num_procs;
-  vector a;
-  vector b;
+  const MPI_Comm comm;
+  const int rank;
+  const int num_procs;
+  const int N;
+  const int M;
 
  public:
-  dsop(MPI_Comm comm, int rank, int num_procs) : comm(comm), rank(rank), num_procs(num_procs) {}
-  dsop() {}
+  dsop(MPI_Comm comm, int rank, int num_procs, int N, int M)
+      : comm(comm), rank(rank), num_procs(num_procs), N(N), M(M) {}
   virtual ~dsop() = default;
 
-  virtual void load(const std::vector<vector>& a_in, const std::vector<vector>& b_in) {
-    a = a_in[rank];
-    b = b_in[rank];
-  };
-
-  virtual matrix compute() = 0;
+  virtual void compute(const std::vector<vector>& a_in, const std::vector<vector>& b_in, matrix& result) = 0;
 };
 
 #endif // CODE_DSOP_H
