@@ -1,6 +1,11 @@
-source config.sh
+. config.sh
 
-while read -r job_id; do
+job_path="${bb_output_dir}/jobs"
+
+while read -r job_row; do
+  repetition=$(echo "${job_row}" | awk -F '/' '{print $1}')
+  job_id=$(echo "${job_row}" | awk -F '/' '{print $2}')
+
   status=$(bbjobs "${job_id}" | grep Status)
 
   if [[ $status == *"PENDING"* ]]; then
@@ -18,6 +23,8 @@ while read -r job_id; do
     exit 1
   fi
 
-done <$job_list
+  echo "Job ${job_id} (repetition ${repetition}) has completed"
+
+done <"$job_path"
 
 echo "All jobs are finished!"
