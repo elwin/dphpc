@@ -16,7 +16,7 @@ format: build
 	cd ${OUT}; make clangformat
 
 clean:
-	rm -rf ${OUT} cmake-build-debug
+	rm -rf ${OUT} cmake-build-debug CMakeFiles
 
 # only temporary until we have a proper build thing in place
 mpi_tmp: build
