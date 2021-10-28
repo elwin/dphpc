@@ -2,9 +2,12 @@
 
 namespace impls::allreduce {
 
-matrix allreduce::compute() {
+matrix allreduce::compute(const std::vector<vector>& a_in, const std::vector<vector>& b_in) {
+  const auto& a = a_in[rank];
+  const auto& b = b_in[rank];
+
   auto current = matrix::outer(a, b);
-  auto result = matrix(a.size(), b.size());
+  auto result = matrix(N, M);
 
   MPI_Allreduce(current.get_ptr(), result.get_ptr(), result.dimension(), MPI_DOUBLE, MPI_SUM, comm);
 

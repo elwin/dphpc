@@ -13,8 +13,7 @@ class allgather : public dsop {
   using dsop::dsop;
 
  public:
-  // todo why tf are those entire declarations even needed?
-  matrix compute() override;
+  matrix compute(const std::vector<vector>& a_in, const std::vector<vector>& b_in) override;
 };
 
 } // namespace impls::allgather
