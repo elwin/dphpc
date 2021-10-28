@@ -2,31 +2,24 @@
 
 namespace impls::allgather {
 
-matrix allgather::compute() {
-  // Create new combined vector to send
-  auto send_vector_length = a.size() + b.size();
-  vector send_vector;
-  send_vector.reserve(send_vector_length);
-  send_vector.insert(send_vector.end(), a.begin(), a.end());
-  send_vector.insert(send_vector.end(), b.begin(), b.end());
+void allgather::compute(const std::vector<vector>& a_in, const std::vector<vector>& b_in, matrix& result) {
+  const auto& a = a_in[rank];
+  const auto& b = b_in[rank];
 
-  // Create receive vector
-  auto rec_vector = vector(send_vector_length * num_procs);
+  auto rec_a = vector(N * num_procs);
+  MPI_Allgather(a.data(), N, MPI_DOUBLE, rec_a.data(), N, MPI_DOUBLE, comm);
 
-  // Distribute all vectors to all nodes
-  MPI_Allgather(
-      send_vector.data(), send_vector_length, MPI_DOUBLE, rec_vector.data(), send_vector_length, MPI_DOUBLE, comm);
+  auto rec_b = vector(M * num_procs);
+  MPI_Allgather(b.data(), M, MPI_DOUBLE, rec_b.data(), M, MPI_DOUBLE, comm);
 
-  // Calculate sum of products on all nodes
-  auto result = matrix(a.size(), b.size());
   for (int i = 0; i < num_procs; i++) {
-    for (size_t x = 0; x < a.size(); x++) {
-      for (size_t y = 0; y < b.size(); y++) {
-        result.get(x, y) += rec_vector[i * send_vector_length + x] * rec_vector[i * send_vector_length + a.size() + y];
+    for (int x = 0; x < N; x++) {
+      double tmp = rec_a[i * N + x];
+      for (int y = 0; y < M; y++) {
+        result.get(x, y) += tmp * rec_b[i * M + y];
       }
     }
   }
-  return result;
 }
 
 } // namespace impls::allgather
