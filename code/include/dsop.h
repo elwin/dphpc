@@ -16,10 +16,11 @@ class dsop {
   const int M;
 
  public:
-  dsop(MPI_Comm comm, int rank, int num_procs, int N, int M) : comm(comm), rank(rank), num_procs(num_procs), N(N), M(M) {}
+  dsop(MPI_Comm comm, int rank, int num_procs, int N, int M)
+      : comm(comm), rank(rank), num_procs(num_procs), N(N), M(M) {}
   virtual ~dsop() = default;
 
-  virtual matrix compute(const std::vector<vector>& a_in, const std::vector<vector>& b_in) = 0;
+  virtual void compute(const std::vector<vector>& a_in, const std::vector<vector>& b_in, matrix& result) = 0;
 };
 
 #endif // CODE_DSOP_H

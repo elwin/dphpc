@@ -139,8 +139,8 @@ int main(int argc, char* argv[]) {
     }
   }
 
-  int64_t t;
-  auto result = timer<matrix>([&]() { return impl->compute(a_vec, b_vec); }, t);
+  auto result = matrix(N, M);
+  int64_t t = timer([&]() { return impl->compute(a_vec, b_vec, result); });
 
   if (is_root) {
     std::vector<int64_t> timings(numprocs);
@@ -201,7 +201,8 @@ int main(int argc, char* argv[]) {
       }
 
       auto sequential = dsop_single(COMM, rank, numprocs, N, M);
-      auto expected = sequential.compute(a_vec, b_vec);
+      auto expected = matrix(N, M);
+      sequential.compute(a_vec, b_vec, expected);
 
       auto& r = results.front();
 

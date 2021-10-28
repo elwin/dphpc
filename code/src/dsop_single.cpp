@@ -2,11 +2,8 @@
 
 #include <cassert>
 
-matrix dsop_single::compute(const std::vector<vector>& a, const std::vector<vector>& b) {
-  auto result = matrix(N, M);
+void dsop_single::compute(const std::vector<vector>& a, const std::vector<vector>& b, matrix& result) {
   for (size_t i = 0; i < a.size(); i++) {
     result.add(matrix::outer(a[i], b[i]));
   }
-
-  return result;
 }

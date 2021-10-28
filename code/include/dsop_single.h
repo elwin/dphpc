@@ -12,7 +12,7 @@
 class dsop_single : dsop {
  public:
   using dsop::dsop;
-  matrix compute(const std::vector<vector>& a_in, const std::vector<vector>& b_in) override;
+  void compute(const std::vector<vector>& a_in, const std::vector<vector>& b_in, matrix& result) override;
 };
 
 #endif // CODE_DSOP_SINGLE_H

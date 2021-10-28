@@ -22,7 +22,8 @@ TEST(DSOP_SingleTest, BasicAssertions) {
   auto expected = matrix(3, 2, {{10, 20}, {20, 40}, {30, 60}});
 
   auto calculator = dsop_single(nullptr, 0, 1, 3, 2);
-  auto result = calculator.compute(a, b);
+  auto result = matrix(3, 2);
+  calculator.compute(a, b, result);
 
   EXPECT_EQ(result, expected);
 }

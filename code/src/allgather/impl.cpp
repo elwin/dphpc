@@ -2,7 +2,7 @@
 
 namespace impls::allgather {
 
-matrix allgather::compute(const std::vector<vector>& a_in, const std::vector<vector>& b_in) {
+void allgather::compute(const std::vector<vector>& a_in, const std::vector<vector>& b_in, matrix& result) {
   const auto& a = a_in[rank];
   const auto& b = b_in[rank];
 
@@ -12,15 +12,14 @@ matrix allgather::compute(const std::vector<vector>& a_in, const std::vector<vec
   auto rec_b = vector(M * num_procs);
   MPI_Allgather(b.data(), M, MPI_DOUBLE, rec_b.data(), M, MPI_DOUBLE, comm);
 
-  auto result = matrix(N, M);
   for (int i = 0; i < num_procs; i++) {
     for (int x = 0; x < N; x++) {
+      double tmp = rec_a[i * N + x];
       for (int y = 0; y < M; y++) {
-        result.get(x, y) += rec_a[i * N + x] * rec_b[i * M + y];
+        result.get(x, y) += tmp * rec_b[i * M + y];
       }
     }
   }
-  return result;
 }
 
 } // namespace impls::allgather
