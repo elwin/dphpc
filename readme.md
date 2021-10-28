@@ -80,7 +80,7 @@ env2lmod
 Then we can load the required modules by using:
 
 ```shell
-module load gcc/8.2.0 cmake/3.20.3 openmpi/4.0.2
+module load gcc/9.3.0 cmake/3.20.3 openmpi/4.0.2
 ```
 
 Then you should be able to build the project with `make <target>`
