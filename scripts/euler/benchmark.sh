@@ -35,10 +35,10 @@ N_THREADS_SCALE=$EXP_MODE
 for ((ti = 0; ti < N_THREADS_STEPS; ti += 1)); do
   if [[ $N_THREADS_SCALE == $LIN_MODE ]]; then
     nt=$((2 ** (N_THREADS_START_POWER) * (ti+1)))
-    nThreads+=(nt)
+    nThreads+=($nt)
   elif [[ $N_THREADS_SCALE == $EXP_MODE ]]; then
     nt=$((2 ** (N_THREADS_START_POWER + ti)))
-    nThreads+=(nt)
+    nThreads+=($nt)
   fi
 done
 
