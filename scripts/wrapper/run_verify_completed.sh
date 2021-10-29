@@ -6,3 +6,4 @@ set -e
 
 cd ~/dphpc
 ./scripts/euler/verify_completed.sh
+./scripts/euler/collect.sh
