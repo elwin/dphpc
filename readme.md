@@ -105,6 +105,33 @@ bsub -n 4 mpirun -np 4 ./main -n 5 -m 5 -i allreduce
   as `elwin/master` to keep non-running code
 - Nevertheless, merge to `master` as often as possible to avoid surprising your team-members and to avoid merge conflict
 
+
+## Running Benchmark File
+
+### Preparations
+
+Create an ssh key for uploading to Euler.
+```shell
+ssh-keygen -t ed25519 -f ~/.ssh/id_ed25519_euler
+```
+And upload the public key to the euler cluster.
+```shell
+ssh-copy-id -i $HOME/.ssh/id_ed25519_euler.pub    username@euler.ethz.ch
+```
+Make an ssh config file (or extend the current one if it already exists) under ```~/.ssh/config``` on local computer, and put the following content there:
+```
+Host euler
+    HostName euler.ethz.ch
+    User <eth-username>
+    IdentityFile ~/.ssh/id_ed25519_euler
+```
+You can now ssh into the euler cluster using using ```ssh euler```
+
+### Submit Jobs
+
+
+
+
 ## Readings
 
 - [Getting started with clusters (ETH)](https://scicomp.ethz.ch/wiki/Getting_started_with_clusters)
