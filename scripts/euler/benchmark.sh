@@ -1,12 +1,12 @@
 . ./scripts/euler/config.sh
 
 # Constants and variable init
-EQUAL_MODE="eq"         # N=M --> only loop through values of N
-UNEQUAL_MODE="neq"      # all combinations of N,M
-LIN_MODE="linear"    # linear steps in N,M
-EXP_MODE="exp"  # exponential steps in N,M
-LOCAL_MODE="local"      # execute on local computer
-CLUSTER_MODE="cluster"  # execute on cluster
+EQUAL_MODE="eq"        # N=M --> only loop through values of N
+UNEQUAL_MODE="neq"     # all combinations of N,M
+LIN_MODE="linear"      # linear steps in N,M
+EXP_MODE="exp"         # exponential steps in N,M
+LOCAL_MODE="local"     # execute on local computer
+CLUSTER_MODE="cluster" # execute on cluster
 CLEAN=0
 
 ############################################################
@@ -34,7 +34,7 @@ N_THREADS_SCALE=$EXP_MODE
 # initialize nThreads
 for ((ti = 0; ti < N_THREADS_STEPS; ti += 1)); do
   if [[ $N_THREADS_SCALE == $LIN_MODE ]]; then
-    nt=$((2 ** (N_THREADS_START_POWER) * (ti+1)))
+    nt=$((2 ** (N_THREADS_START_POWER) * (ti + 1)))
     nThreads+=($nt)
   elif [[ $N_THREADS_SCALE == $EXP_MODE ]]; then
     nt=$((2 ** (N_THREADS_START_POWER + ti)))
@@ -58,7 +58,7 @@ STEPS_M=2
 # Initialize nValues, mValues
 for ((ni = 0; ni < STEPS_N; ni += 1)); do
   if [[ $nm_mode_scale == $LIN_MODE ]]; then
-    n=$((2 ** (START_POWER_N) * (ni+1)))
+    n=$((2 ** (START_POWER_N) * (ni + 1)))
   elif [[ $nm_mode_scale == $EXP_MODE ]]; then
     n=$((2 ** (START_POWER_N + ni)))
   fi
@@ -67,7 +67,7 @@ for ((ni = 0; ni < STEPS_N; ni += 1)); do
   if [[ $nm_mode == $UNEQUAL_MODE ]]; then
     for ((mi = 0; mi < STEPS_M; mi += 1)); do
       if [[ $nm_mode_scale == $LIN_MODE ]]; then
-        val=$((2 ** (START_POWER_M) * (mi+1)))
+        val=$((2 ** (START_POWER_M) * (mi + 1)))
       elif [[ $nm_mode_scale == $EXP_MODE ]]; then
         val=$((2 ** (START_POWER_M + mi)))
       fi
@@ -83,54 +83,55 @@ done
 ############################################################
 # Help                                                     #
 ############################################################
-Help()
-{
-   # Display Help
-   echo "Benchmark Bash Script"
-   echo
-   echo "Usage: name [-h] [-e $LOCAL_MODE|$CLUSTER_MODE] [-t N_THREADS] [-r N_REPETITIONS] -i NAME [-c]"
-   echo "options:"
-   echo "h     Print this Help."
-   echo "e     Set execution mode. Values are {$LOCAL_MODE, $CLUSTER_MODE} (run on local node or using bsub on euler cluster)."
-   echo "t     Number of Threads."
-   echo "r     Number of repeated experiments to issue."
-   echo "c     Delete old build and build again."
-   echo "i     Can set implementation name, when wanting to run a single implementation"
-   echo
-   exit 1;
+Help() {
+  # Display Help
+  echo "Benchmark Bash Script"
+  echo
+  echo "Usage: name [-h] [-e $LOCAL_MODE|$CLUSTER_MODE] [-t N_THREADS] [-r N_REPETITIONS] -i NAME [-c]"
+  echo "options:"
+  echo "h     Print this Help."
+  echo "e     Set execution mode. Values are {$LOCAL_MODE, $CLUSTER_MODE} (run on local node or using bsub on euler cluster)."
+  echo "t     Number of Threads."
+  echo "r     Number of repeated experiments to issue."
+  echo "c     Delete old build and build again."
+  echo "i     Can set implementation name, when wanting to run a single implementation"
+  echo
+  exit 1
 }
 
 while getopts "hm:e:t:r:i:c" option; do
-   case $option in
-      h) # display Help
-          Help
-          exit;;
-      m) # set mode
-          nm_mode=${OPTARG}
-          if [[ ! ( $nm_mode == $EQUAL_MODE || $nm_mode == $UNEQUAL_MODE ) ]]; then
-            Help
-          fi
-          ;;
-      e) # execution mode
-          EXECUTION_MODE=${OPTARG}
-          if [[ ! ( $EXECUTION_MODE == $LOCAL_MODE || $EXECUTION_MODE == $CLUSTER_MODE ) ]]; then
-            Help
-          fi
-          ;;
-      t) # number of threads
-          N_THREADS=("${OPTARG}");;
-      r) # repetitions
-          N_REPETITIONS=("${OPTARG}");;
-      i) # Enter an implementation name
-          names=("${OPTARG}");;
-      c) # Clean old build
-          CLEAN=$[1]
-          ;;
-      \?) # Invalid option
-          echo "Error: Invalid option"
-          Help
-          exit;;
-   esac
+  case $option in
+  h) # display Help
+    Help
+    exit
+    ;;
+  m) # set mode
+    nm_mode=${OPTARG}
+    if [[ ! ($nm_mode == $EQUAL_MODE || $nm_mode == $UNEQUAL_MODE) ]]; then
+      Help
+    fi
+    ;;
+  e) # execution mode
+    EXECUTION_MODE=${OPTARG}
+    if [[ ! ($EXECUTION_MODE == $LOCAL_MODE || $EXECUTION_MODE == $CLUSTER_MODE) ]]; then
+      Help
+    fi
+    ;;
+  t) # number of threads
+    N_THREADS=("${OPTARG}") ;;
+  r) # repetitions
+    N_REPETITIONS=("${OPTARG}") ;;
+  i) # Enter an implementation name
+    names=("${OPTARG}") ;;
+  c) # Clean old build
+    CLEAN=$((1))
+    ;;
+  \?) # Invalid option
+    echo "Error: Invalid option"
+    Help
+    exit
+    ;;
+  esac
 done
 echo "[BENCHMARK CONFIGURATION] NM_MODE=$nm_mode, EXECUTION_MODE=$EXECUTION_MODE, N_THREADS=(${nThreads[*]}), N_REPETITIONS=$N_REPETITIONS, IMPLEMENTATIONS=(${names[*]}), clean=$CLEAN"
 
@@ -179,20 +180,27 @@ for ((rep = 1; rep <= $N_REPETITIONS; rep += 1)); do
           OUTPUT_PATH=${bb_output_dir}/${rep}/output_i_${IMPLEMENTATION}_t_${N_THREADS}_n_${n}_m_${m}_rep_${rep}.txt
           echo "Running n_threads=$t, i=$IMPLEMENTATION, n=$n, m=$m, repetition=$rep"
 
-          echo "$(mpirun -np ${t} ${build_dir}/main -n $n -m $m -i $IMPLEMENTATION)" >> $OUTPUT_PATH
+          echo "$(mpirun -np ${t} ${build_dir}/main -n $n -m $m -i $IMPLEMENTATION)" >>$OUTPUT_PATH
 
         elif [[ $EXECUTION_MODE == $CLUSTER_MODE ]]; then
-          jobMsg=$(bsub -oo "${outDir}/%J" -n ${t} "mpirun -np ${t} ${build_dir}/main -n ${n} -m ${m} -i ${IMPLEMENTATION}")
-          # jobMsg='asdf<123>asdf<123'
+          cmd="mpirun -np ${t} ${build_dir}/main -n ${n} -m ${m} -i ${IMPLEMENTATION}"
+
+          jobMsg=$(
+            bsub \
+              -o "${outDir}/%J" \
+              -e "${outDir}/%J.err" \
+              -n "${t}" \
+              "${cmd}"
+          )
 
           IFS='>'
-          read -a jobMsgSplit <<< "$jobMsg"
+          read -a jobMsgSplit <<<"$jobMsg"
           IFS='<'
-          read -a jobID <<< "$jobMsgSplit"
-          echo "${rep}/${jobID[1]}" >> $job_file
+          read -a jobID <<<"$jobMsgSplit"
+          echo "${rep}/${jobID[1]}" >>$job_file
 
           # Write the overview file
-          echo "${jobID[1]}::implementation:$IMPLEMENTATION::n:$n::m:$m::rep:$rep" >> $job_overview_file
+          echo "${jobID[1]}::implementation:$IMPLEMENTATION::n:$n::m:$m::rep:$rep" >>$job_overview_file
 
           echo "Issued n_threads=$t, i=$IMPLEMENTATION, n=$n, m=$m, repetition=$rep. JOB-ID: ${jobID[1]}"
         fi
@@ -201,4 +209,3 @@ for ((rep = 1; rep <= $N_REPETITIONS; rep += 1)); do
     done
   done
 done
-
