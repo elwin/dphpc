@@ -164,7 +164,7 @@ for ((rep = 1; rep <= $N_REPETITIONS; rep += 1)); do
         # echo "$(mpirun -np ${N_THREADS} ${build_dir}/main -n $n -m $m -i $IMPLEMENTATION)" >>$OUTPUT_PATH
 
       elif [[ $EXECUTION_MODE == $CLUSTER_MODE ]]; then
-        jobMsg=$(bsub -o "${bb_output_dir}/${rep}/%J" -n ${N_THREADS} "mpirun -np ${N_THREADS} ${build_dir}/main -n ${n} -m ${m} -i ${IMPLEMENTATION} >> ${trash_dir}/program.out")
+        jobMsg=$(bsub -o "${bb_output_dir}/$rep/%J" -n ${N_THREADS} "mpirun -np ${N_THREADS} ${build_dir}/main -n ${n} -m ${m} -i ${IMPLEMENTATION}") # >> ${trash_dir}/program.out
 
         IFS='>'
         read -a jobMsgSplit <<< "$jobMsg"
