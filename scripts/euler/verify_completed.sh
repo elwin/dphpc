@@ -1,4 +1,4 @@
-. config.sh
+. ./scripts/euler/config.sh
 
 job_path="${bb_output_dir}/jobs"
 
