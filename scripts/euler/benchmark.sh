@@ -183,6 +183,7 @@ for ((rep = 1; rep <= $N_REPETITIONS; rep += 1)); do
 
         elif [[ $EXECUTION_MODE == $CLUSTER_MODE ]]; then
           jobMsg=$(bsub -oo "${outDir}/%J" -n ${t} "mpirun -np ${t} ${build_dir}/main -n ${n} -m ${m} -i ${IMPLEMENTATION}")
+          # jobMsg='asdf<123>asdf<123'
 
           IFS='>'
           read -a jobMsgSplit <<< "$jobMsg"
@@ -193,7 +194,7 @@ for ((rep = 1; rep <= $N_REPETITIONS; rep += 1)); do
           # Write the overview file
           echo "${jobID[1]}::implementation:$IMPLEMENTATION::n:$n::m:$m::rep:$rep" >> $job_overview_file
 
-          echo "Issued n_threads=$N_THREADS, i=$IMPLEMENTATION, n=$n, m=$m, repetition=$rep. JOB-ID: ${jobID[1]}"
+          echo "Issued n_threads=$t, i=$IMPLEMENTATION, n=$n, m=$m, repetition=$rep. JOB-ID: ${jobID[1]}"
         fi
 
       done
