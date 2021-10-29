@@ -20,7 +20,7 @@ CLEAN=0
 #   - The whole script can/should be configured only here
 
 # Execution Mode (local node or on cluster)
-EXECUTION_MODE=CLUSTER_MODE
+EXECUTION_MODE=$CLUSTER_MODE
 # Number of threads to run with
 N_THREADS=16
 # Number of repeated executions
@@ -141,15 +141,13 @@ fi
 # check that n,m values are of equal length
 if [[ ${#nValues[@]} != ${#mValues[@]} ]]; then
   echo "Input values nValues, mValues are not of equal length"
-  exit
+  exit 1
 fi
 
 # different repetitions
 for ((rep = 1; rep <= $N_REPETITIONS; rep += 1)); do
   outDir="$bb_output_dir/$rep"
   mkdir -p $outDir
-
-  echo $outDir
 
   # run experiment over all implementations
   for IMPLEMENTATION in "${names[@]}"; do
@@ -159,28 +157,24 @@ for ((rep = 1; rep <= $N_REPETITIONS; rep += 1)); do
       n=${nValues[i]}
       m=${mValues[i]}
 
-      echo "$n, $m"
-
       # Run locally or on cluster
       if [[ $EXECUTION_MODE == $LOCAL_MODE ]]; then
         OUTPUT_PATH=${bb_output_dir}/${rep}/output_i_${IMPLEMENTATION}_t_${N_THREADS}_n_${n}_m_${m}_rep_${rep}.txt
         echo "Running n_threads=$N_THREADS, i=$IMPLEMENTATION, n=$n, m=$m, repetition=$rep"
 
-        # echo "$(mpirun -np ${N_THREADS} ${build_dir}/main -n $n -m $m -i $IMPLEMENTATION)" >>$OUTPUT_PATH
+        echo "$(mpirun -np ${N_THREADS} ${build_dir}/main -n $n -m $m -i $IMPLEMENTATION)" >> $OUTPUT_PATH
 
       elif [[ $EXECUTION_MODE == $CLUSTER_MODE ]]; then
-        jobMsg=$(bsub -oo "${outDir}/%J" -n ${N_THREADS} "mpirun -np ${N_THREADS} ${build_dir}/main -n ${n} -m ${m} -i ${IMPLEMENTATION} >> ${trash_dir}/program.out") #
-
-        echo "${bb_output_dir}/$rep/%J"
+        jobMsg=$(bsub -oo "${outDir}/%J" -n ${N_THREADS} "mpirun -np ${N_THREADS} ${build_dir}/main -n ${n} -m ${m} -i ${IMPLEMENTATION}")
 
         IFS='>'
         read -a jobMsgSplit <<< "$jobMsg"
         IFS='<'
         read -a jobID <<< "$jobMsgSplit"
-        echo "$rep/${jobID[1]}" >> "$job_file"
+        echo "${rep}/${jobID[1]}" >> $job_file
 
         # Write the overview file
-        echo "${jobID[1]}::implementation:$IMPLEMENTATION::n:$n::m:$m::rep:$rep" >> "$job_overview_file"
+        echo "${jobID[1]}::implementation:$IMPLEMENTATION::n:$n::m:$m::rep:$rep" >> $job_overview_file
 
         echo "Issued n_threads=$N_THREADS, i=$IMPLEMENTATION, n=$n, m=$m, repetition=$rep. JOB-ID: ${jobID[1]}"
       fi
