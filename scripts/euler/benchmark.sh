@@ -146,7 +146,7 @@ fi
 
 # different repetitions
 for ((rep = 1; rep <= $N_REPETITIONS; rep += 1)); do
-  mkdir -p "${bb_output_dir}/${rep}"
+  mkdir -p "${bb_output_dir}/$rep"
 
   # run experiment over all implementations
   for IMPLEMENTATION in "${names[@]}"; do
