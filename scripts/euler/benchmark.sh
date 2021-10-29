@@ -24,7 +24,7 @@ EXECUTION_MODE=CLUSTER_MODE
 # Number of threads to run with
 N_THREADS=16
 # Number of repeated executions
-N_REPETITIONS=1
+N_REPETITIONS=2
 # name of implementations, can be overwritten by commandline argument
 declare -a names=(allreduce)
 
@@ -39,9 +39,9 @@ nm_mode=$UNEQUAL_MODE
 nm_mode_scale=$LIN_MODE
 # N,M are powers of 2
 START_POWER_N=10
-STEPS_N=4
+STEPS_N=2
 START_POWER_M=10
-STEPS_M=4
+STEPS_M=2
 # Initialize nValues, mValues
 for ((ni = 0; ni < STEPS_N; ni += 1)); do
   if [[ $nm_mode_scale == $LIN_MODE ]]; then
@@ -159,13 +159,13 @@ for ((rep = 1; rep <= $N_REPETITIONS; rep += 1)); do
 
       # Run locally or on cluster
       if [[ $EXECUTION_MODE == $LOCAL_MODE ]]; then
-        OUTPUT_PATH=${bb_output_dir}/{$rep}/output_i_${IMPLEMENTATION}_t_${N_THREADS}_n_${n}_m_${m}_rep_${rep}.txt
+        OUTPUT_PATH=${bb_output_dir}/${rep}/output_i_${IMPLEMENTATION}_t_${N_THREADS}_n_${n}_m_${m}_rep_${rep}.txt
         echo "Running n_threads=$N_THREADS, i=$IMPLEMENTATION, n=$n, m=$m, repetition=$rep"
 
         # echo "$(mpirun -np ${N_THREADS} ${build_dir}/main -n $n -m $m -i $IMPLEMENTATION)" >>$OUTPUT_PATH
 
       elif [[ $EXECUTION_MODE == $CLUSTER_MODE ]]; then
-        jobMsg=$(bsub -o "${bb_output_dir}/{$rep}/%J" -n ${N_THREADS} mpirun -np ${N_THREADS} ${build_dir}/main -n $n -m $m -i $IMPLEMENTATION)
+        jobMsg=$(bsub -o "${bb_output_dir}/${rep}/%J" -n ${N_THREADS} mpirun -np ${N_THREADS} ${build_dir}/main -n $n -m $m -i $IMPLEMENTATION)
 
         IFS='>'
         read -a jobMsgSplit <<< "$jobMsg"
