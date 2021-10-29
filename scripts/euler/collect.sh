@@ -11,7 +11,7 @@ while read -r job_row; do
 
   mkdir -p "${folder}"
 
-  tail -n +36 "${folder}/${filename}" >>"${output_dir}/${repetition}.json"
+  tail -n +36 "${folder}/${filename}" | head -n -6 >>"${output_dir}/${repetition}.json"
 
 done <"${job_file}"
 
