@@ -145,25 +145,27 @@ if [[ ${#nValues[@]} != ${#mValues[@]} ]]; then
   exit
 fi
 
-# run experiment over all implementations
-for IMPLEMENTATION in "${names[@]}"; do
-  # input sizes
-  for ((i = 0; i < ${#nValues[@]}; i += 1)); do
-    n=${nValues[i]}
-    m=${mValues[i]}
+# different repetitions
+for ((rep = 1; rep <= $N_REPETITIONS; rep += 1)); do
+  mkdir -p "${bb_output_dir}/${rep}"
 
-    # different repetitions
-    for ((rep = 1; rep <= $N_REPETITIONS; rep += 1)); do
+  # run experiment over all implementations
+  for IMPLEMENTATION in "${names[@]}"; do
+
+    # input sizes
+    for ((i = 0; i < ${#nValues[@]}; i += 1)); do
+      n=${nValues[i]}
+      m=${mValues[i]}
 
       # Run locally or on cluster
       if [[ $EXECUTION_MODE == $LOCAL_MODE ]]; then
-        OUTPUT_PATH=${bb_output_dir}/output_i_${IMPLEMENTATION}_t_${N_THREADS}_n_${n}_m_${m}_rep_${rep}.txt
+        OUTPUT_PATH=${bb_output_dir}/{$rep}/output_i_${IMPLEMENTATION}_t_${N_THREADS}_n_${n}_m_${m}_rep_${rep}.txt
         echo "Running n_threads=$N_THREADS, i=$IMPLEMENTATION, n=$n, m=$m, repetition=$rep"
 
         # echo "$(mpirun -np ${N_THREADS} ${build_dir}/main -n $n -m $m -i $IMPLEMENTATION)" >>$OUTPUT_PATH
 
       elif [[ $EXECUTION_MODE == $CLUSTER_MODE ]]; then
-        jobMsg=$(bsub -o "${bb_output_dir}/%J" -n ${N_THREADS} mpirun -np ${N_THREADS} ${build_dir}/main -n $n -m $m -i $IMPLEMENTATION)
+        jobMsg=$(bsub -o "${bb_output_dir}/{$rep}/%J" -n ${N_THREADS} mpirun -np ${N_THREADS} ${build_dir}/main -n $n -m $m -i $IMPLEMENTATION)
 
         IFS='>'
         read -a jobMsgSplit <<< "$jobMsg"
