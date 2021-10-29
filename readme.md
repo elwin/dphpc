@@ -45,16 +45,16 @@ so).
 
 ### Use GCC
 
-In case you get some unexpected error and you're not using gcc 11, perhaps it might be worth a try to switch. For that,
+In case you get some unexpected error and you're not using gcc 9 or higher, perhaps it might be worth a try to switch. For that,
 after installing the compiler, you must set the following env variables (perhaps you must change the path to the compiler):
 
 ```shell
-CXX=g++-11
-CC=gcc-11
+CXX=g++-9
+CC=gcc-9
 ```
 
 e.g. by adding those to your `~/.zshrc` / `~/.bashrc` using `export CXX=...` or simply setting them in your current
-shell, e.g. `CXX=/usr/local/bin/g++-11  CC=gcc-11 make test`.
+shell, e.g. `CXX=/usr/local/bin/g++-9  CC=gcc-9 make test`.
 
 ## Running on the cluster
 
