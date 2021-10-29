@@ -1,0 +1,1 @@
+{"timestamp": "string","name": "all-reduce","N": 3,"M": 0,"numprocs": 0,"runtime": 3,"runtimes": [],"errors": []}
