@@ -1,10 +1,10 @@
-#!/bin/bash
-
-set -e # Exit on first failure
+. ./scripts/euler/config.sh
 
 # Constants and variable init
 EQUAL_MODE="eq"         # N=M --> only loop through values of N
 UNEQUAL_MODE="neq"      # all combinations of N,M
+LIN_MODE="linear"    # linear steps in N,M
+EXP_MODE="exp"  # exponential steps in N,M
 LOCAL_MODE="local"      # execute on local computer
 CLUSTER_MODE="cluster"  # execute on cluster
 CLEAN=0
@@ -15,22 +15,57 @@ CLEAN=0
 ############################################################
 ############################################################
 
-# Number of threads to run with
-N_THREADS=8
+# NOTES:
+#   - This script has to be executed from the root (dphpc folder)
+#   - The whole script can/should be configured only here
+
 # Execution Mode (local node or on cluster)
-EXECUTION_MODE=$LOCAL_MODE
+EXECUTION_MODE=CLUSTER_MODE
+# Number of threads to run with
+N_THREADS=16
 # Number of repeated executions
-N_REPETITIONS=2
-# Start values and number of iterations for N,M
-# N,M are powers of 2
-START_POWER_N=10
-STEPS_N=2
-START_POWER_M=10
-STEPS_M=2
+N_REPETITIONS=1
 # name of implementations, can be overwritten by commandline argument
 declare -a names=(allreduce)
+
+
+### Initialize combinations of n,m for running experiments
+# Values and number of iterations for N,M
+declare -a nValues=()
+declare -a mValues=()
 # combination mode for n,m. Values {unequal, equal}
 nm_mode=$UNEQUAL_MODE
+# linear or exponential steps. Values {linear, exp}
+nm_mode_scale=$LIN_MODE
+# N,M are powers of 2
+START_POWER_N=10
+STEPS_N=4
+START_POWER_M=10
+STEPS_M=4
+# Initialize nValues, mValues
+for ((ni = 0; ni < STEPS_N; ni += 1)); do
+  if [[ $nm_mode_scale == $LIN_MODE ]]; then
+    n=$((2 ** (START_POWER_N) * (ni+1)))
+  elif [[ $nm_mode_scale == $EXP_MODE ]]; then
+    n=$((2 ** (START_POWER_N + ni)))
+  fi
+
+  # for mode with all combinations
+  if [[ $nm_mode == $UNEQUAL_MODE ]]; then
+    for ((mi = 0; mi < STEPS_M; mi += 1)); do
+      if [[ $nm_mode_scale == $LIN_MODE ]]; then
+        val=$((2 ** (START_POWER_M) * (mi+1)))
+      elif [[ $nm_mode_scale == $EXP_MODE ]]; then
+        val=$((2 ** (START_POWER_M + mi)))
+      fi
+      nValues+=($n)
+      mValues+=("${val}")
+    done
+  elif [[ $nm_mode == $EQUAL_MODE ]]; then
+    nValues+=($n)
+    mValues+=($n)
+  fi
+done
 
 ############################################################
 # Help                                                     #
@@ -40,14 +75,13 @@ Help()
    # Display Help
    echo "Benchmark Bash Script"
    echo
-   echo "Usage: name [-h] [-m NM_MODE] [-e EXECUTION_MODE] [-t N_THREADS] [-r N_REPETITIONS] -i NAME [-c]"
+   echo "Usage: name [-h] [-e $LOCAL_MODE|$CLUSTER_MODE] [-t N_THREADS] [-r N_REPETITIONS] -i NAME [-c]"
    echo "options:"
    echo "h     Print this Help."
-   echo "m     Set input size mode. Values are {$EQUAL_MODE, $UNEQUAL_MODE} (either equal (N=M) or unequal (all combinations))."
    echo "e     Set execution mode. Values are {$LOCAL_MODE, $CLUSTER_MODE} (run on local node or using bsub on euler cluster)."
    echo "t     Number of Threads."
    echo "r     Number of repeated experiments to issue."
-   echo "c     Delete old build before building again."
+   echo "c     Delete old build and build again."
    echo "i     Can set implementation name, when wanting to run a single implementation"
    echo
    exit 1;
@@ -93,13 +127,6 @@ echo "[BENCHMARK CONFIGURATION] NM_MODE=$nm_mode, EXECUTION_MODE=$EXECUTION_MODE
 ############################################################
 ############################################################
 
-# Experiment Configuration
-BUILD_DIR=build_output
-OUTPUT_DIR=results/$(date "+%Y.%m.%d-%H.%M.%S")
-mkdir -p results
-mkdir -p ${OUTPUT_DIR}
-JOB_OVERVIEW_FILE="$OUTPUT_DIR/jobs.txt"
-
 # prepare environment if in cluster mode
 if [[ $EXECUTION_MODE == $CLUSTER_MODE ]]; then
   source /cluster/apps/local/env2lmod.sh
@@ -107,58 +134,48 @@ if [[ $EXECUTION_MODE == $CLUSTER_MODE ]]; then
 fi
 
 if [ $CLEAN -eq 1 ]; then
-  echo "CLEANING UP"
-  make clean
+  echo "CLEANING UP $code_dir"
+  make -C $code_dir clean
+  make -C $code_dir build
 fi
 
-# build
-make build
+# check that n,m values are of equal length
+if [[ ${#nValues[@]} != ${#mValues[@]} ]]; then
+  echo "Input values nValues, mValues are not of equal length"
+  exit
+fi
 
-# run experiment over all implementations
-for IMPLEMENTATION in "${names[@]}"; do
-  n=$START_N
-  for ((ni = 1; ni <= $STEPS_N; ni += 1)); do
-    n=$[2 ** ($START_N + $ni)]
-    declare -a mValues=()
+# different repetitions
+for ((rep = 1; rep <= $N_REPETITIONS; rep += 1)); do
+  mkdir -p "${bb_output_dir}/${rep}"
 
-    # for mode with all combinations
-    if [[ $nm_mode == $UNEQUAL_MODE ]]; then
-      for ((mi = 1; mi <= $STEPS_M; mi += 1)); do
+  # run experiment over all implementations
+  for IMPLEMENTATION in "${names[@]}"; do
 
-        # val=$[$START_M ** $mi]
-        val=$[2 ** ($START_M + $mi)]
-        mValues+=("${val}")
+    # input sizes
+    for ((i = 0; i < ${#nValues[@]}; i += 1)); do
+      n=${nValues[i]}
+      m=${mValues[i]}
 
-      done
-    elif [[ $nm_mode == $EQUAL_MODE ]]; then
-      mValues+=($n)
-    fi
+      # Run locally or on cluster
+      if [[ $EXECUTION_MODE == $LOCAL_MODE ]]; then
+        OUTPUT_PATH=${bb_output_dir}/{$rep}/output_i_${IMPLEMENTATION}_t_${N_THREADS}_n_${n}_m_${m}_rep_${rep}.txt
+        echo "Running n_threads=$N_THREADS, i=$IMPLEMENTATION, n=$n, m=$m, repetition=$rep"
 
-    # Execute
-    for m in "${mValues[@]}"; do
-      # Execute different repetitions
-      for ((rep = 1; rep <= $N_REPETITIONS; rep += 1)); do
-        OUTPUT_PATH=${OUTPUT_DIR}/output_i_${IMPLEMENTATION}_t_${N_THREADS}_n_${n}_m_${m}_rep_${rep}.txt
+        # echo "$(mpirun -np ${N_THREADS} ${build_dir}/main -n $n -m $m -i $IMPLEMENTATION)" >>$OUTPUT_PATH
 
-        # Run locally or on cluster
-        if [[ $EXECUTION_MODE == $LOCAL_MODE ]]; then
-          echo "Running n_threads=$N_THREADS, i=$IMPLEMENTATION, n=$n, m=$m, repetition=$rep"
+      elif [[ $EXECUTION_MODE == $CLUSTER_MODE ]]; then
+        jobMsg=$(bsub -o "${bb_output_dir}/{$rep}/%J" -n ${N_THREADS} mpirun -np ${N_THREADS} ${build_dir}/main -n $n -m $m -i $IMPLEMENTATION)
 
-          echo "$(mpirun -np ${N_THREADS} ${BUILD_DIR}/main -n $n -m $m -i $IMPLEMENTATION)" >>$OUTPUT_PATH
+        IFS='>'
+        read -a jobMsgSplit <<< "$jobMsg"
+        IFS='<'
+        read -a jobID <<< "$jobMsgSplit"
+        echo "${jobID[1]}" >> $job_list
 
-        elif [[ $EXECUTION_MODE == $CLUSTER_MODE ]]; then
-          jobMsg=$(bsub -o ${OUTPUT_PATH} -n ${N_THREADS} mpirun -np ${N_THREADS} ${BUILD_DIR}/main -n $n -m $m -i $IMPLEMENTATION)
+        echo "Issued n_threads=$N_THREADS, i=$IMPLEMENTATION, n=$n, m=$m, repetition=$rep. JOB-ID: ${jobID[1]}"
+      fi
 
-          IFS='>'
-          read -a jobMsgSplit <<< "$jobMsg"
-          IFS='<'
-          read -a jobID <<< "$jobMsgSplit"
-          echo "${jobID[1]}" >> $JOB_OVERVIEW_FILE
-
-          echo "Issued n_threads=$N_THREADS, i=$IMPLEMENTATION, n=$n, m=$m, repetition=$rep"
-        fi
-
-      done
     done
   done
 done
