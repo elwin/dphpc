@@ -1,3 +1,5 @@
+#!/bin/bash
+
 . ./scripts/euler/config.sh
 
 # Constants and variable init

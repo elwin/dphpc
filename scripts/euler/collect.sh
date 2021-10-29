@@ -1,3 +1,5 @@
+#!/bin/bash
+
 . ./scripts/euler/config.sh
 
 while read -r job_row; do
