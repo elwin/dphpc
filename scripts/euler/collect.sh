@@ -1,4 +1,4 @@
-. config.sh
+. ./scripts/euler/config.sh
 
 while read -r job_id; do
 
