@@ -4,7 +4,7 @@ while read -r job_row; do
   repetition=$(echo "${job_row}" | awk -F '/' '{print $1}')
   job_id=$(echo "${job_row}" | awk -F '/' '{print $2}')
 
-  folder="${bb_output_dir}/${repetition}"
+  folder="${bb_output_dir}/${repetition}/"
   filename="${job_id}"
 
   mkdir -p "${folder}"
