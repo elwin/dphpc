@@ -129,7 +129,7 @@ echo "[BENCHMARK CONFIGURATION] NM_MODE=$nm_mode, EXECUTION_MODE=$EXECUTION_MODE
 
 # prepare environment if in cluster mode
 if [[ $EXECUTION_MODE == $CLUSTER_MODE ]]; then
-  source ./scripts/euler/init.sh
+  . ./scripts/euler/init.sh
 fi
 
 if [ $CLEAN -eq 1 ]; then
