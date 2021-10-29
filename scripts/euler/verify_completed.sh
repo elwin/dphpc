@@ -1,5 +1,7 @@
 . ./scripts/euler/config.sh
 
+error=false
+
 while read -r job_row; do
 
   repetition=$(echo "${job_row}" | awk -F '/' '{print $1}')
@@ -9,21 +11,28 @@ while read -r job_row; do
 
   if [[ $status == *"PENDING"* ]]; then
     echo "Job ${job_id} is still pending!"
-    exit 1
+    error=true
+    continue
   fi
 
   if [[ $status == *"RUNNING"* ]]; then
     echo "Job ${job_id} is still running!"
-    exit 1
+    error=true
+    continue
   fi
 
   if [[ $status != *"DONE"* ]]; then
     echo "Job ${job_id} has an unexpected error code!"
-    exit 1
+    error=true
+    continue
   fi
 
   echo "Job ${job_id} (repetition ${repetition}) has completed"
 
 done <"$job_file"
+
+if [ "${error}" = true ]; then
+  exit 1
+fi
 
 echo "All jobs are finished!"
