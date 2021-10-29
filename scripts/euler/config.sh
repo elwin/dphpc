@@ -6,6 +6,7 @@ echo "config"
 
 bb_output_dir="../bb_jobs"
 output_dir="../parsed"
+job_file="${bb_output_dir}/jobs"
 
 mkdir -p "${bb_output_dir}" "${output_dir}"
 

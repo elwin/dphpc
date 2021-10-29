@@ -171,7 +171,7 @@ for ((rep = 1; rep <= $N_REPETITIONS; rep += 1)); do
         read -a jobMsgSplit <<< "$jobMsg"
         IFS='<'
         read -a jobID <<< "$jobMsgSplit"
-        echo "${jobID[1]}" >> "$bb_output_dir"
+        echo "${jobID[1]}" >> "$job_file"
 
         echo "Issued n_threads=$N_THREADS, i=$IMPLEMENTATION, n=$n, m=$m, repetition=$rep. JOB-ID: ${jobID[1]}"
       fi
