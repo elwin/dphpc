@@ -164,7 +164,7 @@ for ((rep = 1; rep <= $N_REPETITIONS; rep += 1)); do
         # echo "$(mpirun -np ${N_THREADS} ${build_dir}/main -n $n -m $m -i $IMPLEMENTATION)" >>$OUTPUT_PATH
 
       elif [[ $EXECUTION_MODE == $CLUSTER_MODE ]]; then
-        jobMsg=$(bsub -o "${bb_output_dir}/$rep/%J" -n ${N_THREADS} "mpirun -np ${N_THREADS} ${build_dir}/main -n ${n} -m ${m} -i ${IMPLEMENTATION}") # >> ${trash_dir}/program.out
+        jobMsg=$(bsub -oo "${bb_output_dir}/$rep/%J" -n ${N_THREADS} "mpirun -np ${N_THREADS} ${build_dir}/main -n ${n} -m ${m} -i ${IMPLEMENTATION}") # >> ${trash_dir}/program.out
 
         echo "${bb_output_dir}/$rep/%J"
 
@@ -173,6 +173,9 @@ for ((rep = 1; rep <= $N_REPETITIONS; rep += 1)); do
         IFS='<'
         read -a jobID <<< "$jobMsgSplit"
         echo "$rep/${jobID[1]}" >> "$job_file"
+
+        # Write the overview file
+        echo "${jobID[1]}::implementation:$IMPLEMENTATION::n:$n::m:$m::rep:$rep" >> "$job_overview_file"
 
         echo "Issued n_threads=$N_THREADS, i=$IMPLEMENTATION, n=$n, m=$m, repetition=$rep. JOB-ID: ${jobID[1]}"
       fi
