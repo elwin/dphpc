@@ -159,6 +159,8 @@ for ((rep = 1; rep <= $N_REPETITIONS; rep += 1)); do
       n=${nValues[i]}
       m=${mValues[i]}
 
+      echo "$n, $m"
+
       # Run locally or on cluster
       if [[ $EXECUTION_MODE == $LOCAL_MODE ]]; then
         OUTPUT_PATH=${bb_output_dir}/${rep}/output_i_${IMPLEMENTATION}_t_${N_THREADS}_n_${n}_m_${m}_rep_${rep}.txt
