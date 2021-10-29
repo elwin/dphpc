@@ -129,8 +129,7 @@ echo "[BENCHMARK CONFIGURATION] NM_MODE=$nm_mode, EXECUTION_MODE=$EXECUTION_MODE
 
 # prepare environment if in cluster mode
 if [[ $EXECUTION_MODE == $CLUSTER_MODE ]]; then
-  source /cluster/apps/local/env2lmod.sh
-  module load gcc/8.2.0 cmake/3.20.3 openmpi/4.0.2
+  source ./scripts/euler/init.sh
 fi
 
 if [ $CLEAN -eq 1 ]; then
