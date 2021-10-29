@@ -1,8 +1,7 @@
 . ./scripts/euler/config.sh
 
-job_path="${bb_output_dir}/jobs"
-
 while read -r job_row; do
+
   repetition=$(echo "${job_row}" | awk -F '/' '{print $1}')
   job_id=$(echo "${job_row}" | awk -F '/' '{print $2}')
 
@@ -25,6 +24,6 @@ while read -r job_row; do
 
   echo "Job ${job_id} (repetition ${repetition}) has completed"
 
-done <"$job_path"
+done <"$job_file"
 
 echo "All jobs are finished!"

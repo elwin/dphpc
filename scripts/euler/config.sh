@@ -2,8 +2,6 @@
 set -e
 set -u
 
-echo "config"
-
 bb_output_dir="../bb_jobs"
 output_dir="../parsed"
 job_file="${bb_output_dir}/jobs"
