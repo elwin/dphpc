@@ -21,13 +21,26 @@ CLEAN=0
 
 # Execution Mode (local node or on cluster)
 EXECUTION_MODE=$CLUSTER_MODE
-# Number of threads to run with
-N_THREADS=16
 # Number of repeated executions
 N_REPETITIONS=2
 # name of implementations, can be overwritten by commandline argument
 declare -a names=(allreduce)
 
+# Number of threads to run with
+declare -a nThreads=()
+N_THREADS_START_POWER=2
+N_THREADS_STEPS=2
+N_THREADS_SCALE=$EXP_MODE
+# initialize nThreads
+for ((ti = 0; ti < N_THREADS_STEPS; ti += 1)); do
+  if [[ $N_THREADS_SCALE == $LIN_MODE ]]; then
+    nt=$((2 ** (N_THREADS_START_POWER) * (ti+1)))
+    nThreads+=(nt)
+  elif [[ $N_THREADS_SCALE == $EXP_MODE ]]; then
+    nt=$((2 ** (N_THREADS_START_POWER + ti)))
+    nThreads+=(nt)
+  fi
+done
 
 ### Initialize combinations of n,m for running experiments
 # Values and number of iterations for N,M
@@ -157,28 +170,33 @@ for ((rep = 1; rep <= $N_REPETITIONS; rep += 1)); do
       n=${nValues[i]}
       m=${mValues[i]}
 
-      # Run locally or on cluster
-      if [[ $EXECUTION_MODE == $LOCAL_MODE ]]; then
-        OUTPUT_PATH=${bb_output_dir}/${rep}/output_i_${IMPLEMENTATION}_t_${N_THREADS}_n_${n}_m_${m}_rep_${rep}.txt
-        echo "Running n_threads=$N_THREADS, i=$IMPLEMENTATION, n=$n, m=$m, repetition=$rep"
+      # input sizes
+      for ((j = 0; j < ${#nThreads[@]}; j += 1)); do
+        t=${nThreads[j]}
 
-        echo "$(mpirun -np ${N_THREADS} ${build_dir}/main -n $n -m $m -i $IMPLEMENTATION)" >> $OUTPUT_PATH
+        # Run locally or on cluster
+        if [[ $EXECUTION_MODE == $LOCAL_MODE ]]; then
+          OUTPUT_PATH=${bb_output_dir}/${rep}/output_i_${IMPLEMENTATION}_t_${N_THREADS}_n_${n}_m_${m}_rep_${rep}.txt
+          echo "Running n_threads=$t, i=$IMPLEMENTATION, n=$n, m=$m, repetition=$rep"
 
-      elif [[ $EXECUTION_MODE == $CLUSTER_MODE ]]; then
-        jobMsg=$(bsub -oo "${outDir}/%J" -n ${N_THREADS} "mpirun -np ${N_THREADS} ${build_dir}/main -n ${n} -m ${m} -i ${IMPLEMENTATION}")
+          echo "$(mpirun -np ${t} ${build_dir}/main -n $n -m $m -i $IMPLEMENTATION)" >> $OUTPUT_PATH
 
-        IFS='>'
-        read -a jobMsgSplit <<< "$jobMsg"
-        IFS='<'
-        read -a jobID <<< "$jobMsgSplit"
-        echo "${rep}/${jobID[1]}" >> $job_file
+        elif [[ $EXECUTION_MODE == $CLUSTER_MODE ]]; then
+          jobMsg=$(bsub -oo "${outDir}/%J" -n ${t} "mpirun -np ${t} ${build_dir}/main -n ${n} -m ${m} -i ${IMPLEMENTATION}")
 
-        # Write the overview file
-        echo "${jobID[1]}::implementation:$IMPLEMENTATION::n:$n::m:$m::rep:$rep" >> $job_overview_file
+          IFS='>'
+          read -a jobMsgSplit <<< "$jobMsg"
+          IFS='<'
+          read -a jobID <<< "$jobMsgSplit"
+          echo "${rep}/${jobID[1]}" >> $job_file
 
-        echo "Issued n_threads=$N_THREADS, i=$IMPLEMENTATION, n=$n, m=$m, repetition=$rep. JOB-ID: ${jobID[1]}"
-      fi
+          # Write the overview file
+          echo "${jobID[1]}::implementation:$IMPLEMENTATION::n:$n::m:$m::rep:$rep" >> $job_overview_file
 
+          echo "Issued n_threads=$N_THREADS, i=$IMPLEMENTATION, n=$n, m=$m, repetition=$rep. JOB-ID: ${jobID[1]}"
+        fi
+
+      done
     done
   done
 done
