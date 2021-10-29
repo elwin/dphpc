@@ -1,4 +1,5 @@
-#!/bin/bash
+# not meant to be run directly
+
 set -e
 set -u
 
