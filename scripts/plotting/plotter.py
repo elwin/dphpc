@@ -152,7 +152,7 @@ class PlotMananager:
 
         plot.savefig('comparison_benchmark_plot.png')
 
-pm = PlotMananager("./input_files")
+pm = PlotMananager("./input_files_samples")
 pm.loadSampleBenchmarks()
 pm.generate2DPlot()
 pm.generateComparisonPlot()
