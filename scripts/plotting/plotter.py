@@ -12,7 +12,7 @@ class Benchmark:
     def __init__(self, json):
         self.M = json["M"]
         self.N = json["N"]
-        self.errors = json["errors"]
+        # self.errors = json["errors"]
         self.name = json["name"]
         self.numprocs = json["numprocs"]
         self.runtime = json["runtime"]
@@ -64,8 +64,8 @@ class PlotMananager:
                     self.maxRuntime = ag.runtime
                 if ar.runtime > self.maxRuntime:
                     self.maxRuntime = ar.runtime
-                self.agBenchmarkList.append(ag)        
-                self.arBenchmarkList.append(ar)        
+                self.agBenchmarkList.append(ag)
+                self.arBenchmarkList.append(ar)
         print("finished loading points")
         self.sortBenchMarks("N", "numprocs")
         print("finished sorting points")
@@ -73,18 +73,14 @@ class PlotMananager:
 
     def loadBenchmarks(self):
         # read file
-        file_list = os.listdir(self.filePath)
-        for file in file_list:
-            with open(self.filePath + "/" + file, 'r') as myfile:
-                data=myfile.read()
+        with open(self.filePath, 'r') as myfile:
+            for line in myfile:
+                obj = json.loads(line)
+                benchmark = Benchmark(obj)
+                self.benchmarkList.append(benchmark)
+                if benchmark.runtime > self.maxRuntime:
+                    self.maxRuntime = benchmark.runtime
 
-            # parse file
-            obj = json.loads(data)
-            benchmark = Benchmark(obj)
-            self.benchmarkList.append(benchmark)
-            if benchmark.runtime > self.maxRuntime:
-                self.maxRuntime = benchmark.runtime
-        
         self.sortBenchMarks("N", "M")
         # self.splitBenchmarkList()
 
@@ -94,11 +90,11 @@ class PlotMananager:
                 self.agBenchmarkList.append(benchmark)
             else:
                 self.arBenchmarkList.append(benchmark)
-    
+
     def sortBenchMarks(self, firstOrder: str, secondOrder: str = None):
         if secondOrder:
             self.benchmarkList.sort(key= lambda u: u.json[secondOrder])
-        self.benchmarkList.sort(key= lambda u: u.json[firstOrder]) 
+        self.benchmarkList.sort(key= lambda u: u.json[firstOrder])
 
     def generate2DPlot(self, listType: str = None):
         print("starting 2D plot")
@@ -117,7 +113,7 @@ class PlotMananager:
             y.append(benchmark.N)
             x.append(benchmark.numprocs)
             color.append(self.mapRuntimeToColor(benchmark.runtime))
-        
+
         # ax.set_xscale("log")
         ax.set_yscale("log")
         ax.set_xlabel("Number of Processes")
@@ -152,7 +148,7 @@ class PlotMananager:
 
         plot.savefig('comparison_benchmark_plot.png')
 
-pm = PlotMananager("./input_files_samples")
-pm.loadSampleBenchmarks()
+pm = PlotMananager("./input_files_samples/first_file.txt")
+pm.loadBenchmarks()
 pm.generate2DPlot()
 pm.generateComparisonPlot()
