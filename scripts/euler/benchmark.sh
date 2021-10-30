@@ -216,7 +216,7 @@ for ((rep = 1; rep <= $N_REPETITIONS; rep += 1)); do
           echo "${rep}/${jobID[1]}" >>$job_file
 
           # Write the overview file
-          echo "{\"JOBID\":${jobID[1]},\"implementation\":\"$IMPLEMENTATION\",\"n\":$n,\"m\":$m,\"rep\":$rep}" >>$job_overview_file
+          echo "{\"JOBID\":${jobID[1]},\"implementation\":\"$IMPLEMENTATION\",\"n\":$n,\"m\":$m,\"n_threads\":$t,\"rep\":$rep}" >>$job_overview_file
 
           echo "Issued n_threads=$t, i=$IMPLEMENTATION, n=$n, m=$m, repetition=$rep. JOB-ID: ${jobID[1]}"
         fi

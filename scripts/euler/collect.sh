@@ -14,10 +14,13 @@ while IFS= read -r job_row; do
   # echo "jobID=$job_id, repetition=$repetition, row=$job_row, source-file=$source_file, dest_file=$dest_file"
 
   # use || true to prevent exit from grep when no result was found
-  out=$(tail -n +36 $source_file | { grep -i '{.*}' || true; })
+  out=$(cat $source_file | { grep -i '{.*}' || true; })
   if [ ! -z "$out" ]
   then
     echo $out >> $dest_file
+  else
+    grep_string=".*${job_id}.*"
+    echo "file=$source_file, configuration=$(cat $job_overview_file | { grep -i $grep_string || true; }), error-message=$(cat $source_file | { grep -i '.*job killed.*' || true; })"
   fi
 
   # Buggy?
