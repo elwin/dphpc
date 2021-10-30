@@ -3,7 +3,7 @@
 set -e
 set -u
 
-results_dir="results/tmp"
+results_dir="./results/tmp"
 bb_output_dir="${results_dir}/bb_jobs"
 output_dir="${results_dir}/parsed"
 job_file="${bb_output_dir}/jobs"
