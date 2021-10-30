@@ -24,14 +24,14 @@ CLEAN=0
 # Execution Mode (local node or on cluster)
 EXECUTION_MODE=$CLUSTER_MODE
 # Number of repeated executions
-N_REPETITIONS=2
+N_REPETITIONS=3
 # name of implementations, can be overwritten by commandline argument
-declare -a names=(allreduce)
+declare -a names=(allreduce allgather)
 
 # Number of threads to run with
 declare -a nThreads=()
-N_THREADS_START_POWER=2
-N_THREADS_STEPS=2
+N_THREADS_START_POWER=1
+N_THREADS_STEPS=9
 N_THREADS_SCALE=$EXP_MODE
 # initialize nThreads
 for ((ti = 0; ti < N_THREADS_STEPS; ti += 1)); do
@@ -53,10 +53,10 @@ nm_mode=$EQUAL_MODE
 # linear or exponential steps. Values {linear, exp}
 nm_mode_scale=$EXP_MODE
 # N,M are powers of 2
-START_POWER_N=10
-STEPS_N=2
-START_POWER_M=10
-STEPS_M=2
+START_POWER_N=5
+STEPS_N=8
+START_POWER_M=5
+STEPS_M=8
 # Initialize nValues, mValues
 for ((ni = 0; ni < STEPS_N; ni += 1)); do
   if [[ $nm_mode_scale == $LIN_MODE ]]; then
