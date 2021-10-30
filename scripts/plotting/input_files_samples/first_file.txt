@@ -1,1 +1,16 @@
-{"timestamp": "string","name": "all-reduce","N": 1,"M": 0,"numprocs": 0,"runtime": 1,"runtimes": [],"errors": []}
+{"M":1024,"N":1024,"name":"allreduce","numprocs":4,"runtime":45214,"runtimes":[45155,45214,45154,45056],"timestamp":"2021-10-29T16:22:18Z+0200"}
+{"M":1024,"N":1024,"name":"allreduce","numprocs":8,"runtime":58519,"runtimes":[58475,58427,58519,58467,58216,58222,58164,58208],"timestamp":"2021-10-29T16:22:18Z+0200"}
+{"M":2048,"N":1024,"name":"allreduce","numprocs":4,"runtime":120265,"runtimes":[118833,119340,116904,120265],"timestamp":"2021-10-29T16:22:18Z+0200"}
+{"M":2048,"N":1024,"name":"allreduce","numprocs":8,"runtime":122102,"runtimes":[121638,121949,121516,122060,121971,122102,122058,120503],"timestamp":"2021-10-29T16:22:18Z+0200"}
+{"M":1024,"N":2048,"name":"allreduce","numprocs":4,"runtime":112968,"runtimes":[112772,112968,112592,112739],"timestamp":"2021-10-29T16:22:18Z+0200"}
+{"M":1024,"N":2048,"name":"allreduce","numprocs":8,"runtime":122674,"runtimes":[122483,122664,122674,122600,122670,122455,122346,122384],"timestamp":"2021-10-29T16:22:19Z+0200"}
+{"M":2048,"N":2048,"name":"allreduce","numprocs":4,"runtime":223726,"runtimes":[223243,223524,222690,223726],"timestamp":"2021-10-29T16:22:18Z+0200"}
+{"M":2048,"N":2048,"name":"allreduce","numprocs":8,"runtime":230289,"runtimes":[230150,230083,229510,230097,230212,230289,226751,226958],"timestamp":"2021-10-29T16:22:18Z+0200"}
+{"M":1024,"N":1024,"name":"allreduce","numprocs":4,"runtime":45214,"runtimes":[45155,45214,45154,45056],"timestamp":"2021-10-29T16:22:18Z+0200"}
+{"M":1024,"N":1024,"name":"allreduce","numprocs":8,"runtime":58519,"runtimes":[58475,58427,58519,58467,58216,58222,58164,58208],"timestamp":"2021-10-29T16:22:18Z+0200"}
+{"M":2048,"N":1024,"name":"allreduce","numprocs":4,"runtime":120265,"runtimes":[118833,119340,116904,120265],"timestamp":"2021-10-29T16:22:18Z+0200"}
+{"M":2048,"N":1024,"name":"allreduce","numprocs":8,"runtime":122102,"runtimes":[121638,121949,121516,122060,121971,122102,122058,120503],"timestamp":"2021-10-29T16:22:18Z+0200"}
+{"M":1024,"N":2048,"name":"allreduce","numprocs":4,"runtime":112968,"runtimes":[112772,112968,112592,112739],"timestamp":"2021-10-29T16:22:18Z+0200"}
+{"M":1024,"N":2048,"name":"allreduce","numprocs":8,"runtime":122674,"runtimes":[122483,122664,122674,122600,122670,122455,122346,122384],"timestamp":"2021-10-29T16:22:19Z+0200"}
+{"M":2048,"N":2048,"name":"allreduce","numprocs":4,"runtime":223726,"runtimes":[223243,223524,222690,223726],"timestamp":"2021-10-29T16:22:18Z+0200"}
+{"M":2048,"N":2048,"name":"allreduce","numprocs":8,"runtime":230289,"runtimes":[230150,230083,229510,230097,230212,230289,226751,226958],"timestamp":"2021-10-29T16:22:18Z+0200"}
