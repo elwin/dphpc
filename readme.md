@@ -19,118 +19,17 @@ on [Zoom](https://ethz.zoom.us/j/69785702508).
 
 ## Code
 
-All code related to solving DSOP is located in the folder [`/code`](code).
+All code related to solving DSOP, including a `readme.md`, is located in the folder [`/code`](code).
 
-### Pre-Requisites
+## Run on cluster
 
-You'll need the following, perhaps also a bit more:
+There's a bunch of scripts in the [`/scripts`](scripts) folder, and a [`cluster.md`](cluster.md) explaining how to use them.
 
-- [cmake](https://cmake.org/install/) >= 3.19
-- C++17 compiler ~~(gcc, clang, ... should work)~~ (gcc 11)
-- Something to execute `Makefile`'s (probably already installed)
-- [Open MPI](https://www.open-mpi.org/) >= 4
-
-### Run targets
-
-This assumes you're located in `/code` (`cd code`)
-
-- To build & run all tests, run `make test`
-- To build & run the main file, `make main`
-
-Targets are defined in the [`CMakeLists.txt`](code/CMakeLists.txt) file, take a look there for additional stuff.
-
-I use Jetbrain's CLion - it nicely recognises all targets from the `CMakeLists.txt` file and allows to run & debug tests
-individually. I can recommend it, but other approaches should of course also work (perhaps even better, let me know if
-so).
-
-### Use GCC
-
-In case you get some unexpected error and you're not using gcc 9 or higher, perhaps it might be worth a try to switch. For that,
-after installing the compiler, you must set the following env variables (perhaps you must change the path to the compiler):
-
-```shell
-CXX=g++-9
-CC=gcc-9
-```
-
-e.g. by adding those to your `~/.zshrc` / `~/.bashrc` using `export CXX=...` or simply setting them in your current
-shell, e.g. `CXX=/usr/local/bin/g++-9  CC=gcc-9 make test`.
-
-## Running on the cluster
-
-First, before accessing the cluster, one must be inside the ETH network. This can easily be achieved by using the ETH
-VPN. As soon as we are inside the network, we can connect to the Euler cluster via SSH: `<nethz username>@euler.ethz.ch`
-
-### Checking out the codebase
-
-As git is available on the cluster, you can simply clone this repository into you personal home directory on the
-cluster: `git clone https://github.com/elwin/dphpc`
-
-> You can also send [@elwin](mailto:elwin.stephan@gmail.com) a copy of your public key on your Euler account and he'll add it as a deploy key to the repository. Afterwards, you can `git clone git@github.com:elwin/dphpc.git` without having to do any further authorization :crystal_ball:
-
-### Preparations
-
-Before we can build and run our code, we have to prepare the environment to use the correct versions of our build tools.
-To do this, we will first switch to the new software stack by running:
-
-```shell
-env2lmod
-```
-
-Then we can load the required modules by using:
-
-```shell
-module load gcc/9.3.0 cmake/3.20.3 openmpi/4.0.2
-```
-
-Then you should be able to build the project with `make <target>`
-
-### Running
-
-```shell
-# Directly run it on the local node
-mpirun -np <number of processes> <binary>
-# So for example:
-mpirun -np 4 ./main -n 5 -m 5 -i allreduce
-
-# You can also run it as a job on the cluster
-bsub -n <number of processes> mpirun -np <number of processes> <binary>
-# Example:
-bsub -n 4 mpirun -np 4 ./main -n 5 -m 5 -i allreduce
-```
-
-### Etiquette rules
+## Etiquette rules
 
 - To the `master` branch, only push code that builds with succeeding tests, perhaps make your own branch such
   as `elwin/master` to keep non-running code
 - Nevertheless, merge to `master` as often as possible to avoid surprising your team-members and to avoid merge conflict
-
-
-## Running Benchmark File
-
-### Preparations
-
-Create an ssh key for uploading to Euler.
-```shell
-ssh-keygen -t ed25519 -f ~/.ssh/id_ed25519_euler
-```
-And upload the public key to the euler cluster.
-```shell
-ssh-copy-id -i $HOME/.ssh/id_ed25519_euler.pub    username@euler.ethz.ch
-```
-Make an ssh config file (or extend the current one if it already exists) under ```~/.ssh/config``` on local computer, and put the following content there:
-```
-Host euler
-    HostName euler.ethz.ch
-    User <eth-username>
-    IdentityFile ~/.ssh/id_ed25519_euler
-```
-You can now ssh into the euler cluster using using ```ssh euler```
-
-### Submit Jobs
-
-
-
 
 ## Readings
 
