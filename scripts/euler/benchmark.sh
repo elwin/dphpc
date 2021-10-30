@@ -135,7 +135,21 @@ while getopts "hm:e:t:r:i:c" option; do
     ;;
   esac
 done
-echo "[BENCHMARK CONFIGURATION] NM_MODE=$nm_mode, EXECUTION_MODE=$EXECUTION_MODE, N_THREADS=(${nThreads[*]}), N_REPETITIONS=$N_REPETITIONS, IMPLEMENTATIONS=(${names[*]}), clean=$CLEAN"
+echo "[BENCHMARK CONFIGURATION]
+  NM_MODE=$nm_mode,
+  NUMBER OF NM-COMBINATIONS=${#nValues[@]},
+  EXECUTION_MODE=$EXECUTION_MODE,
+  N_THREADS=(${nThreads[*]}),
+  N_REPETITIONS=$N_REPETITIONS,
+  IMPLEMENTATIONS=(${names[*]}),
+  clean=$CLEAN"
+
+echo "[TOTAL NUMBER OF JOBS]
+  Number of NM combinations (${#nValues[@]}) *
+  Number of thread combinations (${#nThreads[@]}) *
+  Number of implementations (${#names[@]}) *
+  Number of repetitions ($N_REPETITIONS)
+  = $(( ${#nValues[@]} * ${#nThreads[@]} * ${#names[@]} * $N_REPETITIONS )) individual jobs"
 
 ############################################################
 ############################################################
@@ -202,7 +216,7 @@ for ((rep = 1; rep <= $N_REPETITIONS; rep += 1)); do
           echo "${rep}/${jobID[1]}" >>$job_file
 
           # Write the overview file
-          echo "${jobID[1]}::implementation:$IMPLEMENTATION::n:$n::m:$m::rep:$rep" >>$job_overview_file
+          echo "{\"JOBID\":${jobID[1]},\"implementation\":\"$IMPLEMENTATION\",\"n\":$n,\"m\":$m,\"rep\":$rep}" >>$job_overview_file
 
           echo "Issued n_threads=$t, i=$IMPLEMENTATION, n=$n, m=$m, repetition=$rep. JOB-ID: ${jobID[1]}"
         fi
