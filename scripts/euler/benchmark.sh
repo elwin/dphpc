@@ -49,9 +49,9 @@ done
 declare -a nValues=()
 declare -a mValues=()
 # combination mode for n,m. Values {unequal, equal}
-nm_mode=$UNEQUAL_MODE
+nm_mode=$EQUAL_MODE
 # linear or exponential steps. Values {linear, exp}
-nm_mode_scale=$LIN_MODE
+nm_mode_scale=$EXP_MODE
 # N,M are powers of 2
 START_POWER_N=10
 STEPS_N=2
@@ -156,7 +156,7 @@ fi
 
 # check that n,m values are of equal length
 if [[ ${#nValues[@]} != ${#mValues[@]} ]]; then
-  echo "Input values nValues, mValues are not of equal length"
+  echo "Input values nValues, mValues are not of equal length. Please set valid nValues and mValues"
   exit 1
 fi
 
