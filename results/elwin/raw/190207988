@@ -1,0 +1,42 @@
+Sender: LSF System <lsfadmin@eu-g1-004-4>
+Subject: Job 190207988: <mpirun -np 32 code/build_output/main -n 32 -m 32 -i allreduce> in cluster <euler> Done
+
+Job <mpirun -np 32 code/build_output/main -n 32 -m 32 -i allreduce> was submitted from host <eu-login-28> by user <stephael> in cluster <euler> at Sun Oct 31 23:38:33 2021
+Job was executed on host(s) <32*eu-g1-004-4>, in queue <normal.4h>, as user <stephael> in cluster <euler> at Sun Oct 31 23:47:43 2021
+</cluster/home/stephael> was used as the home directory.
+</cluster/home/stephael/dphpc> was used as the working directory.
+Started at Sun Oct 31 23:47:43 2021
+Terminated at Sun Oct 31 23:47:47 2021
+Results reported at Sun Oct 31 23:47:47 2021
+
+Your job looked like:
+
+------------------------------------------------------------
+# LSBATCH: User input
+mpirun -np 32 code/build_output/main -n 32 -m 32 -i allreduce
+------------------------------------------------------------
+
+Successfully completed.
+
+Resource usage summary:
+
+    CPU time :                                   78.84 sec.
+    Max Memory :                                 3773 MB
+    Average Memory :                             -
+    Total Requested Memory :                     32768.00 MB
+    Delta Memory :                               28995.00 MB
+    Max Swap :                                   -
+    Max Processes :                              1
+    Max Threads :                                1
+    Run time :                                   3 sec.
+    Turnaround time :                            554 sec.
+
+The output (if any) follows:
+
+{"M":32,"N":32,"name":"allreduce","numprocs":32,"runtime":540241,"runtimes":[183434,529627,194,160346,520408,529763,514169,531686,499401,509690,528807,502042,494614,494270,516241,494193,217905,40517,170539,539884,71192,170581,260905,489095,526283,217589,540241,170623,119484,121021,539384,130874],"timestamp":"2021-10-31T23:47:46Z+0100"}
+
+
+PS:
+
+Read file <results/tmp/raw/190207988.err> for stderr output of this job.
+

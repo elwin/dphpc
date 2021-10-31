@@ -1,0 +1,42 @@
+Sender: LSF System <lsfadmin@eu-g1-004-4>
+Subject: Job 190208154: <mpirun -np 32 code/build_output/main -n 2048 -m 2048 -i allgather> in cluster <euler> Done
+
+Job <mpirun -np 32 code/build_output/main -n 2048 -m 2048 -i allgather> was submitted from host <eu-login-28> by user <stephael> in cluster <euler> at Sun Oct 31 23:39:10 2021
+Job was executed on host(s) <32*eu-g1-004-4>, in queue <normal.4h>, as user <stephael> in cluster <euler> at Sun Oct 31 23:49:58 2021
+</cluster/home/stephael> was used as the home directory.
+</cluster/home/stephael/dphpc> was used as the working directory.
+Started at Sun Oct 31 23:49:58 2021
+Terminated at Sun Oct 31 23:50:05 2021
+Results reported at Sun Oct 31 23:50:05 2021
+
+Your job looked like:
+
+------------------------------------------------------------
+# LSBATCH: User input
+mpirun -np 32 code/build_output/main -n 2048 -m 2048 -i allgather
+------------------------------------------------------------
+
+Successfully completed.
+
+Resource usage summary:
+
+    CPU time :                                   168.09 sec.
+    Max Memory :                                 4862 MB
+    Average Memory :                             3241.33 MB
+    Total Requested Memory :                     32768.00 MB
+    Delta Memory :                               27906.00 MB
+    Max Swap :                                   -
+    Max Processes :                              35
+    Max Threads :                                139
+    Run time :                                   6 sec.
+    Turnaround time :                            655 sec.
+
+The output (if any) follows:
+
+{"M":2048,"N":2048,"name":"allgather","numprocs":32,"runtime":3395607,"runtimes":[3391696,3188482,3131750,3153792,3374493,3373946,3376016,3380060,3119709,3254268,3081965,3369465,3372421,3395607,3379875,3075454,2957922,3103754,3137790,3347338,3033437,3136068,2908643,3367804,3146318,2964523,3199873,3021558,3081327,3338740,3360915,3316709],"timestamp":"2021-10-31T23:50:00Z+0100"}
+
+
+PS:
+
+Read file <results/tmp/raw/190208154.err> for stderr output of this job.
+

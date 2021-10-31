@@ -1,0 +1,5 @@
+3: Starting numprocs=4 N=4096, M=4096 impl=allgather
+1: Starting numprocs=4 N=4096, M=4096 impl=allgather
+2: Starting numprocs=4 N=4096, M=4096 impl=allgather
+0: Starting numprocs=4 N=4096, M=4096 impl=allgather
+time: 2.609910s

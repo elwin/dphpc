@@ -1,0 +1,42 @@
+Sender: LSF System <lsfadmin@eu-c7-114-05>
+Subject: Job 190208216: <mpirun -np 8 code/build_output/main -n 8192 -m 8192 -i allreduce> in cluster <euler> Done
+
+Job <mpirun -np 8 code/build_output/main -n 8192 -m 8192 -i allreduce> was submitted from host <eu-login-28> by user <stephael> in cluster <euler> at Sun Oct 31 23:39:24 2021
+Job was executed on host(s) <8*eu-c7-114-05>, in queue <normal.4h>, as user <stephael> in cluster <euler> at Sun Oct 31 23:41:55 2021
+</cluster/home/stephael> was used as the home directory.
+</cluster/home/stephael/dphpc> was used as the working directory.
+Started at Sun Oct 31 23:41:55 2021
+Terminated at Sun Oct 31 23:42:01 2021
+Results reported at Sun Oct 31 23:42:01 2021
+
+Your job looked like:
+
+------------------------------------------------------------
+# LSBATCH: User input
+mpirun -np 8 code/build_output/main -n 8192 -m 8192 -i allreduce
+------------------------------------------------------------
+
+Successfully completed.
+
+Resource usage summary:
+
+    CPU time :                                   40.24 sec.
+    Max Memory :                                 8833 MB
+    Average Memory :                             8811.00 MB
+    Total Requested Memory :                     8192.00 MB
+    Delta Memory :                               -641.00 MB
+    Max Swap :                                   -
+    Max Processes :                              11
+    Max Threads :                                39
+    Run time :                                   6 sec.
+    Turnaround time :                            157 sec.
+
+The output (if any) follows:
+
+{"M":8192,"N":8192,"name":"allreduce","numprocs":8,"runtime":4177994,"runtimes":[4166734,4175398,4177994,4177927,4175525,4159317,4143714,4165507],"timestamp":"2021-10-31T23:41:56Z+0100"}
+
+
+PS:
+
+Read file <results/tmp/raw/190208216.err> for stderr output of this job.
+

@@ -1,0 +1,42 @@
+Sender: LSF System <lsfadmin@eu-g1-019-3>
+Subject: Job 190207953: <mpirun -np 32 code/build_output/main -n 16 -m 16 -i allreduce> in cluster <euler> Done
+
+Job <mpirun -np 32 code/build_output/main -n 16 -m 16 -i allreduce> was submitted from host <eu-login-28> by user <stephael> in cluster <euler> at Sun Oct 31 23:38:26 2021
+Job was executed on host(s) <32*eu-g1-019-3>, in queue <normal.4h>, as user <stephael> in cluster <euler> at Sun Oct 31 23:42:36 2021
+</cluster/home/stephael> was used as the home directory.
+</cluster/home/stephael/dphpc> was used as the working directory.
+Started at Sun Oct 31 23:42:36 2021
+Terminated at Sun Oct 31 23:42:39 2021
+Results reported at Sun Oct 31 23:42:39 2021
+
+Your job looked like:
+
+------------------------------------------------------------
+# LSBATCH: User input
+mpirun -np 32 code/build_output/main -n 16 -m 16 -i allreduce
+------------------------------------------------------------
+
+Successfully completed.
+
+Resource usage summary:
+
+    CPU time :                                   77.25 sec.
+    Max Memory :                                 3774 MB
+    Average Memory :                             -
+    Total Requested Memory :                     32768.00 MB
+    Delta Memory :                               28994.00 MB
+    Max Swap :                                   -
+    Max Processes :                              1
+    Max Threads :                                1
+    Run time :                                   3 sec.
+    Turnaround time :                            253 sec.
+
+The output (if any) follows:
+
+{"M":16,"N":16,"name":"allreduce","numprocs":32,"runtime":609626,"runtimes":[590535,592314,605417,590671,140110,592170,122,606775,608517,607095,170289,609484,609582,609626,199664,190182,609606,608976,141199,609527,608288,310135,604958,604068,609471,310149,609086,150229,300119,609190,360209,290328],"timestamp":"2021-10-31T23:42:38Z+0100"}
+
+
+PS:
+
+Read file <results/tmp/raw/190207953.err> for stderr output of this job.
+

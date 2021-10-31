@@ -1,0 +1,42 @@
+Sender: LSF System <lsfadmin@eu-g1-004-4>
+Subject: Job 190207950: <mpirun -np 32 code/build_output/main -n 16 -m 16 -i allreduce> in cluster <euler> Done
+
+Job <mpirun -np 32 code/build_output/main -n 16 -m 16 -i allreduce> was submitted from host <eu-login-28> by user <stephael> in cluster <euler> at Sun Oct 31 23:38:26 2021
+Job was executed on host(s) <32*eu-g1-004-4>, in queue <normal.4h>, as user <stephael> in cluster <euler> at Sun Oct 31 23:47:18 2021
+</cluster/home/stephael> was used as the home directory.
+</cluster/home/stephael/dphpc> was used as the working directory.
+Started at Sun Oct 31 23:47:18 2021
+Terminated at Sun Oct 31 23:47:22 2021
+Results reported at Sun Oct 31 23:47:22 2021
+
+Your job looked like:
+
+------------------------------------------------------------
+# LSBATCH: User input
+mpirun -np 32 code/build_output/main -n 16 -m 16 -i allreduce
+------------------------------------------------------------
+
+Successfully completed.
+
+Resource usage summary:
+
+    CPU time :                                   81.12 sec.
+    Max Memory :                                 3773 MB
+    Average Memory :                             2.00 MB
+    Total Requested Memory :                     32768.00 MB
+    Delta Memory :                               28995.00 MB
+    Max Swap :                                   -
+    Max Processes :                              1
+    Max Threads :                                1
+    Run time :                                   7 sec.
+    Turnaround time :                            536 sec.
+
+The output (if any) follows:
+
+{"M":16,"N":16,"name":"allreduce","numprocs":32,"runtime":632539,"runtimes":[251480,297925,280871,632463,331893,632219,632399,192306,597985,592595,603948,593127,611570,262,592554,600725,143052,162555,372761,220887,632078,198700,632180,222610,632236,632325,632539,632425,632110,632299,632260,632126],"timestamp":"2021-10-31T23:47:21Z+0100"}
+
+
+PS:
+
+Read file <results/tmp/raw/190207950.err> for stderr output of this job.
+

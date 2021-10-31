@@ -1,0 +1,42 @@
+Sender: LSF System <lsfadmin@eu-g1-004-4>
+Subject: Job 190208192: <mpirun -np 32 code/build_output/main -n 4096 -m 4096 -i allgather> in cluster <euler> Done
+
+Job <mpirun -np 32 code/build_output/main -n 4096 -m 4096 -i allgather> was submitted from host <eu-login-28> by user <stephael> in cluster <euler> at Sun Oct 31 23:39:20 2021
+Job was executed on host(s) <32*eu-g1-004-4>, in queue <normal.4h>, as user <stephael> in cluster <euler> at Sun Oct 31 23:51:12 2021
+</cluster/home/stephael> was used as the home directory.
+</cluster/home/stephael/dphpc> was used as the working directory.
+Started at Sun Oct 31 23:51:12 2021
+Terminated at Sun Oct 31 23:51:28 2021
+Results reported at Sun Oct 31 23:51:28 2021
+
+Your job looked like:
+
+------------------------------------------------------------
+# LSBATCH: User input
+mpirun -np 32 code/build_output/main -n 4096 -m 4096 -i allgather
+------------------------------------------------------------
+
+Successfully completed.
+
+Resource usage summary:
+
+    CPU time :                                   438.45 sec.
+    Max Memory :                                 7998 MB
+    Average Memory :                             5332.00 MB
+    Total Requested Memory :                     32768.00 MB
+    Delta Memory :                               24770.00 MB
+    Max Swap :                                   -
+    Max Processes :                              35
+    Max Threads :                                139
+    Run time :                                   15 sec.
+    Turnaround time :                            728 sec.
+
+The output (if any) follows:
+
+{"M":4096,"N":4096,"name":"allgather","numprocs":32,"runtime":11945148,"runtimes":[11901415,11856532,11849214,11942842,11879333,11928878,11945148,11941002,11530757,11844216,11882817,11870564,11880753,11940030,11496865,11602478,11803677,11816225,11879866,11878810,11444414,11857249,11892511,11691616,11513515,11862309,11394145,11815752,11864240,11785481,11837037,11866147],"timestamp":"2021-10-31T23:51:14Z+0100"}
+
+
+PS:
+
+Read file <results/tmp/raw/190208192.err> for stderr output of this job.
+

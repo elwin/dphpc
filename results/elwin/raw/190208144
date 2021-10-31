@@ -1,0 +1,42 @@
+Sender: LSF System <lsfadmin@eu-c7-106-02>
+Subject: Job 190208144: <mpirun -np 16 code/build_output/main -n 2048 -m 2048 -i allgather> in cluster <euler> Done
+
+Job <mpirun -np 16 code/build_output/main -n 2048 -m 2048 -i allgather> was submitted from host <eu-login-28> by user <stephael> in cluster <euler> at Sun Oct 31 23:39:08 2021
+Job was executed on host(s) <16*eu-c7-106-02>, in queue <normal.4h>, as user <stephael> in cluster <euler> at Sun Oct 31 23:40:32 2021
+</cluster/home/stephael> was used as the home directory.
+</cluster/home/stephael/dphpc> was used as the working directory.
+Started at Sun Oct 31 23:40:32 2021
+Terminated at Sun Oct 31 23:40:36 2021
+Results reported at Sun Oct 31 23:40:36 2021
+
+Your job looked like:
+
+------------------------------------------------------------
+# LSBATCH: User input
+mpirun -np 16 code/build_output/main -n 2048 -m 2048 -i allgather
+------------------------------------------------------------
+
+Successfully completed.
+
+Resource usage summary:
+
+    CPU time :                                   51.69 sec.
+    Max Memory :                                 1706 MB
+    Average Memory :                             1137.33 MB
+    Total Requested Memory :                     16384.00 MB
+    Delta Memory :                               14678.00 MB
+    Max Swap :                                   -
+    Max Processes :                              19
+    Max Threads :                                71
+    Run time :                                   4 sec.
+    Turnaround time :                            88 sec.
+
+The output (if any) follows:
+
+{"M":2048,"N":2048,"name":"allgather","numprocs":16,"runtime":2257609,"runtimes":[2235566,2257609,2232705,2232569,2230215,2230545,2236725,2235892,2234582,2232993,2232110,2231966,2233058,2230931,2233987,2232345],"timestamp":"2021-10-31T23:40:34Z+0100"}
+
+
+PS:
+
+Read file <results/tmp/raw/190208144.err> for stderr output of this job.
+

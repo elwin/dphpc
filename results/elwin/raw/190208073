@@ -1,0 +1,42 @@
+Sender: LSF System <lsfadmin@eu-g1-019-3>
+Subject: Job 190208073: <mpirun -np 32 code/build_output/main -n 256 -m 256 -i allreduce> in cluster <euler> Done
+
+Job <mpirun -np 32 code/build_output/main -n 256 -m 256 -i allreduce> was submitted from host <eu-login-28> by user <stephael> in cluster <euler> at Sun Oct 31 23:38:53 2021
+Job was executed on host(s) <32*eu-g1-019-3>, in queue <normal.4h>, as user <stephael> in cluster <euler> at Sun Oct 31 23:43:30 2021
+</cluster/home/stephael> was used as the home directory.
+</cluster/home/stephael/dphpc> was used as the working directory.
+Started at Sun Oct 31 23:43:30 2021
+Terminated at Sun Oct 31 23:43:34 2021
+Results reported at Sun Oct 31 23:43:34 2021
+
+Your job looked like:
+
+------------------------------------------------------------
+# LSBATCH: User input
+mpirun -np 32 code/build_output/main -n 256 -m 256 -i allreduce
+------------------------------------------------------------
+
+Successfully completed.
+
+Resource usage summary:
+
+    CPU time :                                   79.36 sec.
+    Max Memory :                                 3810 MB
+    Average Memory :                             -
+    Total Requested Memory :                     32768.00 MB
+    Delta Memory :                               28958.00 MB
+    Max Swap :                                   -
+    Max Processes :                              1
+    Max Threads :                                1
+    Run time :                                   3 sec.
+    Turnaround time :                            281 sec.
+
+The output (if any) follows:
+
+{"M":256,"N":256,"name":"allreduce","numprocs":32,"runtime":562719,"runtimes":[204282,184000,234228,64295,3331,174347,154500,84400,61344,134340,63904,144150,93963,134069,560327,558534,562719,234023,175906,83890,558152,560161,558221,560727,554551,549287,543567,551126,548042,544067,548044,542288],"timestamp":"2021-10-31T23:43:33Z+0100"}
+
+
+PS:
+
+Read file <results/tmp/raw/190208073.err> for stderr output of this job.
+

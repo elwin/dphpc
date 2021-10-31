@@ -1,0 +1,42 @@
+Sender: LSF System <lsfadmin@eu-g1-004-4>
+Subject: Job 190208100: <mpirun -np 32 code/build_output/main -n 512 -m 512 -i allreduce> in cluster <euler> Done
+
+Job <mpirun -np 32 code/build_output/main -n 512 -m 512 -i allreduce> was submitted from host <eu-login-28> by user <stephael> in cluster <euler> at Sun Oct 31 23:38:58 2021
+Job was executed on host(s) <32*eu-g1-004-4>, in queue <normal.4h>, as user <stephael> in cluster <euler> at Sun Oct 31 23:48:59 2021
+</cluster/home/stephael> was used as the home directory.
+</cluster/home/stephael/dphpc> was used as the working directory.
+Started at Sun Oct 31 23:48:59 2021
+Terminated at Sun Oct 31 23:49:03 2021
+Results reported at Sun Oct 31 23:49:03 2021
+
+Your job looked like:
+
+------------------------------------------------------------
+# LSBATCH: User input
+mpirun -np 32 code/build_output/main -n 512 -m 512 -i allreduce
+------------------------------------------------------------
+
+Successfully completed.
+
+Resource usage summary:
+
+    CPU time :                                   79.91 sec.
+    Max Memory :                                 3913 MB
+    Average Memory :                             -
+    Total Requested Memory :                     32768.00 MB
+    Delta Memory :                               28855.00 MB
+    Max Swap :                                   -
+    Max Processes :                              -
+    Max Threads :                                -
+    Run time :                                   4 sec.
+    Turnaround time :                            605 sec.
+
+The output (if any) follows:
+
+{"M":512,"N":512,"name":"allreduce","numprocs":32,"runtime":594885,"runtimes":[560407,557616,582165,583305,557507,571326,579253,571669,590884,195395,145983,125935,567685,589447,594885,594107,246425,176152,591419,85968,353747,222899,592202,223016,593986,313934,355682,548786,383383,305292,314654,234597],"timestamp":"2021-10-31T23:49:01Z+0100"}
+
+
+PS:
+
+Read file <results/tmp/raw/190208100.err> for stderr output of this job.
+

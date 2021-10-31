@@ -1,0 +1,17 @@
+3: Starting numprocs=16 N=1024, M=1024 impl=allreduce
+4: Starting numprocs=16 N=1024, M=1024 impl=allreduce
+11: Starting numprocs=16 N=1024, M=1024 impl=allreduce
+12: Starting numprocs=16 N=1024, M=1024 impl=allreduce
+14: Starting numprocs=16 N=1024, M=1024 impl=allreduce
+2: Starting numprocs=16 N=1024, M=1024 impl=allreduce
+6: Starting numprocs=16 N=1024, M=1024 impl=allreduce
+7: Starting numprocs=16 N=1024, M=1024 impl=allreduce
+15: Starting numprocs=16 N=1024, M=1024 impl=allreduce
+0: Starting numprocs=16 N=1024, M=1024 impl=allreduce
+13: Starting numprocs=16 N=1024, M=1024 impl=allreduce
+5: Starting numprocs=16 N=1024, M=1024 impl=allreduce
+9: Starting numprocs=16 N=1024, M=1024 impl=allreduce
+1: Starting numprocs=16 N=1024, M=1024 impl=allreduce
+10: Starting numprocs=16 N=1024, M=1024 impl=allreduce
+8: Starting numprocs=16 N=1024, M=1024 impl=allreduce
+time: 0.063488s

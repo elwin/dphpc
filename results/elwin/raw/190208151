@@ -1,0 +1,42 @@
+Sender: LSF System <lsfadmin@eu-g1-019-3>
+Subject: Job 190208151: <mpirun -np 32 code/build_output/main -n 2048 -m 2048 -i allreduce> in cluster <euler> Done
+
+Job <mpirun -np 32 code/build_output/main -n 2048 -m 2048 -i allreduce> was submitted from host <eu-login-28> by user <stephael> in cluster <euler> at Sun Oct 31 23:39:10 2021
+Job was executed on host(s) <32*eu-g1-019-3>, in queue <normal.4h>, as user <stephael> in cluster <euler> at Sun Oct 31 23:43:56 2021
+</cluster/home/stephael> was used as the home directory.
+</cluster/home/stephael/dphpc> was used as the working directory.
+Started at Sun Oct 31 23:43:56 2021
+Terminated at Sun Oct 31 23:44:01 2021
+Results reported at Sun Oct 31 23:44:01 2021
+
+Your job looked like:
+
+------------------------------------------------------------
+# LSBATCH: User input
+mpirun -np 32 code/build_output/main -n 2048 -m 2048 -i allreduce
+------------------------------------------------------------
+
+Successfully completed.
+
+Resource usage summary:
+
+    CPU time :                                   83.16 sec.
+    Max Memory :                                 5927 MB
+    Average Memory :                             2512.67 MB
+    Total Requested Memory :                     32768.00 MB
+    Delta Memory :                               26841.00 MB
+    Max Swap :                                   -
+    Max Processes :                              35
+    Max Threads :                                139
+    Run time :                                   5 sec.
+    Turnaround time :                            291 sec.
+
+The output (if any) follows:
+
+{"M":2048,"N":2048,"name":"allreduce","numprocs":32,"runtime":408743,"runtimes":[385266,385720,385266,384045,379353,376104,372794,363665,364834,361308,365681,356517,367282,369807,367088,375828,380311,408743,396496,400497,384663,385989,385174,381349,379777,369947,377911,379704,379682,374633,379142,375260],"timestamp":"2021-10-31T23:44:00Z+0100"}
+
+
+PS:
+
+Read file <results/tmp/raw/190208151.err> for stderr output of this job.
+

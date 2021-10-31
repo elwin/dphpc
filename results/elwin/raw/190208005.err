@@ -1,0 +1,9 @@
+6: Starting numprocs=8 N=64, M=64 impl=allgather
+3: Starting numprocs=8 N=64, M=64 impl=allgather
+2: Starting numprocs=8 N=64, M=64 impl=allgather
+0: Starting numprocs=8 N=64, M=64 impl=allgather
+5: Starting numprocs=8 N=64, M=64 impl=allgather
+1: Starting numprocs=8 N=64, M=64 impl=allgather
+7: Starting numprocs=8 N=64, M=64 impl=allgather
+4: Starting numprocs=8 N=64, M=64 impl=allgather
+time: 0.001925s

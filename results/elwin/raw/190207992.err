@@ -1,0 +1,5 @@
+2: Starting numprocs=4 N=64, M=64 impl=allreduce
+1: Starting numprocs=4 N=64, M=64 impl=allreduce
+0: Starting numprocs=4 N=64, M=64 impl=allreduce
+3: Starting numprocs=4 N=64, M=64 impl=allreduce
+time: 0.000609s
