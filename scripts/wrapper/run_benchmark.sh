@@ -6,4 +6,4 @@ set -e
 
 cd ~/dphpc
 source ./scripts/euler/init.sh
-./scripts/euler/benchmark.sh -e cluster
+python ./scripts/euler/benchmark.py
