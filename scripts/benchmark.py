@@ -1,15 +1,25 @@
+import os
+
 from lib import *
+
+configs = [
+    Configuration(n=2 ** n, m=2 ** n, nodes=2 ** p, repetition=r, implementation=implementation)
+    for n in range(4, 17)
+    for p in range(2, 6)
+    for r in repetitions
+    for implementation in ["allgather", "allreduce"]
+]
+
+def is_euler() -> bool:
+    return 'HOSTNAME' in os.environ and os.environ['HOSTNAME'].startswith('eu')
 
 
 def main():
-    # scheduler = Scheduler(DryRun())
-    # with open("xxxx", "a") as f:
-    #     scheduler = Scheduler(LocalRunner(binary_path="code/build_output/main", output=f))
-    #     scheduler.register(config=Configuration(1, 1, 1, "allgather"))
-    #     scheduler.run()
+    if is_euler():
+        scheduler = Scheduler(EulerRunner())
+    else:
+        scheduler = Scheduler(DryRun())
 
-    # scheduler = Scheduler(DryRun())
-    scheduler = Scheduler(EulerRunner())
     scheduler.register(config=configs)
     scheduler.run()
 

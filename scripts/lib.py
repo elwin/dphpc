@@ -93,14 +93,3 @@ class EulerRunner(Runner):
                             o.writelines(j.readlines()[35:][:-6])
                     except:
                         pass
-
-
-repetitions = range(0, 3)
-
-configs = [
-    Configuration(n=2 ** n, m=2 ** n, nodes=2 ** p, repetition=r, implementation=implementation)
-    for n in range(4, 17)
-    for p in range(2, 6)
-    for r in repetitions
-    for implementation in ["allgather", "allreduce"]
-]
