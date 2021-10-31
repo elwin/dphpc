@@ -1,9 +1,0 @@
-3: Starting numprocs=8 N=16, M=16 impl=allgather
-0: Starting numprocs=8 N=16, M=16 impl=allgather
-4: Starting numprocs=8 N=16, M=16 impl=allgather
-2: Starting numprocs=8 N=16, M=16 impl=allgather
-7: Starting numprocs=8 N=16, M=16 impl=allgather
-5: Starting numprocs=8 N=16, M=16 impl=allgather
-1: Starting numprocs=8 N=16, M=16 impl=allgather
-6: Starting numprocs=8 N=16, M=16 impl=allgather
-time: 0.000445s

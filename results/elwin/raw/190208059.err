@@ -1,9 +1,0 @@
-5: Starting numprocs=8 N=256, M=256 impl=allgather
-6: Starting numprocs=8 N=256, M=256 impl=allgather
-0: Starting numprocs=8 N=256, M=256 impl=allgather
-2: Starting numprocs=8 N=256, M=256 impl=allgather
-4: Starting numprocs=8 N=256, M=256 impl=allgather
-7: Starting numprocs=8 N=256, M=256 impl=allgather
-3: Starting numprocs=8 N=256, M=256 impl=allgather
-1: Starting numprocs=8 N=256, M=256 impl=allgather
-time: 0.016469s

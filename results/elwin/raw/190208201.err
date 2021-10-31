@@ -1,5 +1,0 @@
-1: Starting numprocs=4 N=8192, M=8192 impl=allgather
-2: Starting numprocs=4 N=8192, M=8192 impl=allgather
-0: Starting numprocs=4 N=8192, M=8192 impl=allgather
-3: Starting numprocs=4 N=8192, M=8192 impl=allgather
-time: 11.227806s
