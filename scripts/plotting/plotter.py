@@ -5,8 +5,8 @@ import matplotlib.pyplot as plot
 from numpy import log
 
 
-ALLGATHER_KEY = "all-gather"
-ALLREDUCE_KEY = "all-reduce"
+ALLGATHER_KEY = "allgather"
+ALLREDUCE_KEY = "allreduce"
 
 class Benchmark:
     def __init__(self, json):
@@ -82,7 +82,7 @@ class PlotMananager:
                     self.maxRuntime = benchmark.runtime
 
         self.sortBenchMarks("N", "M")
-        # self.splitBenchmarkList()
+        self.splitBenchmarkList()
 
     def splitBenchmarkList(self):
         for benchmark in self.benchmarkList:
@@ -127,6 +127,8 @@ class PlotMananager:
 
     def generateComparisonPlot(self):
         fix, ax = plot.subplots()
+        print(len(self.agBenchmarkList))
+        print(len(self.arBenchmarkList))
         # ax.set_xscale("log")
         ax.set_yscale("log")
         ax.set_xlabel("Number of Processes")
@@ -135,20 +137,73 @@ class PlotMananager:
         y = []
         color = []
         for ag in self.agBenchmarkList:
-            y.append(ag.N)
-            x.append(ag.numprocs)
-            color.append("green")
-
-        for i in range(len(self.arBenchmarkList)):
-            ar = self.arBenchmarkList[i]
-            if y[i] == ar.N and x[i] == ar.numprocs:
-                if self.agBenchmarkList[i].runtime > ar.runtime:
-                    color[i] = "red"
+            for ar in self.arBenchmarkList:
+                if ag.N == ar.N and ag.numprocs == ar.numprocs:
+                    y.append(ag.N)
+                    x.append(ag.numprocs)
+                    if ag.runtime > ar.runtime:
+                        color.append("red")
+                    else:
+                        color.append("green")
+        
         ax.scatter(x, y, c=color, cmap='viridis')
 
         plot.savefig('comparison_benchmark_plot.png')
+    
+    def plotPerNumProcesses(self, plot_type = "numprocs", sort_key = "N", x_scale = "linear", y_scale = "linear"):
+        self.sortListByKey(self.agBenchmarkList, sort_key) 
+        self.sortListByKey(self.arBenchmarkList, sort_key)
+        ag_split = self.splitBenchMarksByKey(self.agBenchmarkList, plot_type)
+        ar_split = self.splitBenchMarksByKey(self.arBenchmarkList, plot_type)
 
-pm = PlotMananager("./input_files_samples/first_file.txt")
+        for key in ag_split.keys():
+            if key in ar_split.keys():
+                fix, ax = plot.subplots()
+                (x_ar, y_ar) = self.extractParamAndRuntime(ar_split[key], sort_key)
+                (x_ag, y_ag) = self.extractParamAndRuntime(ag_split[key], sort_key)
+                ax.set_yscale(y_scale)
+                ax.set_xscale(x_scale)
+                ax.plot(x_ar, y_ar, color='red')
+                ax.plot(x_ag, y_ag, color='green')
+                if plot_type == "numprocs":
+                    ax.set_xlabel("Vector Size")
+                else:
+                    ax.set_xlabel("Number of Processes")
+                ax.set_ylabel("Runtime")
+                plot.savefig(str(key) + '_' + plot_type + '_benchmark_plot.png')
+                plot.close()
+
+    def extractParamAndRuntime(self, list, sort_key):
+        x = []
+        y = []
+        for elem in list:
+            if sort_key == "N":
+                x.append(elem.N)
+            else:
+                x.append(elem.numprocs)
+            y.append(elem.runtime)
+        return (x, y)
+
+    def splitBenchMarksByKey(self, list, key):
+        benchmarksSplit = {}
+        for elem in list:
+            if key == "numprocs":
+                dict_key = elem.numprocs
+            else:
+                dict_key = elem.N
+            
+            if dict_key in benchmarksSplit.keys():
+                benchmarksSplit[dict_key].append(elem)
+            else:
+                benchmarksSplit[dict_key] = [elem]
+        return benchmarksSplit
+
+    def sortListByKey(self, list, key):
+        list.sort(key= lambda u: u.json[key])
+
+pm = PlotMananager("./input_files_samples/1.json")
 pm.loadBenchmarks()
 pm.generate2DPlot()
 pm.generateComparisonPlot()
+pm.plotPerNumProcesses(plot_type='numprocs', x_scale = 'linear', y_scale = 'log')
+pm.plotPerNumProcesses(plot_type='N', sort_key="numprocs", x_scale = 'linear', y_scale = 'log')
