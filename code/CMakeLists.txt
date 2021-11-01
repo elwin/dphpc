@@ -17,6 +17,7 @@ set(MAIN_SOURCES
         src/dsop_single.cpp
         src/util.cpp
         src/allreduce/impl.cpp
+        src/allreduce_ring/impl.cpp
         src/allgather/impl.cpp
         )
 
