@@ -54,7 +54,7 @@ class DryRun(Runner):
         if config.nodes > 48:
             logging.warning(f"Euler may support only up to 48 nodes, {config.nodes} requested")
 
-        if config.n > 2 ** 13 or config.m > 2 * 13:
+        if config.n > 2 ** 13 or config.m > 2 ** 13:
             logging.warning(f"vectors larger than {2 ** 13} entries may fail on euler due to memory constraints")
 
 
