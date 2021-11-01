@@ -6,9 +6,9 @@ from numpy import log, log2, number
 import numpy as np
 import copy
 
-
 ALLGATHER_KEY = "allgather"
 ALLREDUCE_KEY = "allreduce"
+
 
 class Benchmark:
     def __init__(self, json):
@@ -21,7 +21,7 @@ class Benchmark:
         self.runtimes = json["runtimes"]
         self.timestamp = json["timestamp"]
         self.json = json
-    
+
     def print(self):
         print("{")
         print("N: " + str(self.N))
@@ -49,7 +49,7 @@ class PlotMananager:
                     "errors": [],
                     "name": "all-reduce",
                     "numprocs": p,
-                    "runtime": log(p)*n**2,
+                    "runtime": log(p) * n ** 2,
                     "runtimes": [],
                     "timestamp": ""
                 }
@@ -60,7 +60,7 @@ class PlotMananager:
                     "errors": [],
                     "name": "all-gather",
                     "numprocs": p,
-                    "runtime": (p-1)*(n+n),
+                    "runtime": (p - 1) * (n + n),
                     "runtimes": [],
                     "timestamp": ""
                 }
@@ -78,7 +78,7 @@ class PlotMananager:
         self.sortBenchMarks("N", "numprocs")
         # self.splitBenchmarkList()
 
-    def loadBenchmarks(self, useAverage = True, fileName=""):
+    def loadBenchmarks(self, useAverage=True, fileName=""):
         # read file
         if useAverage:
             files = os.listdir(self.filePath)
@@ -116,7 +116,7 @@ class PlotMananager:
                 averaged_elem.runtime = average_runtime / numberOfRuns
                 benchmarks_averaged.append(averaged_elem)
                 allReadyCalculated.append(param_key)
-        
+
         return benchmarks_averaged
 
     def splitBenchmarkList(self):
@@ -128,8 +128,8 @@ class PlotMananager:
 
     def sortBenchMarks(self, firstOrder: str, secondOrder: str = None):
         if secondOrder:
-            self.benchmarkList.sort(key= lambda u: u.json[secondOrder])
-        self.benchmarkList.sort(key= lambda u: u.json[firstOrder])
+            self.benchmarkList.sort(key=lambda u: u.json[secondOrder])
+        self.benchmarkList.sort(key=lambda u: u.json[firstOrder])
 
     def generate2DPlot(self, listType: str = None):
         if listType == ALLGATHER_KEY:
@@ -155,7 +155,7 @@ class PlotMananager:
         ax.scatter(x, y, c=color, cmap='viridis')
         plot.savefig(listType + '_benchmark_plot.png')
 
-    def mapRuntimeToColor(self, runtime:int):
+    def mapRuntimeToColor(self, runtime: int):
         return runtime * 255.0 / self.maxRuntime
 
     def generateComparisonPlot(self):
@@ -176,13 +176,13 @@ class PlotMananager:
                         color.append("red")
                     else:
                         color.append("green")
-        
+
         ax.scatter(x, y, c=color, cmap='viridis')
 
         plot.savefig('comparison_benchmark_plot.png')
-    
-    def plotPerNumProcesses(self, plot_type = "numprocs", sort_key = "N", x_scale = "linear", y_scale = "linear"):
-        self.sortListByKey(self.agBenchmarkList, sort_key) 
+
+    def plotPerNumProcesses(self, plot_type="numprocs", sort_key="N", x_scale="linear", y_scale="linear"):
+        self.sortListByKey(self.agBenchmarkList, sort_key)
         self.sortListByKey(self.arBenchmarkList, sort_key)
         ag_split = self.splitBenchMarksByKey(self.agBenchmarkList, plot_type)
         ar_split = self.splitBenchMarksByKey(self.arBenchmarkList, plot_type)
@@ -224,7 +224,7 @@ class PlotMananager:
                 dict_key = elem.numprocs
             else:
                 dict_key = elem.N
-            
+
             if dict_key in benchmarksSplit.keys():
                 benchmarksSplit[dict_key].append(elem)
             else:
@@ -232,9 +232,9 @@ class PlotMananager:
         return benchmarksSplit
 
     def sortListByKey(self, list, key):
-        list.sort(key= lambda u: u.json[key])
-    
-    def plotTheoreticalComparison(self, fixed_key, fixed_value, upper_limit, x_scale = 'linear', y_scale = 'log'):
+        list.sort(key=lambda u: u.json[key])
+
+    def plotTheoreticalComparison(self, fixed_key, fixed_value, upper_limit, x_scale='linear', y_scale='log'):
         fig, ax = plot.subplots()
         ax.set_yscale(y_scale)
         ax.set_xscale(x_scale)
@@ -243,14 +243,14 @@ class PlotMananager:
 
         print(x)
         if fixed_key == "N":
-            ar_fixed = fixed_value**2
-            ag_fixed = fixed_value*2
+            ar_fixed = fixed_value ** 2
+            ag_fixed = fixed_value * 2
             y_ar = np.multiply(ar_fixed, np.log2(x))
             y_ag = np.multiply(ag_fixed, np.subtract(x, 1))
         else:
             y_ar = np.multiply(log2(fixed_value), np.power(x))
-            y_ag = np.multiply(fixed_value-1, np.multiply(x, 2))
-        
+            y_ag = np.multiply(fixed_value - 1, np.multiply(x, 2))
+
         plot.style.use('ggplot')
         print(y_ar)
         print(y_ag)
@@ -263,10 +263,16 @@ class PlotMananager:
         plot.savefig(str(fixed_value) + '_' + fixed_key + '_theoretical_plot.png')
         plot.close()
 
-pm = PlotMananager("./input_files_samples/")
-pm.loadBenchmarks()
-pm.generate2DPlot()
-pm.generateComparisonPlot()
-pm.plotPerNumProcesses(plot_type='numprocs', x_scale = 'linear', y_scale = 'log')
-pm.plotPerNumProcesses(plot_type='N', sort_key="numprocs", x_scale = 'linear', y_scale = 'log')
-# pm.plotTheoreticalComparison("N", 4092, 256)
+
+def main():
+    pm = PlotMananager("./input_files_samples/")
+    pm.loadBenchmarks()
+    pm.generate2DPlot()
+    pm.generateComparisonPlot()
+    pm.plotPerNumProcesses(plot_type='numprocs', x_scale='linear', y_scale='log')
+    pm.plotPerNumProcesses(plot_type='N', sort_key="numprocs", x_scale='linear', y_scale='log')
+    # pm.plotTheoreticalComparison("N", 4092, 256)
+
+
+if __name__ == '__main__':
+    main()
