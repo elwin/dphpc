@@ -140,17 +140,24 @@ int main(int argc, char* argv[]) {
   }
 
   auto result = matrix(N, M);
-  int64_t t = timer([&]() { return impl->compute(a_vec, b_vec, result); });
+  int64_t t = timer_run([&]() { return impl->compute(a_vec, b_vec, result); });
+  int64_t mpi_time = impl->get_mpi_time();
 
   if (is_root) {
     std::vector<int64_t> timings(numprocs);
+    std::vector<int64_t> timings_mpi(numprocs);
+    std::vector<int64_t> timings_compute(numprocs);
 
     for (int i = 0; i < numprocs; i++) {
       if (i == rank) {
         timings[i] = t;
+        timings_mpi[i] = mpi_time;
       } else {
         MPI_Recv(&timings[i], 1, MPI_INT64_T, i, TAG_TIMING, COMM, MPI_STATUS_IGNORE);
+        MPI_Recv(&timings_mpi[i], 1, MPI_INT64_T, i, TAG_TIMING, COMM, MPI_STATUS_IGNORE);
       }
+
+      timings_compute[i] = timings[i] - timings_mpi[i];
     }
 
     if (verbose) {
@@ -170,8 +177,15 @@ int main(int argc, char* argv[]) {
     result_dump["N"] = N;
     result_dump["M"] = M;
     result_dump["numprocs"] = numprocs;
-    result_dump["runtime"] = *std::max_element(timings.begin(), timings.end());
     result_dump["runtimes"] = timings;
+    result_dump["runtimes_mpi"] = timings_mpi;
+    result_dump["runtimes_compute"] = timings_compute;
+
+    auto slowest = std::max_element(timings.begin(), timings.end()) - timings.begin();
+
+    result_dump["runtime"] = timings[slowest];
+    result_dump["runtime_mpi"] = timings_mpi[slowest];
+    result_dump["runtime_compute"] = timings_compute[slowest];
 
     if (validate) {
       int num_elements = result.dimension();
@@ -223,6 +237,7 @@ int main(int argc, char* argv[]) {
     std::cout << result_dump << std::endl;
   } else {
     MPI_Send(&t, 1, MPI_INT64_T, ROOT, TAG_TIMING, COMM);
+    MPI_Send(&mpi_time, 1, MPI_INT64_T, ROOT, TAG_TIMING, COMM);
     if (validate) {
       int num_elements = result.dimension();
       MPI_Send(result.get_ptr(), num_elements, MPI_DOUBLE, ROOT, TAG_VALIDATE, COMM);

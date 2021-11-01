@@ -7,7 +7,7 @@ void allreduce::compute(const std::vector<vector>& a_in, const std::vector<vecto
   const auto& b = b_in[rank];
 
   auto current = matrix::outer(a, b);
-  MPI_Allreduce(current.get_ptr(), result.get_ptr(), result.dimension(), MPI_DOUBLE, MPI_SUM, comm);
+  mpi_timer(MPI_Allreduce, current.get_ptr(), result.get_ptr(), result.dimension(), MPI_DOUBLE, MPI_SUM, comm);
 }
 
 } // namespace impls::allreduce
