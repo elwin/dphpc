@@ -1,5 +1,6 @@
 import json
 import os
+import pathlib
 from pprint import pprint
 import matplotlib.pyplot as plot
 from numpy import log, log2, number
@@ -31,8 +32,9 @@ class Benchmark:
 
 
 class PlotMananager:
-    def __init__(self, filePath: str):
-        self.filePath = filePath
+    def __init__(self, inputDir: str, outputDir: str):
+        self.inputDir = inputDir
+        self.outputDir = outputDir
         self.benchmarkList = []
         self.agBenchmarkList = []
         self.arBenchmarkList = []
@@ -81,12 +83,12 @@ class PlotMananager:
     def loadBenchmarks(self, useAverage=True, fileName=""):
         # read file
         if useAverage:
-            files = os.listdir(self.filePath)
+            files = os.listdir(self.inputDir)
         else:
             files = [fileName]
         initialBenchMark = []
         for file in files:
-            with open(self.filePath + file, 'r') as myfile:
+            with open(f"{self.inputDir}/{file}", 'r') as myfile:
                 for line in myfile:
                     obj = json.loads(line)
                     benchmark = Benchmark(obj)
@@ -153,7 +155,7 @@ class PlotMananager:
         ax.set_xlabel("Number of Processes")
         ax.set_ylabel("Size of Vectors")
         ax.scatter(x, y, c=color, cmap='viridis')
-        plot.savefig(listType + '_benchmark_plot.png')
+        plot.savefig(f"{self.outputDir}/{listType}_benchmark_plot.png")
 
     def mapRuntimeToColor(self, runtime: int):
         return runtime * 255.0 / self.maxRuntime
@@ -179,7 +181,7 @@ class PlotMananager:
 
         ax.scatter(x, y, c=color, cmap='viridis')
 
-        plot.savefig('comparison_benchmark_plot.png')
+        plot.savefig(f'{self.outputDir}/comparison_benchmark_plot.png')
 
     def plotPerNumProcesses(self, plot_type="numprocs", sort_key="N", x_scale="linear", y_scale="linear"):
         self.sortListByKey(self.agBenchmarkList, sort_key)
@@ -203,7 +205,7 @@ class PlotMananager:
                 ax.set_ylabel("Runtime")
                 plot.title(plot_type + " = " + str(key))
                 plot.legend(loc="upper left")
-                plot.savefig(str(key) + '_' + plot_type + '_benchmark_plot.png')
+                plot.savefig(f"{self.outputDir}/{key}_{plot_type}_benchmark_plot.png")
                 plot.close()
 
     def extractParamAndRuntime(self, list, sort_key):
@@ -260,12 +262,14 @@ class PlotMananager:
 
         plot.title("Theoretical prediction for " + fixed_key + " = " + str(fixed_value))
         plot.legend(loc="upper left")
-        plot.savefig(str(fixed_value) + '_' + fixed_key + '_theoretical_plot.png')
+        plot.savefig(f"{self.outputDir}/{fixed_value}_{fixed_key}_theoretical_plot.png")
         plot.close()
 
 
 def main():
-    pm = PlotMananager("./input_files_samples/")
+    outputDir = "results/first/plots"
+    pathlib.Path(outputDir).mkdir(parents=True, exist_ok=True)
+    pm = PlotMananager(inputDir="results/first/parsed", outputDir=outputDir)
     pm.loadBenchmarks()
     pm.generate2DPlot()
     pm.generateComparisonPlot()
