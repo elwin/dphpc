@@ -15,6 +15,7 @@
 #include <vector>
 
 #include "allgather/impl.hpp"
+#include "allgather_async/impl.hpp"
 #include "allreduce/impl.hpp"
 #include "dsop_single.h"
 #include "util.hpp"
@@ -47,6 +48,8 @@ static std::unique_ptr<dsop> get_impl(const std::string& name, Args&&... args) {
     return std::make_unique<impls::allreduce::allreduce>(std::forward<Args>(args)...);
   } else if (name == "allgather") {
     return std::make_unique<impls::allgather::allgather>(std::forward<Args>(args)...);
+  } else if (name == "allgather-async") {
+    return std::make_unique<impls::allgather_async::allgather_async>(std::forward<Args>(args)...);
   } else {
     throw std::runtime_error("Unknown implementation '" + name + "'");
   }

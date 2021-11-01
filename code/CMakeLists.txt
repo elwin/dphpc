@@ -18,6 +18,7 @@ set(MAIN_SOURCES
         src/util.cpp
         src/allreduce/impl.cpp
         src/allgather/impl.cpp
+        src/allgather_async/impl.cpp
         )
 
 set(INCLUDE_DIRS include)
