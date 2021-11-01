@@ -17,6 +17,8 @@ vectors Ai and Bi.
 Mondays, 16:15 until finished. We often reserved CHN H 43.2 or alternatively
 on [Zoom](https://ethz.zoom.us/j/69785702508).
 
+For meetings with our supervisors, use this [Link](https://ethz.zoom.us/my/sashkboos).
+
 ## Code
 
 All code related to solving DSOP, including a `readme.md`, is located in the folder [`/code`](code).
