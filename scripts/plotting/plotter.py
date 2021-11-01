@@ -267,9 +267,9 @@ class PlotMananager:
 
 
 def main():
-    outputDir = "results/first/plots"
+    outputDir = "results/tmp/plots"
     pathlib.Path(outputDir).mkdir(parents=True, exist_ok=True)
-    pm = PlotMananager(inputDir="results/first/parsed", outputDir=outputDir)
+    pm = PlotMananager(inputDir="results/tmp/parsed", outputDir=outputDir)
     pm.loadBenchmarks()
     pm.generate2DPlot()
     pm.generateComparisonPlot()

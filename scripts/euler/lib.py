@@ -4,8 +4,12 @@ import logging
 import subprocess
 import re
 import io
+import sys
 from collections import abc as collections
 from config import *
+
+logging.basicConfig(stream=sys.stdout, level=logging.INFO)
+logger = logging.getLogger()
 
 
 class Configuration:
@@ -15,6 +19,10 @@ class Configuration:
         self.nodes = nodes
         self.implementation = implementation
         self.repetition = repetition
+
+    def __str__(self):
+        dim = f'{self.n}' if self.n == self.m else f'{self.n}x{self.m}'
+        return f'{dim}, {self.nodes} nodes, {self.implementation}, rep {self.repetition}'
 
 
 class Runner:
@@ -49,8 +57,7 @@ class Scheduler:
 
 class DryRun(Runner):
     def run(self, config: Configuration):
-        logging.info(f"{config.n} x {config.m}, {config.nodes} nodes, {config.implementation}, rep {config.repetition}")
-
+        logger.info(f"{config.n} x {config.m}, {config.nodes} nodes, {config.implementation}, rep {config.repetition}")
         if config.nodes > 48:
             logging.warning(f"Euler may support only up to 48 nodes, {config.nodes} requested")
 
@@ -88,9 +95,12 @@ class EulerRunner(Runner):
         proc = subprocess.run(
             [
                 "bsub",
+                "-J", config.__str__(),
                 "-o", f"{bb_output_path}/%J",
                 "-e", f"{bb_output_path}/%J.err",
                 "-n", str(config.nodes),
+                "-R", "span[ptile=1] select[model==XeonE3_1585Lv5]",  # use 1 core per node on Euler III nodes (4 cores)
+                "-r",  # make jobs retryable
                 "mpirun",
                 "-np", str(config.nodes),
                 binary_path,
@@ -102,6 +112,8 @@ class EulerRunner(Runner):
             stderr=subprocess.DEVNULL,
         )
 
+        logger.info(proc.stdout.decode())
+
         job_id = re \
             .compile("Job <(.*)> is submitted to queue <normal.4h>.") \
             .search(proc.stdout.decode()) \
@@ -110,7 +122,7 @@ class EulerRunner(Runner):
         with open(f"{bb_output_path}/jobs-{config.repetition}", "a") as f:
             f.write(job_id + "\n")
 
-        logging.info(f'submitted job {job_id}')
+        logger.info(f'submitted job {job_id}')
 
     def verify(self, repetition: int) -> bool:
         completed = True
@@ -133,7 +145,7 @@ class EulerRunner(Runner):
                     "EXIT": "failed",
                     "RUN": "running"
                 }[msg['RECORDS'][0]['STAT']]
-                logging.info(f"{job_id} is {status}")
+                logger.info(f"{job_id} is {status}")
                 if status != "done":
                     completed = False
 
@@ -145,16 +157,15 @@ class EulerRunner(Runner):
                 for job_id in f.read().splitlines():
                     try:
                         with open(f"{bb_output_path}/{job_id}") as j:
-                            o.writelines([job_id])
-                            data = j.readlines()[35:][:-6]
+                            data = [x for x in j.readlines() if x.startswith("{")]  # poor man grep
                             if len(data) != 1:
-                                logging.info(f'expected length 1, got {len(data)}')
+                                logger.info(f'[{job_id}] expected length 1, got {len(data)}')
                                 continue
 
                             parsed = json.loads(data[0])
                             if 'timestamp' not in parsed:
-                                logging.error(f'no timestamp found in output')
+                                logging.error(f'[{job_id}] no timestamp found in output')
 
                             o.writelines(data)
                     except:
-                        logging.error(f'failed to read output for job {job_id}')
+                        logging.error(f'[{job_id}] failed to read output')
