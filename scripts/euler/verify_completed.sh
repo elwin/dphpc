@@ -1,5 +1,7 @@
 #!/bin/bash
 
+echo "This script is deprecated. Use verify.py instead"
+
 . ./scripts/euler/config.sh
 
 error=false

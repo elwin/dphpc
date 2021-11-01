@@ -7,4 +7,4 @@ set -e # Exit on first failure
 
 # Make sure you prepared ssh according to the preparations in the readme file.
 
-ssh -t euler < ./scripts/wrapper/run_benchmark.sh
+ssh -t euler < ./scripts/euler_wrapper/run_benchmark.sh

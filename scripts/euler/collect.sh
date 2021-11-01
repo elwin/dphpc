@@ -1,5 +1,7 @@
 #!/bin/bash
 
+echo "This script is deprecated. Use collect.py instead"
+
 . ./scripts/euler/config.sh
 
 while read -r job_row; do
