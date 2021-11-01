@@ -1,6 +1,9 @@
 import os
 import argparse
 from lib import *
+import logging
+
+implementations = ["allgather", "allreduce"]
 
 
 def inclusive(min_val: int, max_val: int, step=1):
@@ -12,14 +15,14 @@ vector_sizes = [
     for n in inclusive(4, 13)
     for p in inclusive(2, 5)
     for r in repetitions
-    for implementation in ["allgather", "allreduce"]
+    for implementation in implementations
 ]
 
 nodes = [
     Configuration(n=2 ** 13, m=2 ** 13, nodes=p, repetition=r, implementation=implementation)
     for p in inclusive(2, 48, 2)
     for r in repetitions
-    for implementation in ["allgather", "allreduce"]
+    for implementation in implementations
 ]
 
 
@@ -42,7 +45,7 @@ def main():
     scheduler.register(config=nodes)
     scheduler.run()
     if dry_run:
-        print(f"{len(scheduler.configs)} configurations")
+        logging.info(f"{len(scheduler.configs)} configurations")
 
 
 if __name__ == '__main__':

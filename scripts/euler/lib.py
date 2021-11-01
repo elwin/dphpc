@@ -1,11 +1,11 @@
 import enum
 import json
-
-from config import *
-from collections import abc as collections
+import logging
 import subprocess
 import re
 import io
+from collections import abc as collections
+from config import *
 
 
 class Configuration:
@@ -49,7 +49,13 @@ class Scheduler:
 
 class DryRun(Runner):
     def run(self, config: Configuration):
-        print(f"{config.n} x {config.m}, {config.nodes} nodes, {config.implementation}, rep {config.repetition}")
+        logging.info(f"{config.n} x {config.m}, {config.nodes} nodes, {config.implementation}, rep {config.repetition}")
+
+        if config.nodes > 48:
+            logging.warning(f"Euler may support only up to 48 nodes, {config.nodes} requested")
+
+        if config.n > 2 ** 13 or config.m > 2 * 13:
+            logging.warning(f"vectors larger than {2 ** 13} entries may fail on euler due to memory constraints")
 
 
 class LocalRunner(Runner):
@@ -104,7 +110,7 @@ class EulerRunner(Runner):
         with open(f"{bb_output_path}/jobs-{config.repetition}", "a") as f:
             f.write(job_id + "\n")
 
-        print(f'submitted job {job_id}')
+        logging.info(f'submitted job {job_id}')
 
     def verify(self, repetition: int) -> bool:
         completed = True
@@ -127,7 +133,7 @@ class EulerRunner(Runner):
                     "EXIT": "failed",
                     "RUN": "running"
                 }[msg['RECORDS'][0]['STAT']]
-                print(f"{job_id} is {status}")
+                logging.info(f"{job_id} is {status}")
                 if status != "done":
                     completed = False
 
@@ -142,13 +148,13 @@ class EulerRunner(Runner):
                             o.writelines([job_id])
                             data = j.readlines()[35:][:-6]
                             if len(data) != 1:
-                                print(f'expected length 1, got {len(data)}')
+                                logging.info(f'expected length 1, got {len(data)}')
                                 continue
 
                             parsed = json.loads(data[0])
                             if 'timestamp' not in parsed:
-                                print(f'no timestamp found in output')
+                                logging.error(f'no timestamp found in output')
 
                             o.writelines(data)
                     except:
-                        print(f'failed to read output for job {job_id}')
+                        logging.error(f'failed to read output for job {job_id}')
