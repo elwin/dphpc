@@ -2,7 +2,9 @@ import json
 import os
 from pprint import pprint
 import matplotlib.pyplot as plot
-from numpy import log
+from numpy import log, log2, number
+import numpy as np
+import copy
 
 
 ALLGATHER_KEY = "allgather"
@@ -19,6 +21,13 @@ class Benchmark:
         self.runtimes = json["runtimes"]
         self.timestamp = json["timestamp"]
         self.json = json
+    
+    def print(self):
+        print("{")
+        print("N: " + str(self.N))
+        print("numprocs: " + str(self.numprocs))
+        print("runtime: " + str(self.runtime))
+        print("}")
 
 
 class PlotMananager:
@@ -66,23 +75,49 @@ class PlotMananager:
                     self.maxRuntime = ar.runtime
                 self.agBenchmarkList.append(ag)
                 self.arBenchmarkList.append(ar)
-        print("finished loading points")
         self.sortBenchMarks("N", "numprocs")
-        print("finished sorting points")
         # self.splitBenchmarkList()
 
-    def loadBenchmarks(self):
+    def loadBenchmarks(self, useAverage = True, fileName=""):
         # read file
-        with open(self.filePath, 'r') as myfile:
-            for line in myfile:
-                obj = json.loads(line)
-                benchmark = Benchmark(obj)
-                self.benchmarkList.append(benchmark)
-                if benchmark.runtime > self.maxRuntime:
-                    self.maxRuntime = benchmark.runtime
-
+        if useAverage:
+            files = os.listdir(self.filePath)
+        else:
+            files = [fileName]
+        initialBenchMark = []
+        for file in files:
+            with open(self.filePath + file, 'r') as myfile:
+                for line in myfile:
+                    obj = json.loads(line)
+                    benchmark = Benchmark(obj)
+                    initialBenchMark.append(benchmark)
+                    if benchmark.runtime > self.maxRuntime:
+                        self.maxRuntime = benchmark.runtime
+        if useAverage:
+            self.benchmarkList = self.generateAverageBenchmarkList(initialBenchMark, 3)
+        else:
+            self.benchmarkList = initialBenchMark
         self.sortBenchMarks("N", "M")
         self.splitBenchmarkList()
+
+    def generateAverageBenchmarkList(self, benchmarks, numberOfRuns):
+        allReadyCalculated = []
+        benchmarks_averaged = []
+        for elem in benchmarks:
+            param_key = str(elem.N) + " " + str(elem.numprocs) + " " + elem.name
+            if not param_key in allReadyCalculated:
+                averaged_elem = copy.deepcopy(elem)
+                average_runtime = 0
+                for i in range(len(benchmarks)):
+                    elem_inner = benchmarks[i]
+                    param_key_inner = str(elem_inner.N) + " " + str(elem_inner.numprocs) + " " + elem_inner.name
+                    if param_key_inner == param_key:
+                        average_runtime += elem_inner.runtime
+                averaged_elem.runtime = average_runtime / numberOfRuns
+                benchmarks_averaged.append(averaged_elem)
+                allReadyCalculated.append(param_key)
+        
+        return benchmarks_averaged
 
     def splitBenchmarkList(self):
         for benchmark in self.benchmarkList:
@@ -97,7 +132,6 @@ class PlotMananager:
         self.benchmarkList.sort(key= lambda u: u.json[firstOrder])
 
     def generate2DPlot(self, listType: str = None):
-        print("starting 2D plot")
         if listType == ALLGATHER_KEY:
             benchmarkPlotList = self.agBenchmarkList
         elif listType == ALLREDUCE_KEY:
@@ -120,15 +154,12 @@ class PlotMananager:
         ax.set_ylabel("Size of Vectors")
         ax.scatter(x, y, c=color, cmap='viridis')
         plot.savefig(listType + '_benchmark_plot.png')
-        print("finished 2D plot")
 
     def mapRuntimeToColor(self, runtime:int):
         return runtime * 255.0 / self.maxRuntime
 
     def generateComparisonPlot(self):
         fix, ax = plot.subplots()
-        print(len(self.agBenchmarkList))
-        print(len(self.arBenchmarkList))
         # ax.set_xscale("log")
         ax.set_yscale("log")
         ax.set_xlabel("Number of Processes")
@@ -163,13 +194,15 @@ class PlotMananager:
                 (x_ag, y_ag) = self.extractParamAndRuntime(ag_split[key], sort_key)
                 ax.set_yscale(y_scale)
                 ax.set_xscale(x_scale)
-                ax.plot(x_ar, y_ar, color='red')
-                ax.plot(x_ag, y_ag, color='green')
+                ax.plot(x_ag, y_ag, color='green', label='All-Gather')
+                ax.plot(x_ar, y_ar, color='red', label='All-Reduce')
                 if plot_type == "numprocs":
                     ax.set_xlabel("Vector Size")
                 else:
                     ax.set_xlabel("Number of Processes")
                 ax.set_ylabel("Runtime")
+                plot.title(plot_type + " = " + str(key))
+                plot.legend(loc="upper left")
                 plot.savefig(str(key) + '_' + plot_type + '_benchmark_plot.png')
                 plot.close()
 
@@ -200,10 +233,40 @@ class PlotMananager:
 
     def sortListByKey(self, list, key):
         list.sort(key= lambda u: u.json[key])
+    
+    def plotTheoreticalComparison(self, fixed_key, fixed_value, upper_limit, x_scale = 'linear', y_scale = 'log'):
+        fig, ax = plot.subplots()
+        ax.set_yscale(y_scale)
+        ax.set_xscale(x_scale)
+        x = np.linspace(2, upper_limit)
+        plot.style.use('default')
 
-pm = PlotMananager("./input_files_samples/1.json")
+        print(x)
+        if fixed_key == "N":
+            ar_fixed = fixed_value**2
+            ag_fixed = fixed_value*2
+            y_ar = np.multiply(ar_fixed, np.log2(x))
+            y_ag = np.multiply(ag_fixed, np.subtract(x, 1))
+        else:
+            y_ar = np.multiply(log2(fixed_value), np.power(x))
+            y_ag = np.multiply(fixed_value-1, np.multiply(x, 2))
+        
+        plot.style.use('ggplot')
+        print(y_ar)
+        print(y_ag)
+
+        ax.plot(x, y_ar, color='red', label='All-Reduce')
+        ax.plot(x, y_ag, color='green', label='All-Gather')
+
+        plot.title("Theoretical prediction for " + fixed_key + " = " + str(fixed_value))
+        plot.legend(loc="upper left")
+        plot.savefig(str(fixed_value) + '_' + fixed_key + '_theoretical_plot.png')
+        plot.close()
+
+pm = PlotMananager("./input_files_samples/")
 pm.loadBenchmarks()
 pm.generate2DPlot()
 pm.generateComparisonPlot()
 pm.plotPerNumProcesses(plot_type='numprocs', x_scale = 'linear', y_scale = 'log')
 pm.plotPerNumProcesses(plot_type='N', sort_key="numprocs", x_scale = 'linear', y_scale = 'log')
+# pm.plotTheoreticalComparison("N", 4092, 256)
