@@ -27,10 +27,6 @@ using json = nlohmann::json;
 
 #define EPS 1e-5
 
-#define TAG_BASE 123
-#define TAG_VALIDATE TAG_BASE + 1
-#define TAG_TIMING TAG_BASE + 2
-
 static void print_usage(const char* exec) {
   fprintf(stderr, "Usage: %s -n N -m M [-hvc] -i name\n", exec);
   fprintf(stderr, "\n");
@@ -208,12 +204,12 @@ int main(int argc, char* argv[]) {
 
       /*
        * Check that all produced matrices are exactly the same
-       *
-       * TODO can processes get slightly different matrices?
        */
       for (int i = 1; i < numprocs; i++) {
-        if (results.front() != results[i]) {
-          throw std::runtime_error("Result of process " + std::to_string(i) + " differs from result of process 0");
+        double diff = nrm_sqr_diff(results.front().get_ptr(), results[i].get_ptr(), results.front().dimension());
+        if (diff > EPS) {
+          throw std::runtime_error("Result of process " + std::to_string(i) +
+                                   " differs from result of process 0: error=" + std::to_string(diff));
         }
       }
 
