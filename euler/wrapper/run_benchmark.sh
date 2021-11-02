@@ -6,4 +6,5 @@ set -e
 
 cd ~/dphpc
 source ./euler/init.sh
+(cd code; make clean build)
 python ./benchmarks/benchmark.py --mode euler --clean

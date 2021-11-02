@@ -25,7 +25,7 @@ All code related to solving DSOP, including a `readme.md`, is located in the fol
 
 ## Run on cluster
 
-There's a bunch of scripts in the [`/scripts`](scripts) folder, and a [`cluster.md`](cluster.md) explaining how to use
+There's a bunch of scripts in the [`/euler`](euler) folder, and a [`readme.md`](euler/readme.md) explaining how to use
 them.
 
 ## Results
