@@ -276,7 +276,7 @@ def main():
     results_dir = args.dir
     output_dir = f"{results_dir}/plots"
     input_dir = f"{results_dir}/parsed"
-    pathlib.Path(results_dir).mkdir(parents=True, exist_ok=True)
+    pathlib.Path(output_dir).mkdir(parents=True, exist_ok=True)
     pm = PlotMananager(inputDir=input_dir, outputDir=output_dir)
     pm.loadBenchmarks()
     pm.generate2DPlot()
