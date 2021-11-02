@@ -3,7 +3,7 @@ import shutil
 
 from scheduler import *
 
-implementations = ["allgather", "allreduce"]
+implementations = ["allgather", "allreduce", "allreduce-butterfly"]
 
 configs = []
 configs.extend([
