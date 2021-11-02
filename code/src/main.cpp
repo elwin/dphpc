@@ -16,7 +16,7 @@
 
 #include "allgather/impl.hpp"
 #include "allreduce/impl.hpp"
-#include "allreduce_butterfly//impl.hpp"
+#include "allreduce_butterfly/impl.hpp"
 #include "dsop_single.h"
 #include "util.hpp"
 #include "vector.h"
