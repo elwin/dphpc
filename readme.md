@@ -29,7 +29,7 @@ There's a bunch of scripts in the [`/euler`](euler) folder, and a `readme.md` ex
 
 ## Results
 
-Some (ongoing) benchmark results can be found in the [`/results`](results) folder.
+Some (ongoing) benchmark results can be found in the [`/results`](https://github.com/elwin/dphpc_results/) folder.
 
 ## Etiquette rules
 
