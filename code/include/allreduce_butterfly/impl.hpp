@@ -16,4 +16,4 @@ class allreduce_butterfly : public dsop {
   void compute(const std::vector<vector>& a_in, const std::vector<vector>& b_in, matrix& result) override;
 };
 
-} // namespace impls::allreduce
+} // namespace impls::allreduce_butterfly
