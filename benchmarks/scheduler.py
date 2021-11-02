@@ -9,7 +9,7 @@ import sys
 from collections import abc as collections
 from config import *
 
-logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
+logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 logger = logging.getLogger()
 
 
@@ -96,9 +96,9 @@ class Status(enum.Enum):
 
 
 class EulerRunner(Runner):
-    def __init__(self, raw_dir: str, parsed_dir: str):
-        self.raw_dir = raw_dir
-        self.parsed_dir = parsed_dir
+    def __init__(self, results_dir):
+        self.raw_dir = f"{results_dir}/raw"
+        self.parsed_dir = f"{results_dir}/parsed"
 
         for path in [self.raw_dir, self.parsed_dir]:
             pathlib.Path(path).mkdir(parents=True, exist_ok=True)
@@ -119,7 +119,7 @@ class EulerRunner(Runner):
             binary_path,
             '-n', str(config.n),
             '-m', str(config.m),
-            '-i', f'"{config.implementation}"',
+            '-i', config.implementation,
         ]
 
         logger.debug("executing the following command:")

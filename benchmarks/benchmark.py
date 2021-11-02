@@ -7,19 +7,18 @@ implementations = ["allgather", "allreduce"]
 
 configs = []
 configs.extend([
-    Configuration(n=2 ** n, m=2 ** n, nodes=4, repetition=r, implementation=implementation)
-    # for n in inclusive(4, 13)
-    for n in inclusive(4, 8)
-    # for p in inclusive(2, 5)
+    Configuration(n=2 ** n, m=2 ** n, nodes=p ** 2, repetition=r, implementation=implementation)
+    for n in inclusive(4, 13)
+    for p in inclusive(1, 5)
     for r in repetitions
     for implementation in implementations
 ])
 
 configs.extend([
-    # Configuration(n=2 ** 13, m=2 ** 13, nodes=p, repetition=r, implementation=implementation)
-    # for p in inclusive(2, 48, 2)
-    # for r in repetitions
-    # for implementation in implementations
+    Configuration(n=2 ** 13, m=2 ** 13, nodes=p, repetition=r, implementation=implementation)
+    for p in inclusive(2, 48, 2)
+    for r in repetitions
+    for implementation in implementations
 ])
 
 
@@ -37,10 +36,7 @@ def main():
     if mode == "dry-run":
         scheduler = Scheduler(DryRun())
     elif mode == "euler":
-        scheduler = Scheduler(EulerRunner(
-            raw_dir=f"{results_path}/raw",
-            parsed_dir=f"{results_path}/parsed",
-        ))
+        scheduler = Scheduler(EulerRunner(results_dir=results_path))
     else:
         parser.print_help()
         return

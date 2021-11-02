@@ -6,4 +6,4 @@ set -e
 
 cd ~/dphpc
 source ./euler/init.sh
-python ./benchmarks/benchmark.py
+python ./benchmarks/benchmark.py --mode euler --clean
