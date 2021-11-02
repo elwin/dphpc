@@ -19,6 +19,7 @@ set(MAIN_SOURCES
         src/allreduce/impl.cpp
         src/allreduce_butterfly/impl.cpp
         src/allgather/impl.cpp
+        src/allgather_async/impl.cpp
         )
 
 set(INCLUDE_DIRS include)
