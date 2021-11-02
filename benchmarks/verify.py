@@ -2,7 +2,7 @@ from benchmark import *
 
 
 def main():
-    if False in [EulerRunner().verify(r) for r in repetitions]:
+    if False in [EulerRunner(results_dir=results_path).verify(r) for r in repetitions]:
         exit(1)
 
 

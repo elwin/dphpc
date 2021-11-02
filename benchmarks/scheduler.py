@@ -1,11 +1,20 @@
 import enum
 import json
 import logging
+import pathlib
 import subprocess
 import re
 import io
+import sys
 from collections import abc as collections
 from config import *
+
+logging.basicConfig(stream=sys.stdout, level=logging.INFO)
+logger = logging.getLogger()
+
+
+def inclusive(min_val: int, max_val: int, step=1):
+    return range(min_val, max_val + 1, step)
 
 
 class Configuration:
@@ -15,6 +24,10 @@ class Configuration:
         self.nodes = nodes
         self.implementation = implementation
         self.repetition = repetition
+
+    def __str__(self):
+        dim = f'{self.n}' if self.n == self.m else f'{self.n}x{self.m}'
+        return f'{dim}, {self.nodes} nodes, {self.implementation}, rep {self.repetition}'
 
 
 class Runner:
@@ -49,8 +62,7 @@ class Scheduler:
 
 class DryRun(Runner):
     def run(self, config: Configuration):
-        logging.info(f"{config.n} x {config.m}, {config.nodes} nodes, {config.implementation}, rep {config.repetition}")
-
+        logger.info(f"{config.n} x {config.m}, {config.nodes} nodes, {config.implementation}, rep {config.repetition}")
         if config.nodes > 48:
             logging.warning(f"Euler may support only up to 48 nodes, {config.nodes} requested")
 
@@ -84,37 +96,52 @@ class Status(enum.Enum):
 
 
 class EulerRunner(Runner):
+    def __init__(self, results_dir):
+        self.raw_dir = f"{results_dir}/raw"
+        self.parsed_dir = f"{results_dir}/parsed"
+
+        for path in [self.raw_dir, self.parsed_dir]:
+            pathlib.Path(path).mkdir(parents=True, exist_ok=True)
+
     def run(self, config: Configuration):
-        proc = subprocess.run(
-            [
-                "bsub",
-                "-o", f"{bb_output_path}/%J",
-                "-e", f"{bb_output_path}/%J.err",
-                "-n", str(config.nodes),
-                "mpirun",
-                "-np", str(config.nodes),
-                binary_path,
-                "-n", str(config.n),
-                "-m", str(config.m),
-                "-i", config.implementation,
-            ],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.DEVNULL,
-        )
+        args = [
+            'bsub',
+            # '-J', f'"{config.__str__()}"',
+            '-o', f'{self.raw_dir}/%J',
+            '-e', f'{self.raw_dir}/%J.err',
+            '-n', str(config.nodes),
+            '-R', 'span[ptile=1]',  # use 1 core per node
+            '-R', 'select[model==XeonE3_1585Lv5]',  # use Euler III nodes (4 cores)
+            '-R', 'select[!ib]',  # disable infiniband (not available on Euler III)
+            '-r',  # make jobs retryable
+            'mpirun',
+            '-np', str(config.nodes),
+            binary_path,
+            '-n', str(config.n),
+            '-m', str(config.m),
+            '-i', config.implementation,
+        ]
+
+        logger.debug("executing the following command:")
+        logger.debug(" ".join(args))
+
+        proc = subprocess.run(args, stdout=subprocess.PIPE)
+        process_output = proc.stdout.decode()
+        logger.debug(process_output)
 
         job_id = re \
             .compile("Job <(.*)> is submitted to queue <normal.4h>.") \
-            .search(proc.stdout.decode()) \
+            .search(process_output) \
             .group(1)
 
-        with open(f"{bb_output_path}/jobs-{config.repetition}", "a") as f:
+        with open(f"{self.raw_dir}/jobs-{config.repetition}", "a") as f:
             f.write(job_id + "\n")
 
-        logging.info(f'submitted job {job_id}')
+        logger.info(f'submitted job {job_id}')
 
     def verify(self, repetition: int) -> bool:
         completed = True
-        with open(f"{bb_output_path}/jobs-{repetition}") as f:
+        with open(f"{self.raw_dir}/jobs-{repetition}") as f:
             for job_id in f.read().splitlines():
                 proc = subprocess.run(
                     [
@@ -133,28 +160,27 @@ class EulerRunner(Runner):
                     "EXIT": "failed",
                     "RUN": "running"
                 }[msg['RECORDS'][0]['STAT']]
-                logging.info(f"{job_id} is {status}")
+                logger.info(f"{job_id} is {status}")
                 if status != "done":
                     completed = False
 
         return completed
 
     def collect(self, repetition: int):
-        with open(f"{parsed_output_path}/{repetition}.json", "w") as o:
-            with open(f"{bb_output_path}/jobs-{repetition}") as f:
+        with open(f"{self.parsed_dir}/{repetition}.json", "w") as o:
+            with open(f"{self.raw_dir}/jobs-{repetition}") as f:
                 for job_id in f.read().splitlines():
                     try:
-                        with open(f"{bb_output_path}/{job_id}") as j:
-                            o.writelines([job_id])
-                            data = j.readlines()[35:][:-6]
+                        with open(f"{self.raw_dir}/{job_id}") as j:
+                            data = [x for x in j.readlines() if x.startswith("{")]  # poor man grep
                             if len(data) != 1:
-                                logging.info(f'expected length 1, got {len(data)}')
+                                logger.info(f'[{job_id}] expected length 1, got {len(data)}')
                                 continue
 
                             parsed = json.loads(data[0])
                             if 'timestamp' not in parsed:
-                                logging.error(f'no timestamp found in output')
+                                logging.error(f'[{job_id}] no timestamp found in output')
 
                             o.writelines(data)
                     except:
-                        logging.error(f'failed to read output for job {job_id}')
+                        logging.error(f'[{job_id}] failed to read output')

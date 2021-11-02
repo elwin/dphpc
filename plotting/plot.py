@@ -1,3 +1,4 @@
+import argparse
 import json
 import os
 import pathlib
@@ -267,9 +268,16 @@ class PlotMananager:
 
 
 def main():
-    outputDir = "results/first/plots"
-    pathlib.Path(outputDir).mkdir(parents=True, exist_ok=True)
-    pm = PlotMananager(inputDir="results/first/parsed", outputDir=outputDir)
+    parser = argparse.ArgumentParser(description='Run some benchmarks')
+    parser.add_argument('-d', '--dir', type=str, default="results/tmp",
+                        help="Directory containing results (both in and output")
+    args = parser.parse_args()
+
+    results_dir = args.dir
+    output_dir = f"{results_dir}/plots"
+    input_dir = f"{results_dir}/parsed"
+    pathlib.Path(results_dir).mkdir(parents=True, exist_ok=True)
+    pm = PlotMananager(inputDir=input_dir, outputDir=output_dir)
     pm.loadBenchmarks()
     pm.generate2DPlot()
     pm.generateComparisonPlot()

@@ -8,7 +8,9 @@ VPN. As soon as we are inside the network, we can connect to the Euler cluster v
 As git is available on the cluster, you can simply clone this repository into you personal home directory on the
 cluster: `git clone https://github.com/elwin/dphpc`
 
-> You can also send [@elwin](mailto:elwin.stephan@gmail.com) a copy of your public key on your Euler account and he'll add it as a deploy key to the repository. Afterwards, you can `git clone git@github.com:elwin/dphpc.git` without having to do any further authorization :crystal_ball:
+> You can also send [@elwin](mailto:elwin.stephan@gmail.com) a copy of your public key on your Euler account and
+> he'll add it as a deploy key to the repository. Afterwards, you can `git clone git@github.com:elwin/dphpc.git`
+> without having to do any further authorization :crystal_ball:
 
 ## Preparations
 
@@ -18,7 +20,7 @@ Before we can build and run our code, we have to prepare the environment to use 
 To switch to the new software stack and load the required modules, run:
 
 ```shell
-source ~/dphpc/scripts/euler/init.sh
+source ~/dphpc/euler/init.sh
 ```
 
 Or check out what the file does, you can of course also run it manually in your shell.
@@ -27,7 +29,8 @@ Then you should be able to build the project with `make <target>` after `cd`'ing
 
 ### SSHing
 
-> Some scripts assume the the SSH alias `euler` to be set (i.e. `ssh euler` should log you into euler). This step is not necessary for all scripts, you'll see soon enough when something fails when omitting this step.
+> Some scripts assume the SSH alias `euler` to be set (i.e. `ssh euler` should log you into euler).
+> This step is not necessary for all scripts, you'll see soon enough when something fails when omitting this step.
 
 Create an SSH key for uploading to Euler.
 
@@ -51,7 +54,19 @@ Host euler
     IdentityFile ~/.ssh/id_ed25519_euler
 ```
 
-You can now ssh into the euler cluster using `ssh euler`.
+You should now be able to ssh into the euler cluster using `ssh euler`.
+
+## Run entire pipeline
+
+1. Make sure the project is located on `euler:~/dphpc`, checkout out in desired version you want to test
+2. On your local machine, run `./euler/submit_jobs.sh`
+3. Run `./euler/monitor_jobs.sh` to check the number of pending jobs. Once this reaches 0, proceed with the next step
+4. Run `./euler/collect_jobs.sh` to i) verify all jobs completed successfully, ii) "parse" and collect all files
+   together and iii) to copy them to your local machine (`/results/tmp`)
+5. Now you should be able to generate the plots using `python plotting/plot.py`
+
+Should anything in-between fail, some debugging will be necessary. There's barely any fault tolerance. All bash scripts
+are rather simple (usually just a few lines) - take a look at them on how they call other programs (flags and so on).
 
 ## Run jobs
 
