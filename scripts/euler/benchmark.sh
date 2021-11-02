@@ -1,5 +1,7 @@
 #!/bin/bash
 
+echo "This script is deprecated. Use benchmark.py instead"
+
 . ./scripts/euler/config.sh
 
 # Constants and variable init
