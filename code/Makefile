@@ -20,4 +20,4 @@ clean:
 
 # only temporary until we have a proper build thing in place
 mpi_tmp: build
-	mpiexec ${OUT}/main -n 8 -m 8 -i allreduce
+	mpiexec ${OUT}/main -n 4096 -m 4096 -i allreduce-butterfly

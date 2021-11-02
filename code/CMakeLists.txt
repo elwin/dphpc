@@ -8,7 +8,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS on)
 message(STATUS "Using compiler: ${CMAKE_CXX_COMPILER_ID}")
 
 # Only add GCC flags if using GCC
-set(cxx_flags -Wall -Wextra -Wpedantic -Wsuggest-override)
+set(cxx_flags -Wall -Wextra -Wpedantic -Wsuggest-override -O3 -funroll-loops -fvectorize)
 set(cxx_linker_flags ${cxx_flags})
 
 set(MAIN_SOURCES
@@ -17,6 +17,7 @@ set(MAIN_SOURCES
         src/dsop_single.cpp
         src/util.cpp
         src/allreduce/impl.cpp
+        src/allreduce_butterfly/impl.cpp
         src/allgather/impl.cpp
         )
 

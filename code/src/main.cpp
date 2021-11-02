@@ -16,6 +16,7 @@
 
 #include "allgather/impl.hpp"
 #include "allreduce/impl.hpp"
+#include "allreduce_butterfly//impl.hpp"
 #include "dsop_single.h"
 #include "util.hpp"
 #include "vector.h"
@@ -45,6 +46,8 @@ template <typename... Args>
 static std::unique_ptr<dsop> get_impl(const std::string& name, Args&&... args) {
   if (name == "allreduce") {
     return std::make_unique<impls::allreduce::allreduce>(std::forward<Args>(args)...);
+  } else if (name == "allreduce-butterfly") {
+    return std::make_unique<impls::allreduce_butterfly::allreduce_butterfly>(std::forward<Args>(args)...);
   } else if (name == "allgather") {
     return std::make_unique<impls::allgather::allgather>(std::forward<Args>(args)...);
   } else {
