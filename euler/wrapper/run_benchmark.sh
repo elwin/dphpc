@@ -5,5 +5,5 @@
 set -e
 
 cd ~/dphpc
-source ./scripts/euler/init.sh
-python ./scripts/euler/benchmark.py
+source ./euler/init.sh
+python ./benchmarks/benchmark.py
