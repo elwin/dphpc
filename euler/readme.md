@@ -58,8 +58,10 @@ You should now be able to ssh into the euler cluster using `ssh euler`.
 
 ## Run entire pipeline
 
+> The following steps assume you're in the `dphpc` root folder on your local machine
+
 1. Make sure the project is located on `euler:~/dphpc`, checkout out in desired version you want to test
-2. On your local machine, run `./euler/submit_jobs.sh`
+2. On your local machine, run `./euler/submit_jobs.sh` to... submit all jobs
 3. Run `./euler/monitor_jobs.sh` to check the number of pending jobs. Once this reaches 0, proceed with the next step
 4. Run `./euler/collect_jobs.sh` to i) verify all jobs completed successfully, ii) "parse" and collect all files
    together and iii) to copy them to your local machine (`/results/tmp`)
@@ -68,7 +70,7 @@ You should now be able to ssh into the euler cluster using `ssh euler`.
 Should anything in-between fail, some debugging will be necessary. There's barely any fault tolerance. All bash scripts
 are rather simple (usually just a few lines) - take a look at them on how they call other programs (flags and so on).
 
-## Run jobs
+## Run jobs individually
 
 ```shell
 # Directly run it on the local node
@@ -81,9 +83,3 @@ bsub -n <number of processes> mpirun -np <number of processes> <binary>
 # Example:
 bsub -n 4 mpirun -np 4 ./main -n 5 -m 5 -i allreduce
 ```
-
-## Running Benchmark File
-
-### Preparations
-
-### Submit Jobs
