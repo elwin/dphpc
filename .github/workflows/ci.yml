@@ -43,5 +43,8 @@ jobs:
       - name: Run Implementations
         run: |
           cd "$BUILD_DIR"
-          mpirun ./main -c -n 1000 -m 2000 -i allreduce
-          mpirun ./main -c -n 1000 -m 2000 -i allgather
+          impls=("allreduce" "allgather" "allreduce-butterfly" "allgather-async")
+          for i in "${impls[@]}"; do
+            echo "$i"
+            mpirun ./main -c -n 1000 -m 2000 -i "$i"
+          done
