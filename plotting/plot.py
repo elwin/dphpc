@@ -201,12 +201,12 @@ class PlotMananager:
 
         plot.savefig(f'{self.outputDir}/comparison_benchmark_plot.png')
 
-    def plotPerNumProcesses(self, plot_type="numprocs", sort_key="N", x_scale="linear", y_scale="linear"):
+    def plotPerNumProcesses(self, plot_type="numprocs", sort_key="N", x_scale="linear", y_scale="linear", print_additional=False):
         self.sortListByKey(self.agBenchmarkList, sort_key)
         self.sortListByKey(self.arBenchmarkList, sort_key)
         ag_split = self.splitBenchMarksByKey(self.agBenchmarkList, plot_type)
         ar_split = self.splitBenchMarksByKey(self.arBenchmarkList, plot_type)
-        others_split = self.genOtherBenchmarkSplitList(self.otherBenchmarkLists, plot_type)
+        others_split = self.genOtherBenchmarkSplitList(self.otherBenchmarkLists, plot_type, sort_key)
 
         for key in ag_split.keys():
             if key in ar_split.keys():
@@ -215,9 +215,10 @@ class PlotMananager:
                 ax.set_xscale(x_scale)
                 self.printSingleLine(ar_split, sort_key, key, ax)
                 self.printSingleLine(ag_split, sort_key, key, ax)
-                for others_key in others_split.keys():
-                    if key in others_split[others_key].keys():
-                        self.printSingleLine(others_split[others_key], sort_key, key, ax)
+                if print_additional:
+                    for others_key in others_split.keys():
+                        if key in others_split[others_key].keys():
+                            self.printSingleLine(others_split[others_key], sort_key, key, ax)
 
 
                 if plot_type == "numprocs":
@@ -239,9 +240,10 @@ class PlotMananager:
         elif len(x) > 1:
             ax.plot(x, y, color=color, label=name)
 
-    def genOtherBenchmarkSplitList(self, list, plot_type):
+    def genOtherBenchmarkSplitList(self, list, plot_type, sort_key):
         splitOtherBenchMarks = {}
         for key in list.keys():
+            self.sortListByKey(list[key], sort_key)
             splitOtherBenchMarks[key] = self.splitBenchMarksByKey(list[key], plot_type)
         return splitOtherBenchMarks
 
