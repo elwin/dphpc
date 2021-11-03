@@ -48,7 +48,7 @@ jobs:
           cd "$BUILD_DIR"
           impls=("allreduce" "allgather" "allreduce-butterfly" "allgather-async")
           for i in "${impls[@]}"; do
-            echo -e "\e[33${i}\e[0m"
+            echo -e "\e[33m${i}\e[0m"
             mpirun -np 1 ./main -c -n 1000 -m 2000 -i "$i"
             mpirun -np 2 ./main -c -n 1000 -m 2000 -i "$i"
           done
