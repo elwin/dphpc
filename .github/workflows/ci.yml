@@ -11,10 +11,13 @@ on:
 jobs:
   build:
     runs-on: ubuntu-20.04
+    strategy:
+      matrix:
+        build_type: ["Release", "Debug"]
     env:
       CXX: "g++"
-      BUILD_TYPE: "Release"
-      BUILD_DIR: "${{ github.workspace}}/code/build"
+      BUILD_TYPE: ${{ matrix.build_type }}
+      BUILD_DIR: "${{ github.workspace }}/code/build"
       MAKEFLAGS: "-j4"
       COLOR: "ON"
       CXXFLAGS: "-Werror"
@@ -45,6 +48,7 @@ jobs:
           cd "$BUILD_DIR"
           impls=("allreduce" "allgather" "allreduce-butterfly" "allgather-async")
           for i in "${impls[@]}"; do
-            echo "$i"
-            mpirun ./main -c -n 1000 -m 2000 -i "$i"
+            echo -e "\e[33${i}\e[0m"
+            mpirun -np 1 ./main -c -n 1000 -m 2000 -i "$i"
+            mpirun -np 2 ./main -c -n 1000 -m 2000 -i "$i"
           done
