@@ -10,6 +10,12 @@ import copy
 
 ALLGATHER_KEY = "allgather"
 ALLREDUCE_KEY = "allreduce"
+AR_BUTTERFLY_KEY = "allreduce-butterfly"
+NAME_COLOR_MAP = {
+    ALLREDUCE_KEY: 'red',
+    ALLGATHER_KEY: 'green',
+    AR_BUTTERFLY_KEY: 'blue'
+}
 
 
 class Benchmark:
@@ -29,6 +35,7 @@ class Benchmark:
         print("N: " + str(self.N))
         print("numprocs: " + str(self.numprocs))
         print("runtime: " + str(self.runtime))
+        print("name: " + str(self.name))
         print("}")
 
 
@@ -39,6 +46,7 @@ class PlotMananager:
         self.benchmarkList = []
         self.agBenchmarkList = []
         self.arBenchmarkList = []
+        self.otherBenchmarkLists = {}
         self.maxRuntime = 0
 
     def loadSampleBenchmarks(self):
@@ -97,13 +105,13 @@ class PlotMananager:
                     if benchmark.runtime > self.maxRuntime:
                         self.maxRuntime = benchmark.runtime
         if useAverage:
-            self.benchmarkList = self.generateAverageBenchmarkList(initialBenchMark, 3)
+            self.benchmarkList = self.generateAverageBenchmarkList(initialBenchMark)
         else:
             self.benchmarkList = initialBenchMark
         self.sortBenchMarks("N", "M")
         self.splitBenchmarkList()
 
-    def generateAverageBenchmarkList(self, benchmarks, numberOfRuns):
+    def generateAverageBenchmarkList(self, benchmarks):
         allReadyCalculated = []
         benchmarks_averaged = []
         for elem in benchmarks:
@@ -111,10 +119,12 @@ class PlotMananager:
             if not param_key in allReadyCalculated:
                 averaged_elem = copy.deepcopy(elem)
                 average_runtime = 0
+                numberOfRuns = 0
                 for i in range(len(benchmarks)):
                     elem_inner = benchmarks[i]
                     param_key_inner = str(elem_inner.N) + " " + str(elem_inner.numprocs) + " " + elem_inner.name
                     if param_key_inner == param_key:
+                        numberOfRuns += 1
                         average_runtime += elem_inner.runtime
                 averaged_elem.runtime = average_runtime / numberOfRuns
                 benchmarks_averaged.append(averaged_elem)
@@ -126,8 +136,14 @@ class PlotMananager:
         for benchmark in self.benchmarkList:
             if benchmark.name == ALLGATHER_KEY:
                 self.agBenchmarkList.append(benchmark)
-            else:
+            elif benchmark.name == ALLREDUCE_KEY:
                 self.arBenchmarkList.append(benchmark)
+            else:
+                if benchmark.name in self.otherBenchmarkLists.keys():
+                    self.otherBenchmarkLists[benchmark.name].append(benchmark)
+                else:
+                    self.otherBenchmarkLists[benchmark.name] = [benchmark]
+
 
     def sortBenchMarks(self, firstOrder: str, secondOrder: str = None):
         if secondOrder:
@@ -141,6 +157,7 @@ class PlotMananager:
             benchmarkPlotList = self.arBenchmarkList
         else:
             listType = "all"
+
         benchmarkPlotList = self.benchmarkList
         x = []
         y = []
@@ -189,16 +206,20 @@ class PlotMananager:
         self.sortListByKey(self.arBenchmarkList, sort_key)
         ag_split = self.splitBenchMarksByKey(self.agBenchmarkList, plot_type)
         ar_split = self.splitBenchMarksByKey(self.arBenchmarkList, plot_type)
+        others_split = self.genOtherBenchmarkSplitList(self.otherBenchmarkLists, plot_type)
 
         for key in ag_split.keys():
             if key in ar_split.keys():
                 fix, ax = plot.subplots()
-                (x_ar, y_ar) = self.extractParamAndRuntime(ar_split[key], sort_key)
-                (x_ag, y_ag) = self.extractParamAndRuntime(ag_split[key], sort_key)
                 ax.set_yscale(y_scale)
                 ax.set_xscale(x_scale)
-                ax.plot(x_ag, y_ag, color='green', label='All-Gather')
-                ax.plot(x_ar, y_ar, color='red', label='All-Reduce')
+                self.printSingleLine(ar_split, sort_key, key, ax)
+                self.printSingleLine(ag_split, sort_key, key, ax)
+                for others_key in others_split.keys():
+                    if key in others_split[others_key].keys():
+                        self.printSingleLine(others_split[others_key], sort_key, key, ax)
+
+
                 if plot_type == "numprocs":
                     ax.set_xlabel("Vector Size")
                 else:
@@ -208,6 +229,22 @@ class PlotMananager:
                 plot.legend(loc="upper left")
                 plot.savefig(f"{self.outputDir}/{key}_{plot_type}_benchmark_plot.png")
                 plot.close()
+
+    def printSingleLine(self, split_list, sort_key, key, ax):
+        (x, y) = self.extractParamAndRuntime(split_list[key], sort_key)
+        name = split_list[key][0].name
+        color = NAME_COLOR_MAP[name]
+        if len(x) == 1:
+            ax.scatter(x, y, color=color, label=name)
+        elif len(x) > 1:
+            ax.plot(x, y, color=color, label=name)
+
+    def genOtherBenchmarkSplitList(self, list, plot_type):
+        splitOtherBenchMarks = {}
+        for key in list.keys():
+            splitOtherBenchMarks[key] = self.splitBenchMarksByKey(list[key], plot_type)
+        return splitOtherBenchMarks
+
 
     def extractParamAndRuntime(self, list, sort_key):
         x = []
@@ -244,7 +281,6 @@ class PlotMananager:
         x = np.linspace(2, upper_limit)
         plot.style.use('default')
 
-        print(x)
         if fixed_key == "N":
             ar_fixed = fixed_value ** 2
             ag_fixed = fixed_value * 2
@@ -255,8 +291,6 @@ class PlotMananager:
             y_ag = np.multiply(fixed_value - 1, np.multiply(x, 2))
 
         plot.style.use('ggplot')
-        print(y_ar)
-        print(y_ag)
 
         ax.plot(x, y_ar, color='red', label='All-Reduce')
         ax.plot(x, y_ag, color='green', label='All-Gather')
