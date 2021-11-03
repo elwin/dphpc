@@ -180,7 +180,8 @@ class EulerRunner(Runner):
                             parsed = json.loads(data[0])
                             if 'timestamp' not in parsed:
                                 logging.error(f'[{job_id}] no timestamp found in output')
+                            parsed['job_id'] = job_id
 
-                            o.writelines(data)
+                            o.write(json.dumps(parsed, separators=(',', ':')) + '\n')
                     except:
                         logging.error(f'[{job_id}] failed to read output')

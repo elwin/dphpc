@@ -2,7 +2,12 @@ from benchmark import *
 
 
 def main():
-    [EulerRunner(results_dir=results_path).collect(r) for r in repetitions]
+    parser = argparse.ArgumentParser(description='Run some benchmarks')
+    parser.add_argument('-d', '--dir', type=str, default=results_path,
+                        help="Directory containing results (both in and output")
+    args = parser.parse_args()
+
+    [EulerRunner(results_dir=args.dir).collect(r) for r in repetitions]
 
 
 if __name__ == '__main__':
