@@ -17,6 +17,12 @@ def inclusive(min_val: int, max_val: int, step=1):
     return range(min_val, max_val + 1, step)
 
 
+def drop(l: list, key: str) -> list:
+    l = l.copy()
+    l.remove(key)
+    return l
+
+
 class Configuration:
     def __init__(self, n: int, m: int, nodes: int, implementation: str, repetition: int):
         self.n = n
