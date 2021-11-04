@@ -1,6 +1,7 @@
 import enum
 import json
 import logging
+import os.path
 import pathlib
 import subprocess
 import re
@@ -149,6 +150,9 @@ class EulerRunner(Runner):
         completed = True
         with open(f"{self.raw_dir}/jobs-{repetition}") as f:
             for job_id in f.read().splitlines():
+                if os.path.isfile(f'{self.raw_dir}/{job_id}'):
+                    continue
+
                 proc = subprocess.run(
                     [
                         "bjobs",
@@ -160,14 +164,9 @@ class EulerRunner(Runner):
                     stderr=subprocess.PIPE,
                 )
                 msg = json.loads(proc.stdout.decode())
-                status = {
-                    "DONE": "done",
-                    "PEND": "pending",
-                    "EXIT": "failed",
-                    "RUN": "running"
-                }[msg['RECORDS'][0]['STAT']]
+                status = msg['RECORDS'][0]['STAT']
                 logger.info(f"{job_id} is {status}")
-                if status != "done":
+                if status != "DONE":
                     completed = False
 
         return completed
