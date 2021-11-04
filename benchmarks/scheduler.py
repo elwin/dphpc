@@ -172,21 +172,38 @@ class EulerRunner(Runner):
 
         return completed
 
+    @staticmethod
+    def find_key(job_id, data: list, key: str) -> str:
+        line = [x for x in data if key in x]
+        if len(line) != 1:
+            raise Exception(f'[{job_id}] expected length 1 for key {key}, got {len(line)}')
+
+        return line[0].split(":")[1].split()
+
     def collect(self, repetition: int):
         with open(f"{self.parsed_dir}/{repetition}.json", "w") as o:
             with open(f"{self.raw_dir}/jobs-{repetition}") as f:
                 for job_id in f.read().splitlines():
                     try:
                         with open(f"{self.raw_dir}/{job_id}") as j:
-                            data = [x for x in j.readlines() if x.startswith("{")]  # poor man grep
-                            if len(data) != 1:
-                                logger.info(f'[{job_id}] expected length 1, got {len(data)}')
+                            data = j.readlines()
+
+                            payload = [x for x in data if x.startswith("{")]  # poor man grep
+                            if len(payload) != 1:
+                                logger.info(f'[{job_id}] expected length 1, got {len(payload)}')
                                 continue
 
-                            parsed = json.loads(data[0])
+                            parsed = json.loads(payload[0])
                             if 'timestamp' not in parsed:
                                 logging.error(f'[{job_id}] no timestamp found in output')
-                            parsed['job_id'] = job_id
+
+                            parsed['job'] = {
+                                'id': job_id,
+                                'turnaround_time': int(self.find_key(job_id, data, "Turnaround time")[0]),
+                                'runtime': int(self.find_key(job_id, data, "Run time")[0]),
+                                'mem_requested': float(self.find_key(job_id, data, "Total Requested Memory")[0]),
+                                'mem_max': float(self.find_key(job_id, data, "Max Memory")[0]),
+                            }
 
                             o.write(json.dumps(parsed, separators=(',', ':')) + '\n')
                     except:
