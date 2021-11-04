@@ -15,8 +15,10 @@
 #include <vector>
 
 #include "allgather/impl.hpp"
+#include "allgather_async/impl.hpp"
 #include "allreduce/impl.hpp"
 #include "allreduce_ring/impl.hpp"
+#include "allreduce_butterfly/impl.hpp"
 #include "dsop_single.h"
 #include "util.hpp"
 #include "vector.h"
@@ -26,10 +28,6 @@ using json = nlohmann::json;
 #define ROOT 0
 
 #define EPS 1e-5
-
-#define TAG_BASE 123
-#define TAG_VALIDATE TAG_BASE + 1
-#define TAG_TIMING TAG_BASE + 2
 
 static void print_usage(const char* exec) {
   fprintf(stderr, "Usage: %s -n N -m M [-hvc] -i name\n", exec);
@@ -46,10 +44,14 @@ template <typename... Args>
 static std::unique_ptr<dsop> get_impl(const std::string& name, Args&&... args) {
   if (name == "allreduce") {
     return std::make_unique<impls::allreduce::allreduce>(std::forward<Args>(args)...);
+  } else if (name == "allreduce-butterfly") {
+    return std::make_unique<impls::allreduce_butterfly::allreduce_butterfly>(std::forward<Args>(args)...);
   } else if (name == "allreduce_ring") {
     return std::make_unique<impls::allreduce::allreduce_ring>(std::forward<Args>(args)...);
   } else if (name == "allgather") {
     return std::make_unique<impls::allgather::allgather>(std::forward<Args>(args)...);
+  } else if (name == "allgather-async") {
+    return std::make_unique<impls::allgather_async::allgather_async>(std::forward<Args>(args)...);
   } else {
     throw std::runtime_error("Unknown implementation '" + name + "'");
   }
@@ -208,12 +210,12 @@ int main(int argc, char* argv[]) {
 
       /*
        * Check that all produced matrices are exactly the same
-       *
-       * TODO can processes get slightly different matrices?
        */
       for (int i = 1; i < numprocs; i++) {
-        if (results.front() != results[i]) {
-          throw std::runtime_error("Result of process " + std::to_string(i) + " differs from result of process 0");
+        double diff = nrm_sqr_diff(results.front().get_ptr(), results[i].get_ptr(), results.front().dimension());
+        if (diff > EPS) {
+          throw std::runtime_error("Result of process " + std::to_string(i) +
+                                   " differs from result of process 0: error=" + std::to_string(diff));
         }
       }
 

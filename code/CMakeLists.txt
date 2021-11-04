@@ -7,9 +7,29 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_EXPORT_COMPILE_COMMANDS on)
 message(STATUS "Using compiler: ${CMAKE_CXX_COMPILER_ID}")
 
-# Only add GCC flags if using GCC
-set(cxx_flags -Wall -Wextra -Wpedantic -Wsuggest-override)
-set(cxx_linker_flags ${cxx_flags})
+# Set default build type if not specified
+if(NOT CMAKE_BUILD_TYPE)
+  set(CMAKE_BUILD_TYPE "Release")
+  message(STATUS "No build type specified; using ${CMAKE_BUILD_TYPE}")
+endif()
+string(TOUPPER ${CMAKE_BUILD_TYPE} CMAKE_BUILD_TYPE_UPPER)
+
+list(APPEND cxx_base -Wall -Wextra -Wpedantic -Wsuggest-override)
+list(APPEND cxx_debug -DDEBUG -g2)
+list(APPEND cxx_sanitize -O0 -g -fsanitize=address -fsanitize=undefined -fno-omit-frame-pointer -fno-optimize-sibling-calls)
+
+list(APPEND cxx_linker_base "")
+
+list(APPEND cxx_flags ${cxx_base})
+list(APPEND cxx_linker_flags ${cxx_linker_base})
+
+if (CMAKE_BUILD_TYPE_UPPER STREQUAL "DEBUG")
+  list(APPEND cxx_flags ${cxx_debug})
+elseif (CMAKE_BUILD_TYPE_UPPER STREQUAL "SANITIZE")
+  list(APPEND cxx_flags ${cxx_sanitize})
+endif()
+
+list(APPEND cxx_linker_flags ${cxx_flags})
 
 set(MAIN_SOURCES
         src/vector.cpp
@@ -17,8 +37,10 @@ set(MAIN_SOURCES
         src/dsop_single.cpp
         src/util.cpp
         src/allreduce/impl.cpp
+        src/allreduce_butterfly/impl.cpp
         src/allreduce_ring/impl.cpp
         src/allgather/impl.cpp
+        src/allgather_async/impl.cpp
         )
 
 set(INCLUDE_DIRS include)
