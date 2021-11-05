@@ -190,29 +190,22 @@ int main(int argc, char* argv[]) {
     result_dump["runtime_compute"] = timings_compute[slowest];
 
     if (validate) {
-      int num_elements = result.dimension();
-
       std::cerr << "Validation turned on" << std::endl;
-      std::vector<matrix> results(numprocs, matrix{result.rows, result.columns});
-      std::vector<MPI_Request> reqs;
+
+      int num_elements = result.dimension();
+      matrix other_result(N, M);
+
+      // Compare result of other processes to root result one-by-one
       for (int i = 0; i < numprocs; i++) {
         if (i == rank) {
-          results[i] = std::move(result);
-        } else {
-          reqs.push_back(nullptr);
-          MPI_Irecv(results[i].get_ptr(), num_elements, MPI_DOUBLE, i, TAG_VALIDATE, COMM, &reqs.back());
+          continue;
         }
-      }
-      MPI_Waitall(reqs.size(), reqs.data(), MPI_STATUSES_IGNORE);
+        MPI_Recv(other_result.get_ptr(), num_elements, MPI_DOUBLE, i, TAG_VALIDATE, COMM, MPI_STATUS_IGNORE);
 
-      /*
-       * Check that all produced matrices are exactly the same
-       */
-      for (int i = 1; i < numprocs; i++) {
-        double diff = nrm_sqr_diff(results.front().get_ptr(), results[i].get_ptr(), results.front().dimension());
+        double diff = nrm_sqr_diff(result.get_ptr(), other_result.get_ptr(), num_elements);
         if (diff > EPS) {
-          throw std::runtime_error("Result of process " + std::to_string(i) +
-                                   " differs from result of process 0: error=" + std::to_string(diff));
+          throw std::runtime_error("Result of process " + std::to_string(i) + " differs from result of process " +
+                                   std::to_string(rank) + ": error=" + std::to_string(diff));
         }
       }
 
@@ -220,14 +213,12 @@ int main(int argc, char* argv[]) {
       auto expected = matrix(N, M);
       sequential.compute(a_vec, b_vec, expected);
 
-      auto& r = results.front();
-
-      if (!r.matchesDimensions(expected)) {
-        throw std::runtime_error(
-            "Results have wrong dimensions (" + std::to_string(r.rows) + "x" + std::to_string(r.columns) + ")");
+      if (!result.matchesDimensions(expected)) {
+        throw std::runtime_error("Results have wrong dimensions (" + std::to_string(result.rows) + "x" +
+                                 std::to_string(result.columns) + ")");
       }
 
-      double diff = nrm_sqr_diff(r.get_ptr(), expected.get_ptr(), expected.dimension());
+      double diff = nrm_sqr_diff(result.get_ptr(), expected.get_ptr(), expected.dimension());
 
       if (diff > EPS) {
         throw std::runtime_error("Result does not match sequential result: error=" + std::to_string(diff));
@@ -235,6 +226,8 @@ int main(int argc, char* argv[]) {
 
       // Since we require all matrices to be the same, the error is the same for all processes.
       result_dump["errors"] = std::vector<double>(numprocs, diff);
+
+      std::cerr << "Validation successful! error=" << diff << std::endl;
     }
     std::cout << result_dump << std::endl;
   } else {
