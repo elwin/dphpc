@@ -5,7 +5,6 @@ from scheduler import *
 
 implementations = ["allgather", "allreduce", "allreduce-butterfly", "allgather-async"]
 
-
 configs = []
 configs.extend([
     Configuration(n=2 ** n, m=2 ** n, nodes=2 ** p, repetition=r, implementation=implementation)
@@ -22,11 +21,19 @@ configs.extend([
     for implementation in drop(implementations, 'allreduce-butterfly')
 ])
 
+verify_configs = [
+    Configuration(n=2 ** n, m=2 ** n, nodes=2 ** p, implementation=implementation, verify=True)
+    for n in inclusive(4, 10)
+    for p in inclusive(2, 5)
+    for implementation in implementations
+]
+
 
 def main():
     parser = argparse.ArgumentParser(description='Run some benchmarks')
     parser.add_argument('-m', '--mode', type=str, default="dry-run", help="One of {dry-run, euler}")
     parser.add_argument('-c', '--clean', action="store_true", default=False, help="Clean results directory first")
+    parser.add_argument('--check', '--verify', action="store_true", default=False, help="Check results for correctness")
     args = parser.parse_args()
 
     if args.clean:
@@ -42,7 +49,7 @@ def main():
         parser.print_help()
         return
 
-    scheduler.register(config=configs)
+    scheduler.register(config=configs if not args.check else verify_configs)
     scheduler.run()
 
     if mode == "dry-run":
