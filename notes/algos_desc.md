@@ -135,9 +135,9 @@ gamma := computation cost per byte for reduction operation locally
 beta := transfer-time per byte
 alpha := latency
 
-* T(recursive_doubling) = lg p * alpha + log p * n * beta + log p * n * gamma
-* T(ring) = (p-1)* alpha + (p-1)/p * n * beta
-* T(rabenseifner) = 2* lg p * alpha + 2 * (p-1)/p * n * beta + (p-1)/p * n * gamma
+* T(recursive_doubling) = lg p * alpha + log p * n * beta + log p * n * gamma + cost(initialMatrixMult)
+* T(ring) = (p-1)* alpha + (p-1)/p * n * beta + cost(initialMatrixMult)
+* T(rabenseifner) = 2* lg p * alpha + 2 * (p-1)/p * n * beta + (p-1)/p * n * gamma + cost(initialMatrixMult)
 
 # Decision tree
 Assuming that the operation used in allreduce is commutative we have following decision tree
