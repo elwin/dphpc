@@ -33,6 +33,7 @@ Limitations:    The algorithm DOES NOT preserve order of operations so it
                 In addition, algorithm cannot work if the total count is
                 less than size.
       Example on 5 nodes:
+```
       Initial state
 \#      0              1             2              3             4
      [00]           [10]          [20]           [30]           [40]
@@ -79,7 +80,7 @@ Limitations:    The algorithm DOES NOT preserve order of operations so it
      [44+04]       [44+04+14]  [44+04+14+24]      [FULL]         [44]
 
      DISTRIBUTION PHASE: ring ALLGATHER with ranks shifted by 1.
-
+```
 ## Segmented Ring
 (todo: not found implementation yet)
 
