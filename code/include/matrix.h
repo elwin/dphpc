@@ -43,4 +43,10 @@ class matrix {
   static matrix outer(const vector& a, const vector& b);
 };
 
+// Compute outer product and write to matrix C in place
+void set_outer_product(matrix& C, const vector& a, const vector& b);
+
+// Compute outer product and write to sub-matrix in C in-place. Submatrix defined by start row and column.
+void set_submatrix_outer_product(matrix& C, int start_row, int start_col, const vector& a, const vector& b);
+
 #endif // CODE_MATRIX_H
