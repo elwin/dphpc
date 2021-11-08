@@ -19,6 +19,8 @@
 #include "allreduce/impl.hpp"
 #include "allreduce_butterfly/impl.hpp"
 #include "allreduce_rabenseifner/impl.hpp"
+#include "rabenseifner_gather/impl.hpp"
+#include "rabenseifner_scatter/impl.hpp"
 #include "dsop_single.h"
 #include "util.hpp"
 #include "vector.h"
@@ -48,6 +50,10 @@ static std::unique_ptr<dsop> get_impl(const std::string& name, Args&&... args) {
     return std::make_unique<impls::allreduce_butterfly::allreduce_butterfly>(std::forward<Args>(args)...);
   } else if (name == "allreduce-rabenseifner") {
     return std::make_unique<impls::allreduce_rabenseifner::allreduce_rabenseifner>(std::forward<Args>(args)...);
+  } else if (name == "rabenseifner-gather") {
+    return std::make_unique<impls::rabenseifner_gather::rabenseifner_gather>(std::forward<Args>(args)...);
+  } else if (name == "rabenseifner-scatter") {
+    return std::make_unique<impls::rabenseifner_scatter::rabenseifner_scatter>(std::forward<Args>(args)...);
   } else if (name == "allgather") {
     return std::make_unique<impls::allgather::allgather>(std::forward<Args>(args)...);
   } else if (name == "allgather-async") {
