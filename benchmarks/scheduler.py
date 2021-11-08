@@ -1,6 +1,7 @@
 import enum
 import json
 import logging
+import os.path
 import pathlib
 import subprocess
 import re
@@ -17,23 +18,28 @@ def inclusive(min_val: int, max_val: int, step=1):
     return range(min_val, max_val + 1, step)
 
 
-def drop(l: list, key: str) -> list:
-    l = l.copy()
-    l.remove(key)
-    return l
+def drop(li: list, key: str) -> list:
+    li = li.copy()
+    li.remove(key)
+    return li
 
 
 class Configuration:
-    def __init__(self, n: int, m: int, nodes: int, implementation: str, repetition: int):
+    def __init__(self, n: int, m: int, nodes: int, implementation: str, repetition: int = 0, verify: bool = False):
         self.n = n
         self.m = m
         self.nodes = nodes
         self.implementation = implementation
         self.repetition = repetition
+        self.verify = verify
 
     def __str__(self):
         dim = f'{self.n}' if self.n == self.m else f'{self.n}x{self.m}'
-        return f'{dim}, {self.nodes} nodes, {self.implementation}, rep {self.repetition}'
+        out = f'{dim}, {self.nodes} nodes, {self.implementation}, rep {self.repetition}'
+        if self.verify:
+            out += ' [verification]'
+
+        return out
 
 
 class Runner:
@@ -68,7 +74,7 @@ class Scheduler:
 
 class DryRun(Runner):
     def run(self, config: Configuration):
-        logger.info(f"{config.n} x {config.m}, {config.nodes} nodes, {config.implementation}, rep {config.repetition}")
+        logger.info(str(config))
         if config.nodes > 48:
             logging.warning(f"Euler may support only up to 48 nodes, {config.nodes} requested")
 
@@ -81,13 +87,17 @@ class LocalRunner(Runner):
         self.output = output
 
     def run(self, config: Configuration):
+        args = [
+            binary_path,
+            '-n', str(config.n),
+            '-m', str(config.m),
+            '-i', config.implementation,
+        ]
+        if config.verify:
+            args.append('-c')
+
         proc = subprocess.run(
-            [
-                binary_path,
-                "-n", str(config.n),
-                "-m", str(config.m),
-                "-i", config.implementation,
-            ],
+            args,
             stdout=subprocess.PIPE,
         )
 
@@ -128,6 +138,9 @@ class EulerRunner(Runner):
             '-i', config.implementation,
         ]
 
+        if config.verify:
+            args.append('-c')
+
         logger.debug("executing the following command:")
         logger.debug(" ".join(args))
 
@@ -149,6 +162,9 @@ class EulerRunner(Runner):
         completed = True
         with open(f"{self.raw_dir}/jobs-{repetition}") as f:
             for job_id in f.read().splitlines():
+                if os.path.isfile(f'{self.raw_dir}/{job_id}'):
+                    continue
+
                 proc = subprocess.run(
                     [
                         "bjobs",
@@ -160,14 +176,9 @@ class EulerRunner(Runner):
                     stderr=subprocess.PIPE,
                 )
                 msg = json.loads(proc.stdout.decode())
-                status = {
-                    "DONE": "done",
-                    "PEND": "pending",
-                    "EXIT": "failed",
-                    "RUN": "running"
-                }[msg['RECORDS'][0]['STAT']]
+                status = msg['RECORDS'][0]['STAT']
                 logger.info(f"{job_id} is {status}")
-                if status != "done":
+                if status != "DONE":
                     completed = False
 
         return completed
