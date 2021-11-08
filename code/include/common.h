@@ -4,6 +4,9 @@
 #include <cstddef>
 #include <utility>
 
+// Rank of the root process
+static constexpr int ROOT = 0;
+
 #define TAG_BASE 123
 #define TAG_VALIDATE TAG_BASE + 1
 #define TAG_TIMING TAG_BASE + 2
