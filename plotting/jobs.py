@@ -1,3 +1,5 @@
+import argparse
+import dataclasses
 import json
 
 import matplotlib.pyplot as plt
@@ -49,7 +51,7 @@ def plot_compute_ratio(df: pd.DataFrame):
 def main():
     dfs = []
     for i in range(repetitions):
-        df = pandas.io.json.read_json(f'{input_dir}/0.json', lines=True)
+        df = pandas.io.json.read_json(f'{input_dir}/{i}.json', lines=True)
         df = pd.json_normalize(json.loads(df.to_json(orient="records")))
         df = df.rename(columns={'name': 'implementation'})
         dfs.append(df)
