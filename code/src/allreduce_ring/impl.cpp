@@ -30,7 +30,7 @@ void allreduce_ring::compute(const std::vector<vector>& a_in, const std::vector<
     MPI_Send(current + chunk_offset, chunk_length, MPI_DOUBLE, destination, MPI_ANY_TAG, comm);
 
     // Calculate chunk length of receiving chunk
-    chunk_index = (rank + i - 1) % num_procs;
+    chunk_index = chunk_index - 1 % num_procs;
     chunk_offset = chunk_index * chunk_size;
     if (chunk_index == num_procs - 1) {
       chunk_length = (int)last_chunk_size;
@@ -38,20 +38,19 @@ void allreduce_ring::compute(const std::vector<vector>& a_in, const std::vector<
       chunk_length = (int)chunk_size;
     }
 
+    // Receive chunk from previous node
     auto recv_chunk = new double[chunk_length];
     MPI_Recv(recv_chunk, chunk_length, MPI_DOUBLE, source, MPI_ANY_TAG, comm, MPI_STATUS_IGNORE);
 
-    auto sum = new double[chunk_length];
-
+    // Add received chunk to current matrix
     for (int j = 0; j < chunk_length; ++j) {
-      sum[j] = recv_chunk[j] + current[chunk_offset + j];
+      current[chunk_offset + j] = recv_chunk[j] + current[chunk_offset + j];
     }
-
-    current = sum;
   }
 
   // TODO: Distribute partial results among all nodes
   for (int i = 0; i < num_procs; ++i) {
+
   }
 }
 
