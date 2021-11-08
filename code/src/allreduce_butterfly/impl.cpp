@@ -81,33 +81,35 @@ void allreduce_butterfly::compute(const std::vector<vector>& a_in, const std::ve
   }
 
   // [START BUTTERFLY ROUNDS]
-  for (round = 0; round < n_rounds; round++) {
-    // receiver rank (from who we should expect data), is the same rank we send data to
-    int bit_vec = (one << round);
-    recv_rank = rank ^ bit_vec;
+  if (!i_am_idle_rank) {
+    for (round = 0; round < n_rounds; round++) {
+      // receiver rank (from who we should expect data), is the same rank we send data to
+      int bit_vec = (one << round);
+      recv_rank = rank ^ bit_vec;
 
-    //    fprintf(stderr, "Process-%d: round=%d, receiver rank=%d, bit-vec=%d\n", rank, round, recv_rank, bit_vec);
+      //    fprintf(stderr, "Process-%d: round=%d, receiver rank=%d, bit-vec=%d\n", rank, round, recv_rank, bit_vec);
 
-    // change ordering to avoid deadlock for larger message sizes
-    if (rank < recv_rank) {
-      // send
-      mpi_timer(MPI_Send, tempMatrixPtr, matrix_size, MPI_DOUBLE, recv_rank, TAG_ALLGATHER_BUTTERFLY, comm);
-      // receive
-      mpi_timer(
-          MPI_Recv, receivedMatrixPtr, matrix_size, MPI_DOUBLE, recv_rank, TAG_ALLGATHER_BUTTERFLY, comm, &status);
-    } else {
-      // receive
-      mpi_timer(
-          MPI_Recv, receivedMatrixPtr, matrix_size, MPI_DOUBLE, recv_rank, TAG_ALLGATHER_BUTTERFLY, comm, &status);
-      // send
-      mpi_timer(MPI_Send, tempMatrixPtr, matrix_size, MPI_DOUBLE, recv_rank, TAG_ALLGATHER_BUTTERFLY, comm);
-    }
+      // change ordering to avoid deadlock for larger message sizes
+      if (rank < recv_rank) {
+        // send
+        mpi_timer(MPI_Send, tempMatrixPtr, matrix_size, MPI_DOUBLE, recv_rank, TAG_ALLGATHER_BUTTERFLY, comm);
+        // receive
+        mpi_timer(
+            MPI_Recv, receivedMatrixPtr, matrix_size, MPI_DOUBLE, recv_rank, TAG_ALLGATHER_BUTTERFLY, comm, &status);
+      } else {
+        // receive
+        mpi_timer(
+            MPI_Recv, receivedMatrixPtr, matrix_size, MPI_DOUBLE, recv_rank, TAG_ALLGATHER_BUTTERFLY, comm, &status);
+        // send
+        mpi_timer(MPI_Send, tempMatrixPtr, matrix_size, MPI_DOUBLE, recv_rank, TAG_ALLGATHER_BUTTERFLY, comm);
+      }
 
-    //    fprintf(stderr, "Process-%d: RECEIVED DATA round=%d, receiver rank=%d\n", rank, round, recv_rank);
+      //    fprintf(stderr, "Process-%d: RECEIVED DATA round=%d, receiver rank=%d\n", rank, round, recv_rank);
 
-    // add received data to the  temporary matrix
-    for (int i = 0; i < matrix_size; i++) {
-      tempMatrixPtr[i] += receivedMatrixPtr[i];
+      // add received data to the  temporary matrix
+      for (int i = 0; i < matrix_size; i++) {
+        tempMatrixPtr[i] += receivedMatrixPtr[i];
+      }
     }
   }
   // [END BUTTERFLY ROUNDS]
