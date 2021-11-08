@@ -15,14 +15,6 @@ configs.extend([
 ])
 
 configs.extend([
-    Configuration(n=2 ** n, m=2 ** n, nodes=2 ** p, repetition=r, implementation=implementation)
-    for n in inclusive(4, 16)
-    for p in inclusive(1, 5)
-    for r in repetitions
-    for implementation in implementations
-])
-
-configs.extend([
     Configuration(n=2 ** 13, m=2 ** 13, nodes=p, repetition=r, implementation=implementation)
     for p in inclusive(2, 48, 2)
     for r in repetitions
