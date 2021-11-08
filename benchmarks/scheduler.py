@@ -1,3 +1,5 @@
+import collections.abc
+import dataclasses
 import enum
 import json
 import logging
@@ -7,7 +9,7 @@ import subprocess
 import re
 import io
 import sys
-from collections import abc as collections
+from collections import abc
 from config import *
 
 logging.basicConfig(stream=sys.stdout, level=logging.INFO)
@@ -24,14 +26,14 @@ def drop(li: list, key: str) -> list:
     return li
 
 
+@dataclasses.dataclass(eq=True, frozen=True, order=True)
 class Configuration:
-    def __init__(self, n: int, m: int, nodes: int, implementation: str, repetition: int = 0, verify: bool = False):
-        self.n = n
-        self.m = m
-        self.nodes = nodes
-        self.implementation = implementation
-        self.repetition = repetition
-        self.verify = verify
+    n: int
+    m: int
+    nodes: int
+    implementation: str
+    repetition: int = 0
+    verify: bool = False
 
     def __str__(self):
         dim = f'{self.n}' if self.n == self.m else f'{self.n}x{self.m}'
@@ -59,17 +61,19 @@ class Scheduler:
         self.runner = runner
 
     def register(self, config):
-        if isinstance(config, collections.Iterable):
+        if isinstance(config, collections.abc.Iterable):
             self.configs.extend(config)
         else:
             self.configs.append(config)
 
     def run(self):
-        for config in self.configs:
+        for config in self.configurations():
             self.runner.run(config)
 
     def configurations(self):
-        return self.configs
+        configs = list(set(self.configs))
+        configs.sort()
+        return configs
 
 
 class DryRun(Runner):
