@@ -56,6 +56,18 @@ void set_outer_product(matrix& C, const vector& a, const vector& b) {
   }
 }
 
+void add_outer_product(matrix& C, const vector& a, const vector& b) {
+  assert(C.dimension() == a.size() * b.size());
+  C.rows = a.size();
+  C.columns = b.size();
+
+  for (size_t i = 0; i < a.size(); i++) {
+    for (size_t j = 0; j < b.size(); j++) {
+      C.get(i, j) += a[i] * b[j];
+    }
+  }
+}
+
 void set_submatrix_outer_product(matrix& C, int start_row, int start_col, const vector& a, const vector& b) {
   assert(C.rows >= start_row + a.size());
   assert(C.columns >= start_col + b.size());
@@ -63,6 +75,19 @@ void set_submatrix_outer_product(matrix& C, int start_row, int start_col, const 
   for (size_t i = 0; i < a.size(); i++) {
     for (size_t j = 0; j < b.size(); j++) {
       C.get(start_row + i, start_col + j) = a[i] * b[j];
+    }
+  }
+}
+
+
+
+void add_submatrix_outer_product(matrix& C, int start_row, int start_col, const vector& a, const vector& b) {
+  assert(C.rows >= start_row + a.size());
+  assert(C.columns >= start_col + b.size());
+
+  for (size_t i = 0; i < a.size(); i++) {
+    for (size_t j = 0; j < b.size(); j++) {
+      C.get(start_row + i, start_col + j) += a[i] * b[j];
     }
   }
 }

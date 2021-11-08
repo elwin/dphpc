@@ -20,11 +20,29 @@ TEST(SetOuterTest, BasicAssertions) {
   EXPECT_EQ(x, y);
 }
 
+TEST(AddOuterTest, BasicAssertions) {
+  auto y = matrix(3, 4, {{1, 2, 3, 4}, {2, 4, 6, 8}, {3, 6, 9, 12}});
+
+  auto x = matrix::outer({0, 0, 0}, {0, 0, 0, 0});
+  add_outer_product(x, {1, 2, 3}, {1, 2, 3, 4});
+
+  EXPECT_EQ(x, y);
+}
+
 TEST(SetSubmatrixOuterTest, BasicAssertions) {
   auto y = matrix(4, 6, {{0, 0, 0, 0, 0, 0}, {0, 1, 2, 3, 4, 0}, {0, 2, 4, 6, 8, 0}, {0, 0, 0, 0, 0, 0}});
 
   auto x = matrix::outer({0, 0, 0, 0}, {0, 0, 0, 0, 0, 0});
   set_submatrix_outer_product(x, 1, 1, {1, 2}, {1, 2, 3, 4});
+
+  EXPECT_EQ(x, y);
+}
+
+TEST(AddSubmatrixOuterTest, BasicAssertions) {
+  auto y = matrix(4, 6, {{0, 0, 0, 0, 0, 0}, {0, 2, 3, 4, 5, 0}, {0, 3, 5, 7, 9, 0}, {0, 0, 0, 0, 0, 0}});
+
+  auto x = matrix::outer({0, 1, 1, 0}, {0, 1, 1, 1, 1, 0});
+  add_submatrix_outer_product(x, 1, 1, {1, 2}, {1, 2, 3, 4});
 
   EXPECT_EQ(x, y);
 }
