@@ -1,6 +1,4 @@
 #include "allreduce_butterfly/impl.hpp"
-//#include <bitset>
-//#include <iostream>
 
 namespace impls::allreduce_butterfly {
 
@@ -55,25 +53,14 @@ void allreduce_butterfly::compute(const std::vector<vector>& a_in, const std::ve
 
   // Start Reducing to nearest power of 2
   if (non_power_of_2_rounds && i_am_idle_rank) {
-    fprintf(stderr, "%d: [IDLE] Sending to rank=%d\n", rank, idle_partner_rank);
-
-    //    std::cout << "[IDLE] idle_partner_rank = " << std::bitset<32>(idle_partner_rank)  << std::endl;
-
     // send
-    //    mpi_timer(MPI_Send, tempMatrixPtr, matrix_size, MPI_DOUBLE, idle_partner_rank, TAG_ALLGATHER_BUTTERFLY_REDUCE,
-    //    comm);
-    MPI_Send(tempMatrixPtr, matrix_size, MPI_DOUBLE, idle_partner_rank, TAG_ALLGATHER_BUTTERFLY_REDUCE, comm);
+    mpi_timer(
+        MPI_Ssend, tempMatrixPtr, matrix_size, MPI_DOUBLE, idle_partner_rank, TAG_ALLGATHER_BUTTERFLY_REDUCE, comm);
   }
   if (non_power_of_2_rounds && i_am_idle_partner) {
-    fprintf(stderr, "%d: [IDLE-PARTNER] Receiving from rank=%d\n", rank, idle_partner_rank);
-
-    //    std::cout << "[NON-IDLE] idle_partner_rank = " << std::bitset<32>(idle_partner_rank)  << std::endl;
-
     // receive
-    //    mpi_timer(MPI_Recv, receivedMatrixPtr, matrix_size, MPI_DOUBLE, idle_partner_rank,
-    //    TAG_ALLGATHER_BUTTERFLY_REDUCE,comm, &status);
-    MPI_Recv(
-        receivedMatrixPtr, matrix_size, MPI_DOUBLE, idle_partner_rank, TAG_ALLGATHER_BUTTERFLY_REDUCE, comm, &status);
+    mpi_timer(MPI_Recv, receivedMatrixPtr, matrix_size, MPI_DOUBLE, idle_partner_rank, TAG_ALLGATHER_BUTTERFLY_REDUCE,
+        comm, &status);
     // add received data to the  temporary matrix
     for (int i = 0; i < matrix_size; i++) {
       tempMatrixPtr[i] += receivedMatrixPtr[i];
@@ -92,7 +79,7 @@ void allreduce_butterfly::compute(const std::vector<vector>& a_in, const std::ve
       // change ordering to avoid deadlock for larger message sizes
       if (rank < recv_rank) {
         // send
-        mpi_timer(MPI_Send, tempMatrixPtr, matrix_size, MPI_DOUBLE, recv_rank, TAG_ALLGATHER_BUTTERFLY, comm);
+        mpi_timer(MPI_Ssend, tempMatrixPtr, matrix_size, MPI_DOUBLE, recv_rank, TAG_ALLGATHER_BUTTERFLY, comm);
         // receive
         mpi_timer(
             MPI_Recv, receivedMatrixPtr, matrix_size, MPI_DOUBLE, recv_rank, TAG_ALLGATHER_BUTTERFLY, comm, &status);
@@ -101,7 +88,7 @@ void allreduce_butterfly::compute(const std::vector<vector>& a_in, const std::ve
         mpi_timer(
             MPI_Recv, receivedMatrixPtr, matrix_size, MPI_DOUBLE, recv_rank, TAG_ALLGATHER_BUTTERFLY, comm, &status);
         // send
-        mpi_timer(MPI_Send, tempMatrixPtr, matrix_size, MPI_DOUBLE, recv_rank, TAG_ALLGATHER_BUTTERFLY, comm);
+        mpi_timer(MPI_Ssend, tempMatrixPtr, matrix_size, MPI_DOUBLE, recv_rank, TAG_ALLGATHER_BUTTERFLY, comm);
       }
 
       //    fprintf(stderr, "Process-%d: RECEIVED DATA round=%d, receiver rank=%d\n", rank, round, recv_rank);
@@ -119,7 +106,7 @@ void allreduce_butterfly::compute(const std::vector<vector>& a_in, const std::ve
     fprintf(stderr, "%d: [IDLE-PARTNER] Sending to rank=%d\n", rank, idle_partner_rank);
     // send
     mpi_timer(
-        MPI_Send, tempMatrixPtr, matrix_size, MPI_DOUBLE, idle_partner_rank, TAG_ALLGATHER_BUTTERFLY_REDUCE, comm);
+        MPI_Ssend, tempMatrixPtr, matrix_size, MPI_DOUBLE, idle_partner_rank, TAG_ALLGATHER_BUTTERFLY_REDUCE, comm);
   }
   if (non_power_of_2_rounds && i_am_idle_rank) {
     fprintf(stderr, "%d: [IDLE] REceiving from rank=%d\n", rank, idle_partner_rank);
