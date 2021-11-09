@@ -79,8 +79,6 @@ void set_submatrix_outer_product(matrix& C, int start_row, int start_col, const 
   }
 }
 
-
-
 void add_submatrix_outer_product(matrix& C, int start_row, int start_col, const vector& a, const vector& b) {
   assert(C.rows >= start_row + a.size());
   assert(C.columns >= start_col + b.size());

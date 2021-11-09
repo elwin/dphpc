@@ -26,7 +26,6 @@ void allreduce_rabenseifner::compute(const std::vector<vector>& a_in, const std:
   int power_2_ranks = (1 << n_rounds);
 
   // TODO: Extend Rabenseifner with an extension for non-power-of-2 processes
-
   if (num_procs != (1 << n_rounds)) {
     fprintf(stderr, "%d: Starting Rabenseifner with non-power-of-2 numprocs=%d\n", rank, num_procs);
     return;
