@@ -50,7 +50,7 @@ class Configuration:
             binary_path,
             '-n', str(self.n),
             '-m', str(self.m),
-            '-t', str(self.repetition),
+            '-t', str(self.repetitions),
             '-i', self.implementation,
         ]
         if self.verify:
