@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import pandas.io.json
 
-results_dir = 'results/04_good_measures'
+results_dir = 'results/tmp'
 input_dir = f'{results_dir}/parsed'
 output_dir = f'{results_dir}/plots'
 repetitions = 3
