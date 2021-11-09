@@ -12,6 +12,25 @@ output_dir = f'{results_dir}/plots'
 repetitions = 3
 
 
+def plot_runtime(df: pd.DataFrame):
+    for i in [2 ** i for i in range(1, 6)]:
+        data = df[df['numprocs'] == i]
+
+        data.pivot_table(
+            index='N',
+            columns='implementation',
+            values='runtime',
+        ).plot(
+            title=f'Compute ratio ({i} nodes)',
+            kind='line',
+            logy=True,
+            ylabel='Runtime (s)',
+            xlabel='Input Dimension',
+        )
+        plt.tight_layout()
+        plt.savefig(f'{output_dir}/runtime_{i}.svg')
+
+
 def plot_mem_usage(df: pd.DataFrame):
     for i in [2 ** i for i in range(1, 6)]:
         data = df[df['numprocs'] == i]
@@ -59,8 +78,9 @@ def main():
     df = pd.concat(dfs)
     df['fraction'] = df['runtime_compute'] / df['runtime']
 
-    plot_mem_usage(df)
+    plot_runtime(df)
     plot_compute_ratio(df)
+    plot_mem_usage(df)
 
 
 if __name__ == '__main__':
