@@ -9,6 +9,7 @@ import subprocess
 import re
 import io
 import sys
+import typing
 from collections import abc
 from config import *
 
@@ -32,16 +33,30 @@ class Configuration:
     m: int
     nodes: int
     implementation: str
-    repetition: int = 0
+    repetitions: int = 1  # used for repetitions within a job (-t ${repetitions})
+    repetition: int = 0  # used for repeated jobs, probably deprecated
     verify: bool = False
 
     def __str__(self):
         dim = f'{self.n}' if self.n == self.m else f'{self.n}x{self.m}'
-        out = f'{dim}, {self.nodes} nodes, {self.implementation}, rep {self.repetition}'
+        out = f'{dim}, {self.nodes} nodes, {self.implementation}, {self.repetitions}x'
         if self.verify:
             out += ' [verification]'
 
         return out
+
+    def command(self):
+        args = [
+            binary_path,
+            '-n', str(self.n),
+            '-m', str(self.m),
+            '-t', str(self.repetition),
+            '-i', self.implementation,
+        ]
+        if self.verify:
+            args.append('-c')
+
+        return args
 
 
 class Runner:
@@ -91,14 +106,7 @@ class LocalRunner(Runner):
         self.output = output
 
     def run(self, config: Configuration):
-        args = [
-            binary_path,
-            '-n', str(config.n),
-            '-m', str(config.m),
-            '-i', config.implementation,
-        ]
-        if config.verify:
-            args.append('-c')
+        args = config.command()
 
         proc = subprocess.run(
             args,
@@ -136,14 +144,8 @@ class EulerRunner(Runner):
             '-r',  # make jobs retryable
             'mpirun',
             '-np', str(config.nodes),
-            binary_path,
-            '-n', str(config.n),
-            '-m', str(config.m),
-            '-i', config.implementation,
+            *config.command(),
         ]
-
-        if config.verify:
-            args.append('-c')
 
         logger.debug("executing the following command:")
         logger.debug(" ".join(args))
@@ -195,31 +197,47 @@ class EulerRunner(Runner):
 
         return line[0].split(":")[1].split()
 
+    @staticmethod
+    def collect_lines(data: typing.List[str]) -> typing.List[typing.Tuple[int, str]]:
+        start, end = (0, 0)
+        for idx, line in enumerate(data):
+            if line == "The output (if any) follows:\n":
+                start = idx
+            if line == "PS:\n":
+                end = idx
+
+        # account for padding
+        start += 2
+        end -= 2
+
+        line_nrs = range(start + 1, end + 1)  # line numbers are usually 1-indexed
+        return list(zip(line_nrs, data[start:end]))
+
     def collect(self, repetition: int):
         with open(f"{self.parsed_dir}/{repetition}.json", "w") as o:
             with open(f"{self.raw_dir}/jobs-{repetition}") as f:
                 for job_id in f.read().splitlines():
-                    try:
-                        with open(f"{self.raw_dir}/{job_id}") as j:
-                            data = j.readlines()
+                    with open(f"{self.raw_dir}/{job_id}") as j:
+                        data = j.readlines()
 
-                            payload = [x for x in data if x.startswith("{")]  # poor man grep
-                            if len(payload) != 1:
-                                logger.info(f'[{job_id}] expected length 1, got {len(payload)}')
-                                continue
+                        data_lines = self.collect_lines(data)
+                        job_data = {
+                            'id': job_id,
+                            'turnaround_time': int(self.find_key(job_id, data, "Turnaround time")[0]),
+                            'runtime': int(self.find_key(job_id, data, "Run time")[0]),
+                            'mem_requested': float(self.find_key(job_id, data, "Total Requested Memory")[0]),
+                            'mem_max': float(self.find_key(job_id, data, "Max Memory")[0]),
+                        }
 
-                            parsed = json.loads(payload[0])
-                            if 'timestamp' not in parsed:
-                                logging.error(f'[{job_id}] no timestamp found in output')
+                        if len(data_lines) == 0:
+                            logging.error(f'[{job_id}] no usable data lines found')
 
-                            parsed['job'] = {
-                                'id': job_id,
-                                'turnaround_time': int(self.find_key(job_id, data, "Turnaround time")[0]),
-                                'runtime': int(self.find_key(job_id, data, "Run time")[0]),
-                                'mem_requested': float(self.find_key(job_id, data, "Total Requested Memory")[0]),
-                                'mem_max': float(self.find_key(job_id, data, "Max Memory")[0]),
-                            }
-
-                            o.write(json.dumps(parsed, separators=(',', ':')) + '\n')
-                    except:
-                        logging.error(f'[{job_id}] failed to read output')
+                        for line_nr, line in data_lines:
+                            try:
+                                parsed = json.loads(line)
+                                parsed['job'] = job_data
+                                o.write(json.dumps(parsed, separators=(',', ':')) + '\n')
+                            except Exception as e:
+                                subject = data[1]
+                                logging.error(f'[{job_id}] failed to parse line {line_nr}, "{subject}": {e}')
+                                break

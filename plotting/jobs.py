@@ -1,12 +1,10 @@
-import argparse
-import dataclasses
 import json
 
 import matplotlib.pyplot as plt
 import pandas as pd
 import pandas.io.json
 
-results_dir = 'results/tmp'
+results_dir = 'results/06_gooder_measures'
 input_dir = f'{results_dir}/parsed'
 output_dir = f'{results_dir}/plots'
 repetitions = 3
@@ -29,6 +27,25 @@ def plot_runtime(df: pd.DataFrame):
         )
         plt.tight_layout()
         plt.savefig(f'{output_dir}/runtime_{i}.svg')
+        plt.close()
+
+    for n in [2 ** n for n in range(4, 14)]:
+        data = df[df['N'] == n]
+
+        data.pivot_table(
+            index='numprocs',
+            columns='implementation',
+            values='runtime',
+        ).plot(
+            title=f'Runtime ({n} vector size)',
+            kind='line',
+            logy=True,
+            ylabel='Runtime (s)',
+            xlabel='Number of processes',
+        )
+        plt.tight_layout()
+        plt.savefig(f'{output_dir}/runtime_dim_{n}.svg')
+        plt.close()
 
 
 def plot_mem_usage(df: pd.DataFrame):
@@ -49,6 +66,7 @@ def plot_mem_usage(df: pd.DataFrame):
         )
         plt.tight_layout()
         plt.savefig(f'{output_dir}/mem_usage_{i}.svg')
+        plt.close()
 
 
 def plot_compute_ratio(df: pd.DataFrame):
@@ -65,6 +83,7 @@ def plot_compute_ratio(df: pd.DataFrame):
         )
         plt.tight_layout()
         plt.savefig(f'{output_dir}/compute_ratio_{i}.svg')
+        plt.close()
 
 
 def main():

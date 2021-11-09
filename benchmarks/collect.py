@@ -1,3 +1,5 @@
+import glob
+
 from benchmark import *
 
 
@@ -7,7 +9,11 @@ def main():
                         help="Directory containing results (both in and output")
     args = parser.parse_args()
 
-    [EulerRunner(results_dir=args.dir).collect(r) for r in repetitions]
+    # jesus what have I done...
+    for file in glob.glob(f'{args.dir}/raw/jobs-*'):
+        filename = pathlib.Path(file).name
+        repetition = int(filename.strip('jobs-'))
+        EulerRunner(results_dir=args.dir).collect(repetition)
 
 
 if __name__ == '__main__':
