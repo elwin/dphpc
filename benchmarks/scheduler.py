@@ -32,16 +32,30 @@ class Configuration:
     m: int
     nodes: int
     implementation: str
-    repetition: int = 0
+    repetitions: int = 1  # used for repetitions within a job (-t ${repetitions})
+    repetition: int = 0  # used for repeated jobs, probably deprecated
     verify: bool = False
 
     def __str__(self):
         dim = f'{self.n}' if self.n == self.m else f'{self.n}x{self.m}'
-        out = f'{dim}, {self.nodes} nodes, {self.implementation}, rep {self.repetition}'
+        out = f'{dim}, {self.nodes} nodes, {self.implementation}, {self.repetitions}x'
         if self.verify:
             out += ' [verification]'
 
         return out
+
+    def command(self):
+        args = [
+            binary_path,
+            '-n', str(self.n),
+            '-m', str(self.m),
+            '-t', str(self.repetition),
+            '-i', self.implementation,
+        ]
+        if self.verify:
+            args.append('-c')
+
+        return args
 
 
 class Runner:
@@ -91,14 +105,7 @@ class LocalRunner(Runner):
         self.output = output
 
     def run(self, config: Configuration):
-        args = [
-            binary_path,
-            '-n', str(config.n),
-            '-m', str(config.m),
-            '-i', config.implementation,
-        ]
-        if config.verify:
-            args.append('-c')
+        args = config.command()
 
         proc = subprocess.run(
             args,
@@ -136,14 +143,8 @@ class EulerRunner(Runner):
             '-r',  # make jobs retryable
             'mpirun',
             '-np', str(config.nodes),
-            binary_path,
-            '-n', str(config.n),
-            '-m', str(config.m),
-            '-i', config.implementation,
+            *config.command(),
         ]
-
-        if config.verify:
-            args.append('-c')
 
         logger.debug("executing the following command:")
         logger.debug(" ".join(args))
