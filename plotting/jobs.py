@@ -21,7 +21,7 @@ def plot_runtime(df: pd.DataFrame):
             columns='implementation',
             values='runtime',
         ).plot(
-            title=f'Compute ratio ({i} nodes)',
+            title=f'Runtime ({i} nodes)',
             kind='line',
             logy=True,
             ylabel='Runtime (s)',
