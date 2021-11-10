@@ -10,7 +10,6 @@ import re
 import io
 import sys
 import typing
-from collections import abc
 from config import *
 
 logging.basicConfig(stream=sys.stdout, level=logging.INFO)
@@ -217,27 +216,31 @@ class EulerRunner(Runner):
         with open(f"{self.parsed_dir}/{repetition}.json", "w") as o:
             with open(f"{self.raw_dir}/jobs-{repetition}") as f:
                 for job_id in f.read().splitlines():
-                    with open(f"{self.raw_dir}/{job_id}") as j:
-                        data = j.readlines()
+                    input_path = f'{self.raw_dir}/{job_id}'
+                    try:
+                        with open(input_path) as j:
+                            data = j.readlines()
 
-                        data_lines = self.collect_lines(data)
-                        job_data = {
-                            'id': job_id,
-                            'turnaround_time': int(self.find_key(job_id, data, "Turnaround time")[0]),
-                            'runtime': int(self.find_key(job_id, data, "Run time")[0]),
-                            'mem_requested': float(self.find_key(job_id, data, "Total Requested Memory")[0]),
-                            'mem_max': float(self.find_key(job_id, data, "Max Memory")[0]),
-                        }
+                            data_lines = self.collect_lines(data)
+                            job_data = {
+                                'id': job_id,
+                                'turnaround_time': int(self.find_key(job_id, data, "Turnaround time")[0]),
+                                'runtime': int(self.find_key(job_id, data, "Run time")[0]),
+                                'mem_requested': float(self.find_key(job_id, data, "Total Requested Memory")[0]),
+                                'mem_max': float(self.find_key(job_id, data, "Max Memory")[0]),
+                            }
 
-                        if len(data_lines) == 0:
-                            logging.error(f'[{job_id}] no usable data lines found')
+                            if len(data_lines) == 0:
+                                logging.error(f'[{job_id}] no usable data lines found')
 
-                        for line_nr, line in data_lines:
-                            try:
-                                parsed = json.loads(line)
-                                parsed['job'] = job_data
-                                o.write(json.dumps(parsed, separators=(',', ':')) + '\n')
-                            except Exception as e:
-                                subject = data[1]
-                                logging.error(f'[{job_id}] failed to parse line {line_nr}, "{subject}": {e}')
-                                break
+                            for line_nr, line in data_lines:
+                                try:
+                                    parsed = json.loads(line)
+                                    parsed['job'] = job_data
+                                    o.write(json.dumps(parsed, separators=(',', ':')) + '\n')
+                                except Exception as e:
+                                    subject = data[1]
+                                    logging.error(f'[{job_id}] failed to parse line {line_nr}, "{subject}": {e}')
+                                    break
+                    except FileNotFoundError:
+                        logging.error(f'[{job_id} no job output file found (yet): {input_path}')

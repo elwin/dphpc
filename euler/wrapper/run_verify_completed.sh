@@ -6,5 +6,4 @@ set -e
 
 cd ~/dphpc
 source ./euler/init.sh
-python ./benchmarks/verify.py
-python ./benchmarks/collect.py
+python ./benchmarks/process.py
