@@ -11,7 +11,6 @@ namespace impls::allgather_async {
  * being received.
  */
 void allgather_async::compute(const std::vector<vector>& a_in, const std::vector<vector>& b_in, matrix& result) {
-  HERE1(rank, "Start");
   const auto& a = a_in[rank];
   const auto& b = b_in[rank];
 
@@ -30,7 +29,6 @@ void allgather_async::compute(const std::vector<vector>& a_in, const std::vector
    * Asynchronously send and receive vectors to/from all other processes.
    */
   for (int i = 0; i < num_procs; i++) {
-    HERE(rank, "i = %d", i);
     if (i == rank) {
       continue;
     }
@@ -56,9 +54,7 @@ void allgather_async::compute(const std::vector<vector>& a_in, const std::vector
    */
   while (true) {
     int idx;
-    HERE1(rank, "Waitany");
     mpi_timer(MPI_Waitany, recv_reqs.size(), recv_reqs.data(), &idx, MPI_STATUS_IGNORE);
-    HERE(rank, "Received from idx=%d", idx);
 
     // No active requests left
     if (idx == MPI_UNDEFINED) {
@@ -73,6 +69,8 @@ void allgather_async::compute(const std::vector<vector>& a_in, const std::vector
       }
     }
   }
+
+  mpi_timer(MPI_Waitall, send_reqs.size(), send_reqs.data(), MPI_STATUSES_IGNORE);
 }
 
 } // namespace impls::allgather_async
