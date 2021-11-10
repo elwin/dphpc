@@ -9,7 +9,7 @@ import plot
 def main():
     parser = argparse.ArgumentParser(description='Collect all raw benchmark files')
     parser.add_argument('action', choices=['all', 'collect', 'plot'], default='all', nargs='?')
-    parser.add_argument('-d', '--dir', type=str, default='results/tmp',
+    parser.add_argument('-d', '--dir', type=str, default=results_path,
                         help="Directory containing results (both in and output")
     args = parser.parse_args()
 
