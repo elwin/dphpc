@@ -1,3 +1,5 @@
+#!/bin/bash
+
 # call this file using `source init.sh`
 
 source /cluster/apps/local/env2lmod.sh
