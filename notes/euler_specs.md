@@ -9,7 +9,7 @@
   - Each node connected via 10G Ethernet to internal switch
 - Euler
   - Contains 27 chassis
-  - Each chassis connected via 40G Ethernet to one of the core switches
+  - Each chassis connected via 4x40G Ethernet to one of the core switches
 - Network
   - Mellanox Ethernet (same chip as InfiniBand)
 
