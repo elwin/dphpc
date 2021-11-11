@@ -49,29 +49,26 @@ void rabenseifner_gather::compute(const std::vector<vector>& a_in, const std::ve
   int round, recv_rank;
   int one = 1UL;
   int matrix_size = N * M;
-  int n_cols = (int)a.size();
-  int n_rows = (int)b.size();
+  int n_rows = (int)a.size();
+  int n_cols = (int)b.size();
   MPI_Status status;
 
   // Partition the rows among the processes
   int my_n_rows = n_rows / power_2_ranks;                       // divide rows evenly among workers
-  int last_n_rows = n_rows - ((power_2_ranks - 2) * my_n_rows); // last process finishes up rows
-  int recv_b_elements = my_n_rows;
+  int last_n_rows = n_rows - ((power_2_ranks - 1) * my_n_rows); // last process finishes up rows
+  int recv_a_elements = my_n_rows;
   if (last_n_rows > my_n_rows) {
-    recv_b_elements = last_n_rows;
+    recv_a_elements = last_n_rows;
   }
-  int my_result_offset = rank * my_n_rows * n_cols;
   int my_result_row_offset = rank * my_n_rows;
 
   std::vector<MPI_Request> send_reqs;
   MPI_Request request;
-  vector recv_vec_A(n_cols);
-  vector recv_vec_B(recv_b_elements);
+  vector recv_vec_A(recv_a_elements);
+  vector recv_vec_B(n_cols);
   double* recv_vec_A_ptr = recv_vec_A.data();
   double* recv_vec_B_ptr = recv_vec_B.data(); // make buffer large enough
   double* resultPtr = result.get_ptr();
-
-  fprintf(stderr, "%d: Starting Vector Gather Stage\n", rank);
 
   // [VECTOR-GATHER STAGE]
   // Send vectors
@@ -85,42 +82,42 @@ void rabenseifner_gather::compute(const std::vector<vector>& a_in, const std::ve
     }
     // send full vector a
     send_reqs.push_back(nullptr);
-    mpi_timer(MPI_Isend, &a, n_cols, MPI_DOUBLE, i, TAG_RABENSEIFNER_GATHER_VEC_A, comm, &send_reqs.back());
-    // send part of vector b
-    // TODO: Check that the correct sub-vector is sent here
-    send_reqs.push_back(nullptr);
-    mpi_timer(MPI_Isend, &b[i * my_n_rows], send_n_rows, MPI_DOUBLE, i, TAG_RABENSEIFNER_GATHER_VEC_B, comm,
+    mpi_timer(MPI_Isend, &a[i * my_n_rows], send_n_rows, MPI_DOUBLE, i, TAG_RABENSEIFNER_GATHER_VEC_A, comm,
         &send_reqs.back());
+    // send part of vector b
+    send_reqs.push_back(nullptr);
+    mpi_timer(MPI_Isend, &b[0], n_cols, MPI_DOUBLE, i, TAG_RABENSEIFNER_GATHER_VEC_B, comm, &send_reqs.back());
   }
 
-  fprintf(stderr, "%d: Starting Vector Gather-RECEIVE Stage\n", rank);
   // Receive and process vectors
   int recv_n_rows = my_n_rows;
   if (rank == (power_2_ranks - 1)) {
     recv_n_rows = last_n_rows;
   }
   for (int i = 0; i < power_2_ranks; i++) {
-    fprintf(stderr, "%d: Vector Gather-RECEIVE Stage, i=%d\n", rank, i);
     if (i == rank) {
       // copy parts of b into the subvector and use it to compute the outer product
-      vector b_subvec(recv_n_rows);
+      vector a_subvec(recv_n_rows);
       for (int j = 0; j < recv_n_rows; j++) {
-        b_subvec[j] = b[rank * my_n_rows + j];
+        a_subvec[j] = a[rank * my_n_rows + j];
       }
-      add_submatrix_outer_product(result, my_result_offset, 0, a, b_subvec);
+      add_submatrix_outer_product(result, my_result_row_offset, 0, a_subvec, b);
       continue;
     }
-    recv_vec_B.resize(recv_n_rows, 0.0);
-    recv_vec_B_ptr = recv_vec_B.data();
+    recv_vec_A.resize(recv_n_rows, 0.0);
+    recv_vec_A_ptr = recv_vec_A.data();
     // receive both vectors
-    mpi_timer(MPI_Recv, recv_vec_A_ptr, n_cols, MPI_DOUBLE, i, TAG_RABENSEIFNER_GATHER_VEC_A, comm, &status);
-    mpi_timer(MPI_Recv, recv_vec_B_ptr, recv_n_rows, MPI_DOUBLE, i, TAG_RABENSEIFNER_GATHER_VEC_B, comm, &status);
+    mpi_timer(MPI_Recv, recv_vec_A_ptr, recv_n_rows, MPI_DOUBLE, i, TAG_RABENSEIFNER_GATHER_VEC_A, comm, &status);
+    mpi_timer(MPI_Recv, recv_vec_B_ptr, n_cols, MPI_DOUBLE, i, TAG_RABENSEIFNER_GATHER_VEC_B, comm, &status);
+
+    vector received_A(recv_vec_A_ptr, recv_vec_A_ptr + recv_n_rows);
+    vector received_B(recv_vec_B_ptr, recv_vec_B_ptr + n_cols);
+
     // add the outer product to the current result matrix
-    add_submatrix_outer_product(result, my_result_offset, 0, recv_vec_A, recv_vec_B);
+    add_submatrix_outer_product(result, my_result_row_offset, 0, recv_vec_A, recv_vec_B);
   }
 
-  fprintf(stderr, "%d: Starting Butterfly-scatter Stage\n", rank);
-
+  // TODO: Cleanup index computation
   // [BUTTERFLY-SCATTER]
   // Construct Indices for Butterfly-Scatter
   // Indices list: Represents a partition of the N*M matrix in terms of indices. Upper index is always exclusive.
@@ -139,33 +136,30 @@ void rabenseifner_gather::compute(const std::vector<vector>& a_in, const std::ve
   int current_idx_lower = 0;
   int current_idx_upper = power_2_ranks;
   int middle_idx;
-  for (round = n_rounds-1; round >= 0; round--) {
+  for (round = n_rounds - 1; round >= 0; round--) {
     //  for (round = 0; round < n_rounds; round++) {
     middle_idx = ((current_idx_lower + current_idx_upper + 1) / 2);
     if (rank < middle_idx) {
-      my_recv_indices_lower[round] = current_idx_lower;
-      my_recv_indices_upper[round] = middle_idx;
-      my_send_indices_lower[round] = middle_idx;
-      my_send_indices_upper[round] = current_idx_upper;
-
-      current_idx_upper = middle_idx;
-    } else {
       my_send_indices_lower[round] = current_idx_lower;
       my_send_indices_upper[round] = middle_idx;
       my_recv_indices_lower[round] = middle_idx;
       my_recv_indices_upper[round] = current_idx_upper;
+
+      current_idx_upper = middle_idx;
+    } else {
+      my_recv_indices_lower[round] = current_idx_lower;
+      my_recv_indices_upper[round] = middle_idx;
+      my_send_indices_lower[round] = middle_idx;
+      my_send_indices_upper[round] = current_idx_upper;
 
       current_idx_lower = middle_idx;
     }
   }
   int idx_lower_send, idx_upper_send, idx_lower_recv, idx_upper_recv;
   for (round = 0; round < n_rounds; round++) {
-    //    fprintf(stderr, "%d: ROUND=%d\n", rank, round); // DELETE
     // receiver rank (from who we should expect data), is the same rank we send data to
     int bit_vec = (one << round);
     recv_rank = rank ^ bit_vec;
-
-    fprintf(stderr, "%d: Butterfly-scatter round=%d\n", rank, round);
 
     // Note: send and receive need to be reversed here!
     idx_lower_send = all_indices[my_send_indices_lower[round]];
@@ -178,10 +172,8 @@ void rabenseifner_gather::compute(const std::vector<vector>& a_in, const std::ve
     // send, receive, and wait
     mpi_timer(MPI_Isend, resultPtr + idx_lower_send, chunk_size_send, MPI_DOUBLE, recv_rank, TAG_RABENSEIFNER_GATHER,
         comm, &request);
-    fprintf(stderr, "%d: Butterfly-scatter round=%d SENT\n", rank, round);
     mpi_timer(MPI_Recv, resultPtr + idx_lower_recv, chunk_size_recv, MPI_DOUBLE, recv_rank, TAG_RABENSEIFNER_GATHER,
         comm, &status);
-    fprintf(stderr, "%d: Butterfly-scatter round=%d RECEIVED\n", rank, round);
     MPI_Wait(&request, &status);
   }
 }
