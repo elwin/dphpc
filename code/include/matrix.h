@@ -22,6 +22,7 @@ class matrix {
   size_t columns;
 
   void print() const;
+  std::string string() const;
 
   bool operator==(const matrix& b) const;
   bool operator!=(const matrix& b) const;

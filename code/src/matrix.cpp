@@ -100,6 +100,18 @@ void matrix::print() const {
   }
 }
 
+std::string matrix::string() const {
+  std::string s("");
+  for (size_t i = 0; i < rows; i++) {
+    for (size_t j = 0; j < columns; j++) {
+      s.append(std::to_string(get(i, j)));
+      s.append(" ");
+    }
+    s.append("\n");
+  }
+  return s;
+}
+
 void matrix::add(const matrix& b) {
   assert(matchesDimensions(b));
 
