@@ -27,11 +27,25 @@ def drop(li: list, key: str) -> list:
 
 
 @dataclasses.dataclass(eq=True, frozen=True, order=True)
+class Implementation:
+    name: str
+
+    def __str__(self):
+        return self.name
+
+
+allgather = Implementation(name='allgather')
+allreduce = Implementation(name='allreduce')
+allreduce_butterfly = Implementation(name='allreduce-butterfly')
+allgather_async = Implementation(name='allgather-async')
+
+
+@dataclasses.dataclass(eq=True, frozen=True, order=True)
 class Configuration:
     n: int
     m: int
     nodes: int
-    implementation: str
+    implementation: Implementation
     repetitions: int = 1  # used for repetitions within a job (-t ${repetitions})
     repetition: int = 0  # used for repeated jobs, probably deprecated
     verify: bool = False
@@ -50,12 +64,28 @@ class Configuration:
             '-n', str(self.n),
             '-m', str(self.m),
             '-t', str(self.repetitions),
-            '-i', self.implementation,
+            '-i', self.implementation.name,
         ]
         if self.verify:
             args.append('-c')
 
         return args
+
+    def memory_usage(self) -> int:
+        if self.n < 8192 and self.m < 8192:
+            return 1024 * self.nodes
+
+        return int((self.n * self.m / (2 ** 15)) * self.nodes)
+
+    def runnable(self):
+        if self.nodes > 48:
+            return False, f'euler supports only up to 48 nodes'
+
+        threshold = 128_000
+        if self.memory_usage() > threshold:
+            return False, f'too much memory requested ({self.memory_usage()} > {threshold})'
+
+        return True, None
 
 
 class Runner:
@@ -93,11 +123,10 @@ class Scheduler:
 class DryRun(Runner):
     def run(self, config: Configuration):
         logger.info(str(config))
-        if config.nodes > 48:
-            logging.warning(f"Euler may support only up to 48 nodes, {config.nodes} requested")
 
-        if config.n > 2 ** 13 or config.m > 2 ** 13:
-            logging.warning(f"vectors larger than {2 ** 13} entries may fail on euler due to memory constraints")
+        runnable, reason = config.runnable()
+        if not runnable:
+            logging.warning(reason)
 
 
 class LocalRunner(Runner):
@@ -131,6 +160,11 @@ class EulerRunner(Runner):
             pathlib.Path(path).mkdir(parents=True, exist_ok=True)
 
     def run(self, config: Configuration):
+        runnable, reason = config.runnable()
+        if not runnable:
+            logger.warning(f'skipping configuration: {reason}')
+            return
+
         args = [
             'bsub',
             # '-J', f'"{config.__str__()}"',
@@ -212,6 +246,13 @@ class EulerRunner(Runner):
         line_nrs = range(start + 1, end + 1)  # line numbers are usually 1-indexed
         return list(zip(line_nrs, data[start:end]))
 
+    def find_mem_max(self, job_id: str, data: list) -> float:
+        max_mem = self.find_key(job_id, data, "Max Memory")[0]
+        if max_mem == '-':
+            return 0
+
+        return float(max_mem)
+
     def collect(self, repetition: int):
         with open(f"{self.parsed_dir}/{repetition}.json", "w") as o:
             with open(f"{self.raw_dir}/jobs-{repetition}") as f:
@@ -227,11 +268,12 @@ class EulerRunner(Runner):
                                 'turnaround_time': int(self.find_key(job_id, data, "Turnaround time")[0]),
                                 'runtime': int(self.find_key(job_id, data, "Run time")[0]),
                                 'mem_requested': float(self.find_key(job_id, data, "Total Requested Memory")[0]),
-                                'mem_max': float(self.find_key(job_id, data, "Max Memory")[0]),
+                                'mem_max': self.find_mem_max(job_id, data),
                             }
 
+                            subject = data[1].strip()
                             if len(data_lines) == 0:
-                                logging.error(f'[{job_id}] no usable data lines found')
+                                logging.error(f'[{job_id}] no usable data lines found, {subject}')
 
                             for line_nr, line in data_lines:
                                 try:
@@ -239,7 +281,6 @@ class EulerRunner(Runner):
                                     parsed['job'] = job_data
                                     o.write(json.dumps(parsed, separators=(',', ':')) + '\n')
                                 except Exception as e:
-                                    subject = data[1]
                                     logging.error(f'[{job_id}] failed to parse line {line_nr}, "{subject}": {e}')
                                     break
                     except FileNotFoundError:
