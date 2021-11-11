@@ -3,6 +3,7 @@
 #include <cassert>
 #include <cstring>
 #include <iostream>
+#include <string>
 
 matrix::matrix(size_t rows, size_t columns) : rows(rows), columns(columns) {
   this->data = std::make_unique<double[]>(rows * columns);

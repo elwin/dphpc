@@ -2,6 +2,7 @@
 #define CODE_VECTOR_H
 
 #include <vector>
+#include <string>
 
 #include "common.h"
 
