@@ -24,6 +24,9 @@ void rabenseifner_scatter::compute(const std::vector<vector>& a_in, const std::v
   const auto& a = a_in[rank];
   const auto& b = b_in[rank];
 
+  // Maybe use this for defining a custom type --> set of row vectors for sub-matrix
+  // https://stackoverflow.com/questions/41493350/c-mpi-parallel-processing-of-column-arrays
+
   // Check if number of processes assumption true
   if (num_procs == 0) {
     fprintf(stderr, "%d: Starting Rabenseifner numprocs=%d\n", rank, num_procs);
