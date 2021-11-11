@@ -1,24 +1,25 @@
+#!/usr/bin/env python3
+
 import argparse
 import shutil
 
 from scheduler import *
 
-implementations = ["allgather", "allreduce", "allreduce-butterfly", "allgather-async"]
+implementations = [allgather, allreduce, allreduce_butterfly, allgather_async]
+repetitions = 10
 
 configs = []
 configs.extend([
-    Configuration(n=2 ** n, m=2 ** n, nodes=2 ** p, repetition=r, implementation=implementation)
+    Configuration(n=2 ** n, m=2 ** n, nodes=2 ** p, repetitions=repetitions, implementation=implementation)
     for n in inclusive(4, 13)
     for p in inclusive(1, 5)
-    for r in repetitions
     for implementation in implementations
 ])
 
 configs.extend([
-    Configuration(n=2 ** 13, m=2 ** 13, nodes=p, repetition=r, implementation=implementation)
+    Configuration(n=2 ** 13, m=2 ** 13, nodes=p, repetitions=repetitions, implementation=implementation)
     for p in inclusive(2, 48, 2)
-    for r in repetitions
-    for implementation in drop(implementations, 'allreduce-butterfly')
+    for implementation in drop(implementations, allreduce_butterfly)
 ])
 
 verify_configs = [
@@ -53,7 +54,9 @@ def main():
     scheduler.run()
 
     if mode == "dry-run":
-        logger.info(f"{len(scheduler.configs)} configurations")
+        valid_configs = filter(lambda config: config.runnable()[0], scheduler.configurations())
+
+        logger.info(f"{len(list(valid_configs))} configurations")
 
 
 if __name__ == '__main__':
