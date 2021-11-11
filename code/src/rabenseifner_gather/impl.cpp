@@ -27,7 +27,7 @@ void rabenseifner_gather::compute(const std::vector<vector>& a_in, const std::ve
   auto& b = b_in[rank];
 
   // Check if number of processes assumption true
-  if (num_procs <= 1) {
+  if (num_procs < 1) {
     fprintf(stderr, "%d: Starting Rabenseifner numprocs=%d\n", rank, num_procs);
     return;
   }
