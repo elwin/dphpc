@@ -60,7 +60,7 @@ void rabenseifner_scatter::compute(const std::vector<vector>& a_in, const std::v
   int n_rounds = 0;
   int n_processors = num_procs;
   while (n_processors >>= 1) ++n_rounds;
-  int power_2_ranks = (1 << n_rounds);
+//  int power_2_ranks = (1 << n_rounds);
 
   // TODO: Extend Rabenseifner with an extension for non-power-of-2 processes
 
@@ -71,14 +71,14 @@ void rabenseifner_scatter::compute(const std::vector<vector>& a_in, const std::v
 
   int round, recv_rank;
   int one = 1UL;
-  int matrix_size = N * M;
+//  int matrix_size = N * M;
   int n_rows = N;
   int n_cols = M;
   MPI_Status status;
   MPI_Request request;
 
   // Directly use result buffer to store intermediate result
-  double* resultPtr = result.get_ptr();
+//  double* resultPtr = result.get_ptr();
   // Store all vectors in these buffers
   std::vector<SubVec> vectorBuffer_A;
   std::vector<SubVec> vectorBuffer_B;
