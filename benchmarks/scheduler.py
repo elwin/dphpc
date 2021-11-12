@@ -172,7 +172,8 @@ class EulerRunner(Runner):
         mpi_args = []
         if config.implementation.allreduce_algorithm is not None:
             mpi_args.extend([
-                '--mca', 'coll_tuned_reduce_algorithm', f'{config.implementation.allreduce_algorithm}'
+                '--mca', 'coll_tuned_use_dynamic_rules', '1',
+                '--mca', 'coll_tuned_allreduce_algorithm', f'{config.implementation.allreduce_algorithm}'
             ])
 
         args = [
