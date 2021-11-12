@@ -2,6 +2,7 @@
 #define CODE_VECTOR_H
 
 #include <vector>
+#include <string>
 
 #include "common.h"
 
@@ -13,7 +14,8 @@ class vector : public vector_t {
   using vector_t::vector_t; // inherit constructors
 
  public:
-  void print();
+  void print() const;
+  std::string string() const;
 };
 
 #endif // CODE_VECTOR_H

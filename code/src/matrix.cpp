@@ -3,6 +3,7 @@
 #include <cassert>
 #include <cstring>
 #include <iostream>
+#include <string>
 
 matrix::matrix(size_t rows, size_t columns) : rows(rows), columns(columns) {
   this->data = std::make_unique<double[]>(rows * columns);
@@ -44,6 +45,52 @@ matrix matrix::outer(const vector& a, const vector& b) {
   return out;
 }
 
+void set_outer_product(matrix& C, const vector& a, const vector& b) {
+  assert(C.dimension() == a.size() * b.size());
+  C.rows = a.size();
+  C.columns = b.size();
+
+  for (size_t i = 0; i < a.size(); i++) {
+    for (size_t j = 0; j < b.size(); j++) {
+      C.get(i, j) = a[i] * b[j];
+    }
+  }
+}
+
+void add_outer_product(matrix& C, const vector& a, const vector& b) {
+  assert(C.dimension() == a.size() * b.size());
+  C.rows = a.size();
+  C.columns = b.size();
+
+  for (size_t i = 0; i < a.size(); i++) {
+    for (size_t j = 0; j < b.size(); j++) {
+      C.get(i, j) += a[i] * b[j];
+    }
+  }
+}
+
+void set_submatrix_outer_product(matrix& C, int start_row, int start_col, const vector& a, const vector& b) {
+  assert(C.rows >= start_row + a.size());
+  assert(C.columns >= start_col + b.size());
+
+  for (size_t i = 0; i < a.size(); i++) {
+    for (size_t j = 0; j < b.size(); j++) {
+      C.get(start_row + i, start_col + j) = a[i] * b[j];
+    }
+  }
+}
+
+void add_submatrix_outer_product(matrix& C, int start_row, int start_col, const vector& a, const vector& b) {
+  assert(C.rows >= start_row + a.size());
+  assert(C.columns >= start_col + b.size());
+
+  for (size_t i = 0; i < a.size(); i++) {
+    for (size_t j = 0; j < b.size(); j++) {
+      C.get(start_row + i, start_col + j) += a[i] * b[j];
+    }
+  }
+}
+
 void matrix::print() const {
   for (size_t i = 0; i < rows; i++) {
     for (size_t j = 0; j < columns; j++) {
@@ -52,6 +99,18 @@ void matrix::print() const {
 
     std::cerr << std::endl;
   }
+}
+
+std::string matrix::string() const {
+  std::string s("");
+  for (size_t i = 0; i < rows; i++) {
+    for (size_t j = 0; j < columns; j++) {
+      s.append(std::to_string(get(i, j)));
+      s.append(" ");
+    }
+    s.append("\n");
+  }
+  return s;
 }
 
 void matrix::add(const matrix& b) {
