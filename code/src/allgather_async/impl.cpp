@@ -69,6 +69,8 @@ void allgather_async::compute(const std::vector<vector>& a_in, const std::vector
       }
     }
   }
+
+  mpi_timer(MPI_Waitall, send_reqs.size(), send_reqs.data(), MPI_STATUSES_IGNORE);
 }
 
 } // namespace impls::allgather_async

@@ -18,6 +18,7 @@ NAME_COLOR_MAP = {
 }
 
 
+
 class Benchmark:
     def __init__(self, json):
         self.M = json["M"]
