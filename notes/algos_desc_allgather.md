@@ -134,7 +134,7 @@ In round `t` exchange all your data (from `2^t` processes) with process
 Another way to look at this is that all processes are organized in a binary
 tree with the processes at the leaves.
 
-Each round you exchange your buffer contents with the corresponding process in your sibling node and move up to your parent node. 
+Each round you exchange your buffer contents with the corresponding process in your sibling node and move up to your parent node.
 
 ```
    ┌───┴───┐
@@ -149,19 +149,144 @@ The non-leaf nodes in the tree always have all data from all children.
 
 ### Ring
 
-`ompi_coll_base_allgather_intra_ring`
+```
+ompi_coll_base_allgather_intra_ring
+
+Function:     allgather using O(N) steps.
+Accepts:      Same arguments as MPI_Allgather
+Returns:      MPI_SUCCESS or error code
+
+Description:  Ring algorithm for all gather.
+              At every step i, rank r receives message from rank (r - 1)
+              containing data from rank (r - i - 1) and sends message to rank
+              (r + 1) containing data from rank (r - i), with wrap arounds.
+Memory requirements:
+              No additional memory requirements.
+```
+
+Each round, each process sends the data received in the previous round to the next process.
 
 ### Neighbor
 
-`ompi_coll_base_allgather_intra_neighborexchange`
+```
+ompi_coll_base_allgather_intra_neighborexchange
+
+Function:     allgather using N/2 steps (O(N))
+Accepts:      Same arguments as MPI_Allgather
+Returns:      MPI_SUCCESS or error code
+
+Description:  Neighbor Exchange algorithm for allgather.
+              Described by Chen et.al. in
+              "Performance Evaluation of Allgather Algorithms on
+               Terascale Linux Cluster with Fast Ethernet",
+              Proceedings of the Eighth International Conference on
+              High-Performance Computing inn Asia-Pacific Region
+              (HPCASIA'05), 2005
+
+              Rank r exchanges message with one of its neighbors and
+              forwards the data further in the next step.
+
+              No additional memory requirements.
+
+Limitations:  Algorithm works only on even number of processes.
+              For odd number of processes we switch to ring algorithm.
+
+Example on 6 nodes:
+ Initial state
+   #     0      1      2      3      4      5
+        [0]    [ ]    [ ]    [ ]    [ ]    [ ]
+        [ ]    [1]    [ ]    [ ]    [ ]    [ ]
+        [ ]    [ ]    [2]    [ ]    [ ]    [ ]
+        [ ]    [ ]    [ ]    [3]    [ ]    [ ]
+        [ ]    [ ]    [ ]    [ ]    [4]    [ ]
+        [ ]    [ ]    [ ]    [ ]    [ ]    [5]
+  Step 0:
+   #     0 <──> 1      2 <──> 3      4 <──> 5
+        [0]    [0]    [ ]    [ ]    [ ]    [ ]
+        [1]    [1]    [ ]    [ ]    [ ]    [ ]
+        [ ]    [ ]    [2]    [2]    [ ]    [ ]
+        [ ]    [ ]    [3]    [3]    [ ]    [ ]
+        [ ]    [ ]    [ ]    [ ]    [4]    [4]
+        [ ]    [ ]    [ ]    [ ]    [5]    [5]
+  Step 1:
+   #  ─> 0      1 <──> 2      3 <──> 4      5 <─
+        [0]    [0]    [0]    [ ]    [ ]    [0]
+        [1]    [1]    [1]    [ ]    [ ]    [1]
+        [ ]    [2]    [2]    [2]    [2]    [ ]
+        [ ]    [3]    [3]    [3]    [3]    [ ]
+        [4]    [ ]    [ ]    [4]    [4]    [4]
+        [5]    [ ]    [ ]    [5]    [5]    [5]
+  Step 2:
+   #     0 <──> 1      2 <──> 3      4 <──> 5
+        [0]    [0]    [0]    [0]    [0]    [0]
+        [1]    [1]    [1]    [1]    [1]    [1]
+        [2]    [2]    [2]    [2]    [2]    [2]
+        [3]    [3]    [3]    [3]    [3]    [3]
+        [4]    [4]    [4]    [4]    [4]    [4]
+        [5]    [5]    [5]    [5]    [5]    [5]
+
+```
 
 ### Two Proc
 
 `ompi_coll_base_allgather_intra_two_procs`
 
+Special case for two processes. They just exchange their data.
+
 ### Sparbit
 
-`ompi_coll_base_allgather_intra_sparbit`
+```
+ompi_coll_base_allgather_intra_sparbit
+
+Function:     allgather using O(log(N)) steps.
+Accepts:      Same arguments as MPI_Allgather
+Returns:      MPI_SUCCESS or error code
+
+Description: Proposal of an allgather algorithm similar to Bruck but with inverted distances
+             and non-decreasing exchanged data sizes. Described in "Sparbit: a new
+             logarithmic-cost and data locality-aware MPI Allgather algorithm".
+
+Memory requirements:
+             Additional memory for N requests.
+
+Example on 6 nodes, with l representing the highest power of two smaller than N, in this case l =
+4 (more details can be found on the paper):
+ Initial state
+   #     0      1      2      3      4      5
+        [0]    [ ]    [ ]    [ ]    [ ]    [ ]
+        [ ]    [1]    [ ]    [ ]    [ ]    [ ]
+        [ ]    [ ]    [2]    [ ]    [ ]    [ ]
+        [ ]    [ ]    [ ]    [3]    [ ]    [ ]
+        [ ]    [ ]    [ ]    [ ]    [4]    [ ]
+        [ ]    [ ]    [ ]    [ ]    [ ]    [5]
+  Step 0: Each process sends its own block to process r + l and receives another from r - l.
+   #     0      1      2      3      4      5
+        [0]    [ ]    [ ]    [ ]    [0]    [ ]
+        [ ]    [1]    [ ]    [ ]    [ ]    [1]
+        [2]    [ ]    [2]    [ ]    [ ]    [ ]
+        [ ]    [3]    [ ]    [3]    [ ]    [ ]
+        [ ]    [ ]    [4]    [ ]    [4]    [ ]
+        [ ]    [ ]    [ ]    [5]    [ ]    [5]
+  Step 1: Each process sends its own block to process r + l/2 and receives another from r - l/2.
+  The block received on the previous step is ignored to avoid a future double-write.
+   #     0      1      2      3      4      5
+        [0]    [ ]    [0]    [ ]    [0]    [ ]
+        [ ]    [1]    [ ]    [1]    [ ]    [1]
+        [2]    [ ]    [2]    [ ]    [2]    [ ]
+        [ ]    [3]    [ ]    [3]    [ ]    [3]
+        [4]    [ ]    [4]    [ ]    [4]    [ ]
+        [ ]    [5]    [ ]    [5]    [ ]    [5]
+  Step 1: Each process sends all the data it has (3 blocks) to process r + l/4 and similarly
+  receives all the data from process r - l/4.
+   #     0      1      2      3      4      5
+        [0]    [0]    [0]    [0]    [0]    [0]
+        [1]    [1]    [1]    [1]    [1]    [1]
+        [2]    [2]    [2]    [2]    [2]    [2]
+        [3]    [3]    [3]    [3]    [3]    [3]
+        [4]    [4]    [4]    [4]    [4]    [4]
+        [5]    [5]    [5]    [5]    [5]    [5]
+
+```
 
 ## Decision Tree
 

@@ -3,10 +3,13 @@ import json
 import typing
 
 import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
 import pandas.io.json
 import numpy as np
 import math
+
+agg_func = np.median
 
 
 @dataclasses.dataclass
@@ -120,6 +123,7 @@ class PlotManager:
                 index='N',
                 columns='implementation',
                 values='runtime',
+                aggfunc=agg_func,
             ).plot(
                 title=f'Runtime ({i} nodes)',
                 kind='line',
@@ -138,6 +142,7 @@ class PlotManager:
                 index='numprocs',
                 columns='implementation',
                 values='runtime',
+                aggfunc=agg_func,
             ).plot(
                 title=f'Runtime ({n} vector size)',
                 kind='line',
@@ -158,10 +163,10 @@ class PlotManager:
                 index='N',
                 columns='implementation',
                 values='job.mem_max_avg',
+                aggfunc=agg_func,
             ).plot(
                 title=f'Memory Usage ({i} nodes)',
                 kind='bar',
-                # logy=True,
                 ylabel='Memory Usage (GB)',
                 xlabel='Input Dimension',
             )
@@ -177,12 +182,34 @@ class PlotManager:
                 index='N',
                 columns='implementation',
                 values='fraction',
+                aggfunc=agg_func,
             ).plot(
                 title=f'Compute ratio ({i} nodes)',
                 kind='bar',
             )
             plt.tight_layout()
             plt.savefig(f'{self.output_dir}/compute_ratio_{i}.svg')
+            plt.close()
+
+    def plot_repetitions(self, df: pd.DataFrame):
+        for num_procs in [2 ** i for i in range(1, 6)]:
+            vector_size = 4096
+
+            data = df[(df['M'] == vector_size) & (df['numprocs'] == num_procs)]
+
+            data.pivot_table(
+                index='iteration',
+                columns='implementation',
+                values='runtime',
+                aggfunc=agg_func,
+            ).plot(
+                title=f'Runtime across repetition number ({vector_size} vector size, {num_procs} nodes)',
+                ylabel='Runtime (s)',
+                xlabel='Iteration',
+                kind='bar',
+            )
+            plt.tight_layout()
+            plt.savefig(f'{self.output_dir}/runtime_repetition_{num_procs}.svg')
             plt.close()
 
 
@@ -202,8 +229,10 @@ def plot(input_files: typing.List[str], output_dir: str):
     df['runtime_compute'] /= 1_000_000
     df['runtime'] /= 1_000_000
     df['fraction'] = df['runtime_compute'] / df['runtime']
+    df['iteration'] += 1
 
     pm.plot_runtime(df)
     pm.plot_for_analysis(df)
     pm.plot_compute_ratio(df)
     pm.plot_mem_usage(df)
+    pm.plot_repetitions(df)

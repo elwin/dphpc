@@ -7,4 +7,4 @@ set -e # Exit on first failure
 
 # Make sure you prepared ssh according to the preparations in the readme file.
 
-ssh -t euler "watch 'bjobs | wc -l'"
+ssh -t euler "watch 'bjobs -o jobid -noheader | wc -l'"
