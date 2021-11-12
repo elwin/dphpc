@@ -29,6 +29,7 @@ def drop(li: list, key: str) -> list:
 @dataclasses.dataclass(eq=True, frozen=True, order=True)
 class Implementation:
     name: str
+    allreduce_algorithm: int = None
 
     def __str__(self):
         return self.name
@@ -36,6 +37,9 @@ class Implementation:
 
 allgather = Implementation(name='allgather')
 allreduce = Implementation(name='allreduce')
+allreduce_ring = Implementation(name='allreduce-native-ring', allreduce_algorithm=4)
+allreduce_rabenseifner = Implementation(name='allreduce-native-rabenseifner', allreduce_algorithm=6)
+allreduce_basic_linear = Implementation(name='allreduce-native-basic_linear', allreduce_algorithm=1)
 allreduce_butterfly = Implementation(name='allreduce-butterfly')
 allgather_async = Implementation(name='allgather-async')
 
@@ -165,6 +169,12 @@ class EulerRunner(Runner):
             logger.warning(f'skipping configuration: {reason}')
             return
 
+        mpi_args = []
+        if config.implementation.allreduce_algorithm is not None:
+            mpi_args.extend([
+                '--mca', 'coll_tuned_reduce_algorithm', f'{config.implementation.allreduce_algorithm}'
+            ])
+
         args = [
             'bsub',
             # '-J', f'"{config.__str__()}"',
@@ -176,6 +186,7 @@ class EulerRunner(Runner):
             '-R', 'select[!ib]',  # disable infiniband (not available on Euler III)
             '-r',  # make jobs retryable
             'mpirun',
+            *mpi_args,
             '-np', str(config.nodes),
             *config.command(),
         ]

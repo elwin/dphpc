@@ -5,7 +5,15 @@ import shutil
 
 from scheduler import *
 
-implementations = [allgather, allreduce, allreduce_butterfly, allgather_async]
+implementations = [
+    # allgather,
+    allreduce,
+    allreduce_butterfly,
+    allreduce_ring,
+    allreduce_basic_linear,
+    allreduce_rabenseifner,
+    # allgather_async,
+]
 repetitions = 10
 
 configs = []
