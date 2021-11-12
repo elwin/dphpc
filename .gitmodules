@@ -1,3 +1,4 @@
-[submodule "results"]
-	path = results
+[submodule "dphpc_results"]
+	path = dphpc_results
 	url = git@github.com:elwin/dphpc_results.git
+	branch = master
