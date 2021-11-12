@@ -75,6 +75,7 @@ void rabenseifner_scatter::compute(const std::vector<vector>& a_in, const std::v
   int n_rows = N;
   int n_cols = M;
   MPI_Status status;
+  MPI_Request request;
 
   // Directly use result buffer to store intermediate result
   double* resultPtr = result.get_ptr();
@@ -196,8 +197,6 @@ void rabenseifner_scatter::compute(const std::vector<vector>& a_in, const std::v
   // Distribute Vectors using a butterfly-scatter
   int idx_lower_send_A, idx_lower_send_B, idx_upper_send_A, idx_upper_send_B;
   int chunk_size_send, chunk_size_recv;
-  MPI_Request request;
-  MPI_Status status;
   for (round = n_rounds - 1; round >= 0; round--) {
     // receiver rank (from who we should expect data), is the same rank we send data to
     int bit_vec = (one << round);
@@ -221,7 +220,7 @@ void rabenseifner_scatter::compute(const std::vector<vector>& a_in, const std::v
   }
   // sort the vector buffers in increasing order
   std::sort(std::begin(vectorBuffer_A), std::end(vectorBuffer_B),
-      [](SubVec x, SubVec y) { return x.owner_rank > y.owner_rank });
+      [](SubVec x, SubVec y) { return x.owner_rank > y.owner_rank; });
 
   // [COMPUTE OWN SUBMATRIX]
   if (vectorBuffer_A.size() != vectorBuffer_B.size()) {
