@@ -6,7 +6,7 @@ import shutil
 from scheduler import *
 
 implementations = [allgather, allreduce, allreduce_butterfly, allgather_async]
-repetitions = 10
+repetitions = 40
 
 configs = []
 configs.extend([
