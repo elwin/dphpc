@@ -38,6 +38,9 @@ allgather = Implementation(name='allgather')
 allreduce = Implementation(name='allreduce')
 allreduce_butterfly = Implementation(name='allreduce-butterfly')
 allgather_async = Implementation(name='allgather-async')
+allreduce_rabenseifner = Implementation(name='allreduce-rabenseifner')
+rabenseifner_gather = Implementation(name='rabenseifner-gather')
+rabenseifner_scatter = Implementation(name='rabenseifner-scatter')
 
 
 @dataclasses.dataclass(eq=True, frozen=True, order=True)

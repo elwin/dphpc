@@ -5,7 +5,15 @@ import shutil
 
 from scheduler import *
 
-implementations = [allgather, allreduce, allreduce_butterfly, allgather_async]
+implementations = [
+    allgather,
+    allreduce,
+    allreduce_butterfly,
+    allgather_async,
+    allreduce_rabenseifner,
+    rabenseifner_gather,
+    rabenseifner_scatter,
+]
 repetitions = 40
 
 configs = []
