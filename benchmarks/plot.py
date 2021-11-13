@@ -197,6 +197,7 @@ class PlotManager:
             ).plot(
                 title=f'Compute ratio ({i} nodes)',
                 kind='line',
+                ylim=(0, 1),
             )
             plt.tight_layout()
             plt.savefig(f'{self.output_dir}/compute_ratio_{i}.svg')
@@ -216,6 +217,7 @@ class PlotManager:
                 title=f'Compute ratio ({n} vector size)',
                 kind='line',
                 xlabel='Number of processes',
+                ylim=(0, 1),
             )
             plt.tight_layout()
             plt.savefig(f'{self.output_dir}/compute_ratio_dim_{n}.svg')
