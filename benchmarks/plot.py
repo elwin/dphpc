@@ -1,5 +1,6 @@
 import dataclasses
 import json
+import pathlib
 import typing
 
 import matplotlib.pyplot as plt
@@ -14,6 +15,7 @@ agg_func = np.median
 @dataclasses.dataclass
 class PlotManager:
     output_dir: str
+    prefix: str = None
 
     def plot_for_analysis(self, df: pd.DataFrame, func_key='median'):
         self.plot_runtime_with_scatter(df, 'numprocs', 'N', func_key=func_key)
@@ -118,6 +120,13 @@ class PlotManager:
     def ninety_nine(p):
         return np.percentile(p, 99)
 
+    def plot_and_save(self, name: str):
+        plt.tight_layout()
+        output_dir = self.output_dir if self.prefix is None else f'{self.output_dir}/{self.prefix}'
+        pathlib.Path(output_dir).mkdir(parents=True, exist_ok=True)
+        plt.savefig(f'{output_dir}/{name}.svg')
+        plt.close()
+
     def plot_runtime(self, df: pd.DataFrame):
         for i in [2 ** i for i in range(1, 6)]:
             data = df[df['numprocs'] == i]
@@ -136,11 +145,9 @@ class PlotManager:
                 ylabel='Runtime (s)',
                 xlabel='Input Dimension',
             )
-            plt.tight_layout()
-            plt.savefig(f'{self.output_dir}/runtime_{i}.svg')
-            plt.close()
+            self.plot_and_save(f'runtime_{i}')
 
-        for n in [2 ** n for n in range(4, 14)]:
+        for n in [2 ** n for n in range(13, 14)]:
             data = df[df['N'] == n]
             if data.shape[0] == 0:
                 continue
@@ -157,9 +164,7 @@ class PlotManager:
                 ylabel='Runtime (s)',
                 xlabel='Number of processes',
             )
-            plt.tight_layout()
-            plt.savefig(f'{self.output_dir}/runtime_dim_{n}.svg')
-            plt.close()
+            self.plot_and_save(f'runtime_dim_{n}')
 
     def plot_mem_usage(self, df: pd.DataFrame):
         for i in [2 ** i for i in range(1, 6)]:
@@ -175,13 +180,11 @@ class PlotManager:
                 aggfunc=agg_func,
             ).plot(
                 title=f'Memory Usage ({i} nodes)',
-                kind='bar',
+                kind='line',
                 ylabel='Memory Usage (GB)',
                 xlabel='Input Dimension',
             )
-            plt.tight_layout()
-            plt.savefig(f'{self.output_dir}/mem_usage_{i}.svg')
-            plt.close()
+            self.plot_and_save(f'mem_usage_{i}')
 
     def plot_compute_ratio(self, df: pd.DataFrame):
         for i in [2 ** i for i in range(1, 6)]:
@@ -199,11 +202,9 @@ class PlotManager:
                 kind='line',
                 ylim=(0, 1),
             )
-            plt.tight_layout()
-            plt.savefig(f'{self.output_dir}/compute_ratio_{i}.svg')
-            plt.close()
+            self.plot_and_save(f'compute_ratio_{i}')
 
-        for n in [2 ** n for n in range(4, 14)]:
+        for n in [2 ** n for n in range(13, 14)]:
             data = df[df['N'] == n]
             if data.shape[0] == 0:
                 continue
@@ -219,9 +220,7 @@ class PlotManager:
                 xlabel='Number of processes',
                 ylim=(0, 1),
             )
-            plt.tight_layout()
-            plt.savefig(f'{self.output_dir}/compute_ratio_dim_{n}.svg')
-            plt.close()
+            self.plot_and_save(f'compute_ratio_dim_{n}')
 
     def plot_repetitions(self, df: pd.DataFrame):
         for num_procs in [2 ** i for i in range(1, 6)]:
@@ -239,11 +238,17 @@ class PlotManager:
             ).plot(
                 title=f'Runtime across repetition number ({vector_size} vector size, {num_procs} nodes)',
                 ylabel='Runtime (s)',
+                logy=True,
                 xlabel='Iteration',
             )
-            plt.tight_layout()
-            plt.savefig(f'{self.output_dir}/runtime_repetition_{num_procs}.svg')
-            plt.close()
+            self.plot_and_save(f'runtime_repetition_{num_procs}')
+
+    def plot_all(self, df: pd.DataFrame, prefix=None):
+        self.prefix = prefix
+        self.plot_runtime(df)
+        self.plot_compute_ratio(df)
+        self.plot_mem_usage(df)
+        self.plot_repetitions(df)
 
 
 def plot(input_files: typing.List[str], output_dir: str):
@@ -264,11 +269,11 @@ def plot(input_files: typing.List[str], output_dir: str):
     df['fraction'] = df['runtime_compute'] / df['runtime']
     df['iteration'] += 1
     df = df[df['implementation'] != 'rabenseifner-scatter']
-    df_complete = df.copy()
-    df = df[df['iteration'] > 1]
 
-    pm.plot_runtime(df)
     # pm.plot_for_analysis(df)
-    pm.plot_compute_ratio(df)
-    pm.plot_mem_usage(df)
-    pm.plot_repetitions(df_complete)
+
+    pm.plot_all(df[~df['implementation'].str.contains('native')])
+    pm.plot_all(df[df['implementation'].str.startswith('allreduce')], prefix='native')
+    pm.plot_all(df[df['implementation'] == 'rabenseifner-gather'], prefix='rabenseifner-gather')
+    pm.plot_all(df[df['implementation'] == 'allreduce-butterfly'], prefix='allreduce-butterfly')
+    pm.plot_all(df[df['implementation'] == 'allreduce-rabenseifner'], prefix='allreduce-rabenseifner')
