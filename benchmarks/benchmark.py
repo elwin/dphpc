@@ -5,8 +5,21 @@ import shutil
 
 from scheduler import *
 
-implementations = [allgather, allreduce, allreduce_butterfly, allgather_async]
-repetitions = 10
+implementations = [
+    allgather,
+    allreduce,
+    allreduce_butterfly,
+    allgather_async,
+    allreduce_rabenseifner,
+    rabenseifner_gather,
+    # rabenseifner_scatter, # not ready yet
+
+    # Native implementations
+    allreduce_native_ring,
+    allreduce_native_basic_linear,
+    allreduce_native_rabenseifner,
+]
+repetitions = 40
 
 configs = []
 configs.extend([
@@ -19,7 +32,11 @@ configs.extend([
 configs.extend([
     Configuration(n=2 ** 13, m=2 ** 13, nodes=p, repetitions=repetitions, implementation=implementation)
     for p in inclusive(2, 48, 2)
-    for implementation in drop(implementations, allreduce_butterfly)
+    for implementation in drop(implementations, [
+        allreduce_rabenseifner,
+        allreduce_butterfly,
+        rabenseifner_gather,
+    ])
 ])
 
 verify_configs = [
