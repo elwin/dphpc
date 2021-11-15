@@ -8,6 +8,7 @@ from scheduler import *
 implementations = [
     allgather,
     allreduce,
+    allreduce_ring,
     allreduce_butterfly,
     allgather_async,
     allreduce_rabenseifner,
@@ -30,8 +31,9 @@ configs.extend([
 ])
 
 configs.extend([
-    Configuration(n=2 ** 13, m=2 ** 13, nodes=p, repetitions=repetitions, implementation=implementation)
+    Configuration(n=2 ** n, m=2 ** n, nodes=p, repetitions=repetitions, implementation=implementation)
     for p in inclusive(2, 48, 2)
+    for n in inclusive(4, 13)
     for implementation in drop(implementations, [
         allreduce_rabenseifner,
         allreduce_butterfly,

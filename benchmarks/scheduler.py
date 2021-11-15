@@ -38,6 +38,7 @@ class Implementation:
 
 allgather = Implementation(name='allgather')
 allreduce = Implementation(name='allreduce')
+allreduce_ring = Implementation(name='allreduce-ring')
 allreduce_native_ring = Implementation(name='allreduce-native-ring', allreduce_algorithm=4)
 allreduce_native_rabenseifner = Implementation(name='allreduce-native-rabenseifner', allreduce_algorithm=6)
 allreduce_native_basic_linear = Implementation(name='allreduce-native-basic_linear', allreduce_algorithm=1)
