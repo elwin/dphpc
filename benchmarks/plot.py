@@ -144,6 +144,7 @@ class PlotManager:
                 logy=True,
                 ylabel='Runtime (s)',
                 xlabel='Input Dimension',
+                marker='o',
             )
             self.plot_and_save(f'runtime_{i}')
 
@@ -163,6 +164,7 @@ class PlotManager:
                 logy=True,
                 ylabel='Runtime (s)',
                 xlabel='Number of processes',
+                marker='o',
             )
             self.plot_and_save(f'runtime_dim_{n}')
 
@@ -183,6 +185,7 @@ class PlotManager:
                 kind='line',
                 ylabel='Memory Usage (GB)',
                 xlabel='Input Dimension',
+                marker='o',
             )
             self.plot_and_save(f'mem_usage_{i}')
 
@@ -201,6 +204,7 @@ class PlotManager:
                 title=f'Compute ratio ({i} nodes)',
                 kind='line',
                 ylim=(0, 1),
+                marker='o',
             )
             self.plot_and_save(f'compute_ratio_{i}')
 
@@ -219,7 +223,9 @@ class PlotManager:
                 kind='line',
                 xlabel='Number of processes',
                 ylim=(0, 1),
+                marker='o',
             )
+
             self.plot_and_save(f'compute_ratio_dim_{n}')
 
     def plot_repetitions(self, df: pd.DataFrame):
@@ -274,6 +280,3 @@ def plot(input_files: typing.List[str], output_dir: str):
 
     pm.plot_all(df[~df['implementation'].str.contains('native')])
     pm.plot_all(df[df['implementation'].str.startswith('allreduce')], prefix='native')
-    pm.plot_all(df[df['implementation'] == 'rabenseifner-gather'], prefix='rabenseifner-gather')
-    pm.plot_all(df[df['implementation'] == 'allreduce-butterfly'], prefix='allreduce-butterfly')
-    pm.plot_all(df[df['implementation'] == 'allreduce-rabenseifner'], prefix='allreduce-rabenseifner')
