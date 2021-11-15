@@ -131,7 +131,7 @@ static std::unique_ptr<dsop> get_impl(const std::string& name, Args&&... args) {
     return std::make_unique<impls::allreduce::allreduce>(std::forward<Args>(args)...);
   } else if (name == "allreduce-butterfly") {
     return std::make_unique<impls::allreduce_butterfly::allreduce_butterfly>(std::forward<Args>(args)...);
-  } else if (name == "allreduce_ring") {
+  } else if (name == "allreduce-ring") {
     return std::make_unique<impls::allreduce::allreduce_ring>(std::forward<Args>(args)...);
   } else if (name == "allgather") {
     return std::make_unique<impls::allgather::allgather>(std::forward<Args>(args)...);
