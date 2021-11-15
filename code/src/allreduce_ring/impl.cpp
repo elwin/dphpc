@@ -53,6 +53,8 @@ void allreduce_ring::compute(const std::vector<vector>& a_in, const std::vector<
     for (int j = 0; j < chunk_length; ++j) {
       current[chunk_offset + j] = current[chunk_offset + j] + recv_chunk[j];
     }
+
+    free(recv_chunk);
   }
 
   // At this point the current node should have the result of the chunk with index (rank + 1).
@@ -93,6 +95,8 @@ void allreduce_ring::compute(const std::vector<vector>& a_in, const std::vector<
     for (int j = 0; j < chunk_length; ++j) {
       current[chunk_offset + j] = recv_chunk[j];
     }
+
+    free(recv_chunk);
   }
 
   // Copy result into final matrix
