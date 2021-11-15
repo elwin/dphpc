@@ -29,7 +29,8 @@ void allreduce_ring::compute(const std::vector<vector>& a_in, const std::vector<
     }
 
     // Send current chunk to next node
-    mpi_timer(MPI_Send, current + chunk_offset, chunk_length, MPI_DOUBLE, destination, 0, comm);
+    MPI_Request sendRequest;
+    mpi_timer(MPI_Isend, current + chunk_offset, chunk_length, MPI_DOUBLE, destination, 0, comm, &sendRequest);
 
     // Calculate chunk length of receiving chunk
     chunk_index = (chunk_index + num_procs - 1) % num_procs;
@@ -43,6 +44,10 @@ void allreduce_ring::compute(const std::vector<vector>& a_in, const std::vector<
     // Receive chunk from previous node
     auto recv_chunk = new double[chunk_length];
     mpi_timer(MPI_Recv, recv_chunk, chunk_length, MPI_DOUBLE, source, 0, comm, MPI_STATUS_IGNORE);
+
+    // The message should be received so we can wait on it
+    MPI_Status sendStatus;
+    mpi_timer(MPI_Wait, &sendRequest, &sendStatus);
 
     // Add received chunk to current matrix
     for (int j = 0; j < chunk_length; ++j) {
@@ -64,7 +69,8 @@ void allreduce_ring::compute(const std::vector<vector>& a_in, const std::vector<
     }
 
     // Send current chunk to next node
-    mpi_timer(MPI_Send, current + chunk_offset, chunk_length, MPI_DOUBLE, destination, 0, comm);
+    MPI_Request sendRequest;
+    mpi_timer(MPI_Isend, current + chunk_offset, chunk_length, MPI_DOUBLE, destination, 0, comm, &sendRequest);
 
     // Calculate chunk length of receiving chunk
     chunk_index = (chunk_index + num_procs - 1) % num_procs;
@@ -78,6 +84,10 @@ void allreduce_ring::compute(const std::vector<vector>& a_in, const std::vector<
     // Receive chunk from previous node
     auto recv_chunk = new double[chunk_length];
     mpi_timer(MPI_Recv, recv_chunk, chunk_length, MPI_DOUBLE, source, 0, comm, MPI_STATUS_IGNORE);
+
+    // The message should be received so we can wait on it
+    MPI_Status sendStatus;
+    mpi_timer(MPI_Wait, &sendRequest, &sendStatus);
 
     // Replace received chunk in result
     for (int j = 0; j < chunk_length; ++j) {
