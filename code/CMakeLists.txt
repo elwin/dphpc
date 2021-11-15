@@ -41,6 +41,7 @@ set(MAIN_SOURCES
         src/allreduce_rabenseifner/impl.cpp
         src/rabenseifner_gather/impl.cpp
         src/rabenseifner_scatter/impl.cpp
+        src/allreduce_ring/impl.cpp
         src/allgather/impl.cpp
         src/allgather_async/impl.cpp
         )
