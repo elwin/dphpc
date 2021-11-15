@@ -15,6 +15,8 @@ void allreduce_ring::compute(const std::vector<vector>& a_in, const std::vector<
   auto destination = (rank + 1) % num_procs;
   auto source = (rank - 1) % num_procs;
 
+  std::cout << "[" << rank << "] OP: " << current[0] << std::endl;
+
   // Send partial results through the ring until everyone has everything
   for (int i = 0; i < num_procs - 1; ++i) {
     auto chunk_index = (rank + i) % num_procs;
@@ -48,7 +50,12 @@ void allreduce_ring::compute(const std::vector<vector>& a_in, const std::vector<
     for (int j = 0; j < chunk_length; ++j) {
       current[chunk_offset + j] = current[chunk_offset + j] + recv_chunk[j];
     }
+
+    std::cout << "[" << rank << "] "
+              << "Iteration " << i << " (chunk_offset=" << chunk_offset << "): " << current[chunk_offset] << std::endl;
   }
+
+  std::cout << "[" << rank << "] " << current[chunk_size * ((rank + 1) % num_procs)] << std::endl;
 
   // At this point the current node should have the result of the chunk with index (rank + 1).
   // We then have to distribute all result chunks
