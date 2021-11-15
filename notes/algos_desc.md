@@ -136,7 +136,7 @@ beta := transfer-time per byte
 alpha := latency
 
 * T(recursive_doubling) = log p * alpha + log p * n * beta + log p * n * gamma + cost(initialMatrixMult)
-* T(ring) = (p-1) * alpha + (p-1)/p * n * beta + cost(initialMatrixMult)
+* T(ring) = (p-1) * alpha + (p-1)/p * n * beta + (p-1)/p * n * gamma + cost(initialMatrixMult)
 * T(rabenseifner) = 2 * log p * alpha + 2 * (p-1)/p * n * beta + (p-1)/p * n * gamma + cost(initialMatrixMult)
 
 # Decision tree
