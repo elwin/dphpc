@@ -148,7 +148,7 @@ class PlotManager:
             )
             self.plot_and_save(f'runtime_{i}')
 
-        for n in [2 ** n for n in range(13, 14)]:
+        for n in [2 ** n for n in range(4, 14)]:
             data = df[df['N'] == n]
             if data.shape[0] == 0:
                 continue
@@ -208,7 +208,7 @@ class PlotManager:
             )
             self.plot_and_save(f'compute_ratio_{i}')
 
-        for n in [2 ** n for n in range(13, 14)]:
+        for n in [2 ** n for n in range(4, 14)]:
             data = df[df['N'] == n]
             if data.shape[0] == 0:
                 continue
