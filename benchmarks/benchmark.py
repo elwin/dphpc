@@ -19,6 +19,9 @@ implementations = [
     allreduce_native_ring,
     allreduce_native_basic_linear,
     allreduce_native_rabenseifner,
+    allreduce_native_nonoverlapping,
+    allreduce_native_recursive_doubling,
+    allreduce_native_segmented_ring,
 ]
 repetitions = 40
 
