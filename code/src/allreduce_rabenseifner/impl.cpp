@@ -37,8 +37,8 @@ void allreduce_rabenseifner::compute(const std::vector<vector>& a_in, const std:
   MPI_Status status;
 
   // Initial Temporary Matrix
-  auto tempMatrix = matrix::outer(a, b);
-  double* tempMatrixPtr = tempMatrix.get_ptr();
+  set_outer_product(result, a, b);
+  double* tempMatrixPtr = result.get_ptr();
   double* receivedMatrixPtr = new double[N * M];
 
   // [RABENSEIFNER INDICES]
@@ -197,11 +197,6 @@ void allreduce_rabenseifner::compute(const std::vector<vector>& a_in, const std:
     }
   }
   delete[] receivedMatrixPtr;
-  // Write back temporary matrix to the result matrix
-  double* resultPtr = result.get_ptr();
-  for (int i = 0; i < matrix_size; i++) {
-    resultPtr[i] = tempMatrixPtr[i];
-  }
 }
 
 } // namespace impls::allreduce_rabenseifner
