@@ -28,20 +28,8 @@ class matrix {
     }
   }
 
-  matrix(const matrix& other) : matrix(other.rows, other.columns) {
-    memcpy(get_ptr(), other.get_ptr(), other.dimension() * sizeof(double));
-  }
-
-  matrix& operator=(const matrix& other) {
-    data = std::make_unique<double[]>(other.dimension());
-    rows = other.rows;
-    columns = other.columns;
-    memcpy(get_ptr(), other.get_ptr(), other.dimension() * sizeof(double));
-    return *this;
-  }
-
-  size_t rows;
-  size_t columns;
+  const size_t rows;
+  const size_t columns;
 
   void print() const {
     for (size_t i = 0; i < rows; i++) {
