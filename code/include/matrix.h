@@ -124,7 +124,8 @@ class matrix {
     }
   }
 
-  inline void add_submatrix_outer_product(int start_row, int start_col, size_t a_size, const double* a, size_t b_size, const double* b) {
+  inline void add_submatrix_outer_product(
+      int start_row, int start_col, size_t a_size, const double* a, size_t b_size, const double* b) {
     assert(rows >= start_row + a_size);
     assert(columns >= start_col + b_size);
 

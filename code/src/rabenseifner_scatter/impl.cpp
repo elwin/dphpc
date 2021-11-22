@@ -60,7 +60,7 @@ void rabenseifner_scatter::compute(const std::vector<vector>& a_in, const std::v
   int n_rounds = 0;
   int n_processors = num_procs;
   while (n_processors >>= 1) ++n_rounds;
-//  int power_2_ranks = (1 << n_rounds);
+  //  int power_2_ranks = (1 << n_rounds);
 
   // TODO: Extend Rabenseifner with an extension for non-power-of-2 processes
 
@@ -71,14 +71,14 @@ void rabenseifner_scatter::compute(const std::vector<vector>& a_in, const std::v
 
   int round, recv_rank;
   int one = 1UL;
-//  int matrix_size = N * M;
+  //  int matrix_size = N * M;
   int n_rows = N;
   int n_cols = M;
   MPI_Status status;
   MPI_Request request;
 
   // Directly use result buffer to store intermediate result
-//  double* resultPtr = result.get_ptr();
+  //  double* resultPtr = result.get_ptr();
   // Store all vectors in these buffers
   std::vector<SubVec> vectorBuffer_A;
   std::vector<SubVec> vectorBuffer_B;
@@ -249,57 +249,59 @@ void rabenseifner_scatter::compute(const std::vector<vector>& a_in, const std::v
   // TODO
   return;
 
-//  // --> send chunks (final value), and set them directly in the result array
-//  // --> reverse send and receive indices!!!
-//  for (round = 0; round < n_rounds; round++) {
-//    //    fprintf(stderr, "%d: ROUND=%d\n", rank, round); // DELETE
-//    // receiver rank (from who we should expect data), is the same rank we send data to
-//    int bit_vec = (one << round);
-//    recv_rank = rank ^ bit_vec;
-//
-//    // Note: send and receive need to be reversed here!
-//    idx_lower_send = all_indices[my_recv_indices_lower[round]];
-//    idx_upper_send = all_indices[my_recv_indices_upper[round]];
-//    idx_lower_recv = all_indices[my_send_indices_lower[round]];
-//    idx_upper_recv = all_indices[my_send_indices_upper[round]];
-//    int chunk_size_send = idx_upper_send - idx_lower_send;
-//    int chunk_size_recv = idx_upper_recv - idx_lower_recv;
-//
-//    //    fprintf(stderr,
-//    //        "%d: [GATHER] ROUND=%d, Send [%d, %d) to %d, Receive [%d, %d) from %d, Send-Size=%d, Recv-size=%d\n",
-//    //        rank, round, idx_lower_send, idx_upper_send, recv_rank, idx_lower_recv, idx_upper_recv, recv_rank,
-//    //        chunk_size_send, chunk_size_recv); // DELETE
-//
-//    // TODO (Optimization): Send directly from result array, and write directly into result array upon receive
-//    //  --> make use of MPI to pass the correct pointer
-//    // ordering to avoid deadlock for larger message sizes
-//    if (rank < recv_rank) {
-//      // send
-//      mpi_timer(MPI_Send, tempMatrixPtr + idx_lower_send, chunk_size_send, MPI_DOUBLE, recv_rank,
-//          TAG_ALLREDUCE_RABENSEIFNER, comm);
-//      // receive
-//      mpi_timer(MPI_Recv, receivedMatrixPtr, chunk_size_recv, MPI_DOUBLE, recv_rank, TAG_ALLREDUCE_RABENSEIFNER, comm,
-//          &status);
-//    } else {
-//      // receive
-//      mpi_timer(MPI_Recv, receivedMatrixPtr, chunk_size_recv, MPI_DOUBLE, recv_rank, TAG_ALLREDUCE_RABENSEIFNER, comm,
-//          &status);
-//      // send
-//      mpi_timer(MPI_Send, tempMatrixPtr + idx_lower_send, chunk_size_send, MPI_DOUBLE, recv_rank,
-//          TAG_ALLREDUCE_RABENSEIFNER, comm);
-//    }
-//
-//    // TODO (Optimization): Delete this copying, once MPI writes chunks directly into result matrix
-//    // write values into the resulting array (just setting, no adding)
-//    for (int i = 0; i < chunk_size_recv; i++) {
-//      tempMatrixPtr[idx_lower_recv + i] = receivedMatrixPtr[i];
-//    }
-//  }
-//  delete[] receivedMatrixPtr;
-//  // Write back temporary matrix to the result matrix
-//  for (int i = 0; i < matrix_size; i++) {
-//    resultPtr[i] = tempMatrixPtr[i];
-//  }
+  //  // --> send chunks (final value), and set them directly in the result array
+  //  // --> reverse send and receive indices!!!
+  //  for (round = 0; round < n_rounds; round++) {
+  //    //    fprintf(stderr, "%d: ROUND=%d\n", rank, round); // DELETE
+  //    // receiver rank (from who we should expect data), is the same rank we send data to
+  //    int bit_vec = (one << round);
+  //    recv_rank = rank ^ bit_vec;
+  //
+  //    // Note: send and receive need to be reversed here!
+  //    idx_lower_send = all_indices[my_recv_indices_lower[round]];
+  //    idx_upper_send = all_indices[my_recv_indices_upper[round]];
+  //    idx_lower_recv = all_indices[my_send_indices_lower[round]];
+  //    idx_upper_recv = all_indices[my_send_indices_upper[round]];
+  //    int chunk_size_send = idx_upper_send - idx_lower_send;
+  //    int chunk_size_recv = idx_upper_recv - idx_lower_recv;
+  //
+  //    //    fprintf(stderr,
+  //    //        "%d: [GATHER] ROUND=%d, Send [%d, %d) to %d, Receive [%d, %d) from %d, Send-Size=%d, Recv-size=%d\n",
+  //    //        rank, round, idx_lower_send, idx_upper_send, recv_rank, idx_lower_recv, idx_upper_recv, recv_rank,
+  //    //        chunk_size_send, chunk_size_recv); // DELETE
+  //
+  //    // TODO (Optimization): Send directly from result array, and write directly into result array upon receive
+  //    //  --> make use of MPI to pass the correct pointer
+  //    // ordering to avoid deadlock for larger message sizes
+  //    if (rank < recv_rank) {
+  //      // send
+  //      mpi_timer(MPI_Send, tempMatrixPtr + idx_lower_send, chunk_size_send, MPI_DOUBLE, recv_rank,
+  //          TAG_ALLREDUCE_RABENSEIFNER, comm);
+  //      // receive
+  //      mpi_timer(MPI_Recv, receivedMatrixPtr, chunk_size_recv, MPI_DOUBLE, recv_rank, TAG_ALLREDUCE_RABENSEIFNER,
+  //      comm,
+  //          &status);
+  //    } else {
+  //      // receive
+  //      mpi_timer(MPI_Recv, receivedMatrixPtr, chunk_size_recv, MPI_DOUBLE, recv_rank, TAG_ALLREDUCE_RABENSEIFNER,
+  //      comm,
+  //          &status);
+  //      // send
+  //      mpi_timer(MPI_Send, tempMatrixPtr + idx_lower_send, chunk_size_send, MPI_DOUBLE, recv_rank,
+  //          TAG_ALLREDUCE_RABENSEIFNER, comm);
+  //    }
+  //
+  //    // TODO (Optimization): Delete this copying, once MPI writes chunks directly into result matrix
+  //    // write values into the resulting array (just setting, no adding)
+  //    for (int i = 0; i < chunk_size_recv; i++) {
+  //      tempMatrixPtr[idx_lower_recv + i] = receivedMatrixPtr[i];
+  //    }
+  //  }
+  //  delete[] receivedMatrixPtr;
+  //  // Write back temporary matrix to the result matrix
+  //  for (int i = 0; i < matrix_size; i++) {
+  //    resultPtr[i] = tempMatrixPtr[i];
+  //  }
 }
 
 void addReceivedVectors(

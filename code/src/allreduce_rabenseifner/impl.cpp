@@ -120,9 +120,10 @@ void allreduce_rabenseifner::compute(const std::vector<vector>& a_in, const std:
     int chunk_size_send = idx_upper_send - idx_lower_send;
     int chunk_size_recv = idx_upper_recv - idx_lower_recv;
 
-//    fprintf(stderr, "%d: ROUND=%d, Send [%d, %d) to %d, Receive [%d, %d) from %d, Send-Size=%d, Recv-size=%d\n", rank,
-//        round, idx_lower_send, idx_upper_send, recv_rank, idx_lower_recv, idx_upper_recv, recv_rank, chunk_size_send,
-//        chunk_size_recv); // DELETE
+    //    fprintf(stderr, "%d: ROUND=%d, Send [%d, %d) to %d, Receive [%d, %d) from %d, Send-Size=%d, Recv-size=%d\n",
+    //    rank,
+    //        round, idx_lower_send, idx_upper_send, recv_rank, idx_lower_recv, idx_upper_recv, recv_rank,
+    //        chunk_size_send, chunk_size_recv); // DELETE
 
     // TODO: CHECK POINTER ARITHMETIC CORRECTNESS IN SEND
 
@@ -166,10 +167,10 @@ void allreduce_rabenseifner::compute(const std::vector<vector>& a_in, const std:
     int chunk_size_send = idx_upper_send - idx_lower_send;
     int chunk_size_recv = idx_upper_recv - idx_lower_recv;
 
-//    fprintf(stderr,
-//        "%d: [GATHER] ROUND=%d, Send [%d, %d) to %d, Receive [%d, %d) from %d, Send-Size=%d, Recv-size=%d\n", rank,
-//        round, idx_lower_send, idx_upper_send, recv_rank, idx_lower_recv, idx_upper_recv, recv_rank, chunk_size_send,
-//        chunk_size_recv); // DELETE
+    //    fprintf(stderr,
+    //        "%d: [GATHER] ROUND=%d, Send [%d, %d) to %d, Receive [%d, %d) from %d, Send-Size=%d, Recv-size=%d\n",
+    //        rank, round, idx_lower_send, idx_upper_send, recv_rank, idx_lower_recv, idx_upper_recv, recv_rank,
+    //        chunk_size_send, chunk_size_recv); // DELETE
 
     // TODO (Optimization): Send directly from result array, and write directly into result array upon receive
     //  --> make use of MPI to pass the correct pointer
