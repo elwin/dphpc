@@ -14,8 +14,8 @@ if(NOT CMAKE_BUILD_TYPE)
 endif()
 string(TOUPPER ${CMAKE_BUILD_TYPE} CMAKE_BUILD_TYPE_UPPER)
 
-list(APPEND cxx_base -Wall -Wextra -Wpedantic -Wsuggest-override -std=c++17)
-list(APPEND cxx_release -ffast-math -mavx -mavx2 -mfma -ftree-vectorizer-verbose=6)
+list(APPEND cxx_base -Wall -Wextra -Wpedantic -Wsuggest-override -std=c++17 -mavx -mavx2 -mfma)
+list(APPEND cxx_release -ffast-math)
 list(APPEND cxx_debug -DDEBUG -g2)
 list(APPEND cxx_sanitize -O0 -g -fsanitize=address -fsanitize=undefined -fno-omit-frame-pointer -fno-optimize-sibling-calls)
 
@@ -36,7 +36,6 @@ list(APPEND cxx_linker_flags ${cxx_flags})
 
 set(MAIN_SOURCES
         src/vector.cpp
-        src/matrix.cpp
         src/dsop_single.cpp
         src/util.cpp
         src/allreduce/impl.cpp

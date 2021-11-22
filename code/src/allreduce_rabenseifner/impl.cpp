@@ -37,8 +37,8 @@ void allreduce_rabenseifner::compute(const std::vector<vector>& a_in, const std:
   MPI_Status status;
 
   // Initial Temporary Matrix
-  auto tempMatrix = matrix::outer(a, b);
-  double* tempMatrixPtr = tempMatrix.get_ptr();
+  result.set_outer_product(a, b);
+  double* tempMatrixPtr = result.get_ptr();
   double* receivedMatrixPtr = new double[N * M];
 
   // [RABENSEIFNER INDICES]
@@ -120,9 +120,10 @@ void allreduce_rabenseifner::compute(const std::vector<vector>& a_in, const std:
     int chunk_size_send = idx_upper_send - idx_lower_send;
     int chunk_size_recv = idx_upper_recv - idx_lower_recv;
 
-//    fprintf(stderr, "%d: ROUND=%d, Send [%d, %d) to %d, Receive [%d, %d) from %d, Send-Size=%d, Recv-size=%d\n", rank,
-//        round, idx_lower_send, idx_upper_send, recv_rank, idx_lower_recv, idx_upper_recv, recv_rank, chunk_size_send,
-//        chunk_size_recv); // DELETE
+    //    fprintf(stderr, "%d: ROUND=%d, Send [%d, %d) to %d, Receive [%d, %d) from %d, Send-Size=%d, Recv-size=%d\n",
+    //    rank,
+    //        round, idx_lower_send, idx_upper_send, recv_rank, idx_lower_recv, idx_upper_recv, recv_rank,
+    //        chunk_size_send, chunk_size_recv); // DELETE
 
     // TODO: CHECK POINTER ARITHMETIC CORRECTNESS IN SEND
 
@@ -166,10 +167,10 @@ void allreduce_rabenseifner::compute(const std::vector<vector>& a_in, const std:
     int chunk_size_send = idx_upper_send - idx_lower_send;
     int chunk_size_recv = idx_upper_recv - idx_lower_recv;
 
-//    fprintf(stderr,
-//        "%d: [GATHER] ROUND=%d, Send [%d, %d) to %d, Receive [%d, %d) from %d, Send-Size=%d, Recv-size=%d\n", rank,
-//        round, idx_lower_send, idx_upper_send, recv_rank, idx_lower_recv, idx_upper_recv, recv_rank, chunk_size_send,
-//        chunk_size_recv); // DELETE
+    //    fprintf(stderr,
+    //        "%d: [GATHER] ROUND=%d, Send [%d, %d) to %d, Receive [%d, %d) from %d, Send-Size=%d, Recv-size=%d\n",
+    //        rank, round, idx_lower_send, idx_upper_send, recv_rank, idx_lower_recv, idx_upper_recv, recv_rank,
+    //        chunk_size_send, chunk_size_recv); // DELETE
 
     // TODO (Optimization): Send directly from result array, and write directly into result array upon receive
     //  --> make use of MPI to pass the correct pointer
@@ -197,11 +198,6 @@ void allreduce_rabenseifner::compute(const std::vector<vector>& a_in, const std:
     }
   }
   delete[] receivedMatrixPtr;
-  // Write back temporary matrix to the result matrix
-  double* resultPtr = result.get_ptr();
-  for (int i = 0; i < matrix_size; i++) {
-    resultPtr[i] = tempMatrixPtr[i];
-  }
 }
 
 } // namespace impls::allreduce_rabenseifner

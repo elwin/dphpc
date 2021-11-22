@@ -71,11 +71,7 @@ void bruck_async::compute(const std::vector<vector>& a_in, const std::vector<vec
 
     for (int z = to_compute_start; z < to_compute_end; z++) {
       int rbuf_offset = z * vec_size;
-      for (int x = 0; x < N; x++) {
-        for (int y = 0; y < M; y++) {
-          result.get(x, y) += rbuf[rbuf_offset + x] * rbuf[rbuf_offset + N + y];
-        }
-      }
+      result.add_outer_product(N, &rbuf[rbuf_offset], M, &rbuf[rbuf_offset + N]);
     }
 
     to_compute_start = to_compute_end;
@@ -88,11 +84,7 @@ void bruck_async::compute(const std::vector<vector>& a_in, const std::vector<vec
 
   for (int z = to_compute_start; z < to_compute_end; z++) {
     int rbuf_offset = z * vec_size;
-    for (int x = 0; x < N; x++) {
-      for (int y = 0; y < M; y++) {
-        result.get(x, y) += rbuf[rbuf_offset + x] * rbuf[rbuf_offset + N + y];
-      }
-    }
+    result.add_outer_product(N, &rbuf[rbuf_offset], M, &rbuf[rbuf_offset + N]);
   }
 }
 } // namespace impls::bruck_async
