@@ -101,7 +101,7 @@ void rabenseifner_gather::compute(const std::vector<vector>& a_in, const std::ve
       for (int j = 0; j < recv_n_rows; j++) {
         a_subvec[j] = a[rank * my_n_rows + j];
       }
-      add_submatrix_outer_product(result, my_result_row_offset, 0, a_subvec, b);
+      result.add_submatrix_outer_product(my_result_row_offset, 0, a_subvec, b);
       continue;
     }
     recv_vec_A.resize(recv_n_rows, 0.0);
@@ -114,7 +114,7 @@ void rabenseifner_gather::compute(const std::vector<vector>& a_in, const std::ve
     vector received_B(recv_vec_B_ptr, recv_vec_B_ptr + n_cols);
 
     // add the outer product to the current result matrix
-    add_submatrix_outer_product(result, my_result_row_offset, 0, recv_vec_A, recv_vec_B);
+    result.add_submatrix_outer_product(my_result_row_offset, 0, recv_vec_A, recv_vec_B);
   }
 
   // TODO: Cleanup index computation

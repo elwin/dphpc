@@ -129,56 +129,42 @@ class matrix {
 
     return out;
   }
+
+  // Compute outer product and write to sub-matrix in-place. Submatrix defined by start row and column.
+  inline void set_submatrix_outer_product(int start_row, int start_col, const vector& a, const vector& b) {
+    assert(rows >= start_row + a.size());
+    assert(columns >= start_col + b.size());
+
+    for (size_t i = 0; i < a.size(); i++) {
+      for (size_t j = 0; j < b.size(); j++) {
+        get(start_row + i, start_col + j) = a[i] * b[j];
+      }
+    }
+  }
+
+  // Compute and add the outer product and write to sub-matrix in-place. Submatrix defined by start row and column.
+  inline void add_submatrix_outer_product(int start_row, int start_col, const vector& a, const vector& b) {
+    assert(rows >= start_row + a.size());
+    assert(columns >= start_col + b.size());
+
+    for (size_t i = 0; i < a.size(); i++) {
+      for (size_t j = 0; j < b.size(); j++) {
+        get(start_row + i, start_col + j) += a[i] * b[j];
+      }
+    }
+  }
+
+  // Compute outer product and write to matrix in place
+  inline void set_outer_product(const vector& a, const vector& b) {
+    assert(dimension() == a.size() * b.size());
+    set_submatrix_outer_product(0, 0, a, b);
+  }
+
+  // Compute and add the outer product and write to matrix in-place
+  inline void add_outer_product(const vector& a, const vector& b) {
+    assert(dimension() == a.size() * b.size());
+    add_submatrix_outer_product(0, 0, a, b);
+  }
 };
-
-// Compute outer product and write to matrix C in place
-static inline void set_outer_product(matrix& C, const vector& a, const vector& b) {
-  assert(C.dimension() == a.size() * b.size());
-  C.rows = a.size();
-  C.columns = b.size();
-
-  for (size_t i = 0; i < a.size(); i++) {
-    for (size_t j = 0; j < b.size(); j++) {
-      C.get(i, j) = a[i] * b[j];
-    }
-  }
-}
-
-// Compute and add the outer product and write to matrix C in-place
-static inline void add_outer_product(matrix& C, const vector& a, const vector& b) {
-  assert(C.dimension() == a.size() * b.size());
-  C.rows = a.size();
-  C.columns = b.size();
-
-  for (size_t i = 0; i < a.size(); i++) {
-    for (size_t j = 0; j < b.size(); j++) {
-      C.get(i, j) += a[i] * b[j];
-    }
-  }
-}
-
-// Compute outer product and write to sub-matrix in C in-place. Submatrix defined by start row and column.
-static inline void set_submatrix_outer_product(matrix& C, int start_row, int start_col, const vector& a, const vector& b) {
-  assert(C.rows >= start_row + a.size());
-  assert(C.columns >= start_col + b.size());
-
-  for (size_t i = 0; i < a.size(); i++) {
-    for (size_t j = 0; j < b.size(); j++) {
-      C.get(start_row + i, start_col + j) = a[i] * b[j];
-    }
-  }
-}
-
-// Compute and add the outer product and write to sub-matrix in C in-place. Submatrix defined by start row and column.
-static inline void add_submatrix_outer_product(matrix& C, int start_row, int start_col, const vector& a, const vector& b) {
-  assert(C.rows >= start_row + a.size());
-  assert(C.columns >= start_col + b.size());
-
-  for (size_t i = 0; i < a.size(); i++) {
-    for (size_t j = 0; j < b.size(); j++) {
-      C.get(start_row + i, start_col + j) += a[i] * b[j];
-    }
-  }
-}
 
 #endif // CODE_MATRIX_H

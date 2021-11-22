@@ -7,7 +7,7 @@ void allreduce_ring::compute(const std::vector<vector>& a_in, const std::vector<
   const auto& a = a_in[rank];
   const auto& b = b_in[rank];
 
-  set_outer_product(result, a, b);
+  result.set_outer_product(a, b);
   auto current = result.get_ptr();
 
   unsigned long chunk_size = (a.size() * b.size()) / num_procs;

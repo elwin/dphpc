@@ -241,7 +241,7 @@ void rabenseifner_scatter::compute(const std::vector<vector>& a_in, const std::v
       computeB[j] = (*vectorBuffer_B[i].vecPtr)[start_idx_B + j];
     }
     // add outer product to submatrix
-    add_submatrix_outer_product(result, current_idx_lower_A, current_idx_lower_B, computeA, computeB);
+    result.add_submatrix_outer_product(current_idx_lower_A, current_idx_lower_B, computeA, computeB);
   }
   // [RABENSEIFNER - BUTTERFLY ALLGATHER]
   // Distribute sub-matrices among all processes using a butterfly.

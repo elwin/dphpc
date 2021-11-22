@@ -37,7 +37,7 @@ void allreduce_rabenseifner::compute(const std::vector<vector>& a_in, const std:
   MPI_Status status;
 
   // Initial Temporary Matrix
-  set_outer_product(result, a, b);
+  result.set_outer_product(a, b);
   double* tempMatrixPtr = result.get_ptr();
   double* receivedMatrixPtr = new double[N * M];
 
