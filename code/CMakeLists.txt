@@ -47,6 +47,7 @@ set(MAIN_SOURCES
         src/allreduce_ring/impl.cpp
         src/allgather/impl.cpp
         src/allgather_async/impl.cpp
+        src/bruck_async/impl.cpp
         )
 
 set(INCLUDE_DIRS include)
