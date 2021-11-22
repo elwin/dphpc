@@ -108,13 +108,7 @@ class matrix {
 
   static matrix outer(const vector& a, const vector& b) {
     auto out = matrix(a.size(), b.size());
-
-    for (size_t i = 0; i < a.size(); i++) {
-      for (size_t j = 0; j < b.size(); j++) {
-        out.get(i, j) = a[i] * b[j];
-      }
-    }
-
+    out.set_outer_product(a, b);
     return out;
   }
 
@@ -130,16 +124,20 @@ class matrix {
     }
   }
 
-  // Compute and add the outer product and write to sub-matrix in-place. Submatrix defined by start row and column.
-  inline void add_submatrix_outer_product(int start_row, int start_col, const vector& a, const vector& b) {
-    assert(rows >= start_row + a.size());
-    assert(columns >= start_col + b.size());
+  inline void add_submatrix_outer_product(int start_row, int start_col, size_t a_size, const double* a, size_t b_size, const double* b) {
+    assert(rows >= start_row + a_size);
+    assert(columns >= start_col + b_size);
 
-    for (size_t i = 0; i < a.size(); i++) {
-      for (size_t j = 0; j < b.size(); j++) {
+    for (size_t i = 0; i < a_size; i++) {
+      for (size_t j = 0; j < b_size; j++) {
         get(start_row + i, start_col + j) += a[i] * b[j];
       }
     }
+  }
+
+  // Compute and add the outer product and write to sub-matrix in-place. Submatrix defined by start row and column.
+  inline void add_submatrix_outer_product(int start_row, int start_col, const vector& a, const vector& b) {
+    add_submatrix_outer_product(start_row, start_col, a.size(), a.data(), b.size(), b.data());
   }
 
   // Compute outer product and write to matrix in place
@@ -149,9 +147,13 @@ class matrix {
   }
 
   // Compute and add the outer product and write to matrix in-place
+  inline void add_outer_product(size_t a_size, const double* a, size_t b_size, const double* b) {
+    assert(dimension() == a_size * b_size);
+    add_submatrix_outer_product(0, 0, a_size, a, b_size, b);
+  }
+
   inline void add_outer_product(const vector& a, const vector& b) {
-    assert(dimension() == a.size() * b.size());
-    add_submatrix_outer_product(0, 0, a, b);
+    add_outer_product(a.size(), a.data(), b.size(), b.data());
   }
 };
 

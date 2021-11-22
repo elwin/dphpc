@@ -13,12 +13,7 @@ void allgather::compute(const std::vector<vector>& a_in, const std::vector<vecto
   mpi_timer(MPI_Allgather, b.data(), M, MPI_DOUBLE, rec_b.data(), M, MPI_DOUBLE, comm);
 
   for (int i = 0; i < num_procs; i++) {
-    for (int x = 0; x < N; x++) {
-      double tmp = rec_a[i * N + x];
-      for (int y = 0; y < M; y++) {
-        result.get(x, y) += tmp * rec_b[i * M + y];
-      }
-    }
+    result.add_outer_product(N, &rec_a[i * N], M, &rec_b[i * M]);
   }
 }
 

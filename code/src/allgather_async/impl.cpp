@@ -42,11 +42,7 @@ void allgather_async::compute(const std::vector<vector>& a_in, const std::vector
   }
 
   // Calculate own outer product
-  for (int x = 0; x < N; x++) {
-    for (int y = 0; y < M; y++) {
-      result.get(x, y) += a[x] * b[y];
-    }
-  }
+  result.set_outer_product(a, b);
 
   /*
    * Iterative wait for requests to finish. For each finished receive request, we can calculate one outer product and
@@ -63,11 +59,7 @@ void allgather_async::compute(const std::vector<vector>& a_in, const std::vector
 
     const auto& vec = rec[rec_map[idx]];
 
-    for (int x = 0; x < N; x++) {
-      for (int y = 0; y < M; y++) {
-        result.get(x, y) += vec[x] * vec[N + y];
-      }
-    }
+    result.add_outer_product(N, vec.data(), M, &vec[N]);
   }
 
   mpi_timer(MPI_Waitall, send_reqs.size(), send_reqs.data(), MPI_STATUSES_IGNORE);
