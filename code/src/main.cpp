@@ -17,12 +17,13 @@
 #include "allgather/impl.hpp"
 #include "allgather_async/impl.hpp"
 #include "allreduce/impl.hpp"
-#include "allreduce_ring/impl.hpp"
 #include "allreduce_butterfly/impl.hpp"
 #include "allreduce_rabenseifner/impl.hpp"
+#include "allreduce_ring/impl.hpp"
+#include "bruck_async/impl.hpp"
+#include "dsop_single.h"
 #include "rabenseifner_gather/impl.hpp"
 #include "rabenseifner_scatter/impl.hpp"
-#include "dsop_single.h"
 #include "util.hpp"
 #include "vector.h"
 
@@ -147,6 +148,8 @@ static std::unique_ptr<dsop> get_impl(const std::string& name, Args&&... args) {
     return std::make_unique<impls::rabenseifner_gather::rabenseifner_gather>(std::forward<Args>(args)...);
   } else if (name == "rabenseifner-scatter") {
     return std::make_unique<impls::rabenseifner_scatter::rabenseifner_scatter>(std::forward<Args>(args)...);
+  } else if (name == "bruck-async") {
+    return std::make_unique<impls::bruck_async::bruck_async>(std::forward<Args>(args)...);
   } else {
     throw std::runtime_error("Unknown implementation '" + name + "'");
   }
@@ -217,37 +220,36 @@ static void run_iteration(std::unique_ptr<dsop> impl, matrix& result, MPI_Comm C
  *
  * On root, returns a list of errors
  */
-static std::vector<double> run_validate(const settings& s, const matrix& reference_result, matrix& result) {
-  if (s.is_root) {
-    std::cerr << "Validation turned on" << std::endl;
+static std::vector<double> run_validate_root(const settings& s, const matrix& reference_result, matrix& result) {
+  std::cerr << "Validation turned on" << std::endl;
 
-    std::vector<double> errors;
+  std::vector<double> errors;
 
-    for (int i = 0; i < s.numprocs; i++) {
-      if (i != s.rank) {
-        MPI_Recv(result.get_ptr(), result.dimension(), MPI_DOUBLE, i, TAG_VALIDATE, s.COMM, MPI_STATUS_IGNORE);
-      }
-
-      if (!result.matchesDimensions(reference_result)) {
-        throw std::runtime_error("Results of rank " + std::to_string(i) + " have wrong dimensions (" +
-                                 std::to_string(result.rows) + "x" + std::to_string(result.columns) + ")");
-      }
-
-      double diff = nrm_sqr_diff(result.get_ptr(), reference_result.get_ptr(), reference_result.dimension());
-
-      if (diff > EPS) {
-        throw std::runtime_error("Result does not match sequential result: error=" + std::to_string(diff));
-      }
-
-      errors.push_back(diff);
+  for (int i = 0; i < s.numprocs; i++) {
+    if (i != s.rank) {
+      MPI_Recv(result.get_ptr(), result.dimension(), MPI_DOUBLE, i, TAG_VALIDATE, s.COMM, MPI_STATUS_IGNORE);
     }
 
-    std::cerr << "Validation successful! error=" << *std::max_element(errors.begin(), errors.end()) << std::endl;
-    return errors;
-  } else {
-    MPI_Send(result.get_ptr(), result.dimension(), MPI_DOUBLE, ROOT, TAG_VALIDATE, s.COMM);
+    if (!result.matchesDimensions(reference_result)) {
+      throw std::runtime_error("Results of rank " + std::to_string(i) + " have wrong dimensions (" +
+                               std::to_string(result.rows) + "x" + std::to_string(result.columns) + ")");
+    }
+
+    double diff = nrm_sqr_diff(result.get_ptr(), reference_result.get_ptr(), reference_result.dimension());
+
+    if (diff > EPS) {
+      throw std::runtime_error("Result does not match sequential result: error=" + std::to_string(diff));
+    }
+
+    errors.push_back(diff);
   }
-  return {};
+
+  std::cerr << "Validation successful! error=" << *std::max_element(errors.begin(), errors.end()) << std::endl;
+  return errors;
+}
+
+static void run_validate_non_root(const settings& s, matrix& result) {
+  MPI_Send(result.get_ptr(), result.dimension(), MPI_DOUBLE, ROOT, TAG_VALIDATE, s.COMM);
 }
 
 int main(int argc, char* argv[]) {
@@ -317,9 +319,11 @@ int main(int argc, char* argv[]) {
     }
 
     if (validate) {
-      const auto errors = run_validate(s, *reference_result, result);
       if (is_root) {
+        const auto errors = run_validate_root(s, *reference_result, result);
         iter_dump["errors"] = errors;
+      } else {
+        run_validate_non_root(s, result);
       }
     }
 

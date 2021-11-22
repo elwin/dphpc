@@ -11,6 +11,7 @@ implementations = [
     allreduce_ring,
     allreduce_butterfly,
     allgather_async,
+    bruck_async,
     allreduce_rabenseifner,
     rabenseifner_gather,
     # rabenseifner_scatter, # not ready yet

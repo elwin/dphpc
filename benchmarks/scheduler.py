@@ -50,6 +50,7 @@ allgather_async = Implementation(name='allgather-async')
 allreduce_rabenseifner = Implementation(name='allreduce-rabenseifner')
 rabenseifner_gather = Implementation(name='rabenseifner-gather')
 rabenseifner_scatter = Implementation(name='rabenseifner-scatter')
+bruck_async = Implementation(name='bruck-async')
 
 
 @dataclasses.dataclass(eq=True, frozen=True, order=True)
