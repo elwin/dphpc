@@ -139,6 +139,8 @@ static std::unique_ptr<dsop> get_impl(const std::string& name, Args&&... args) {
     return std::make_unique<impls::allgather_async::allgather_async>(std::forward<Args>(args)...);
   } else if (name.rfind("allreduce-native-", 0) == 0) {
     return std::make_unique<impls::allreduce::allreduce>(std::forward<Args>(args)...);
+  } else if (name.rfind("allgather-native-", 0) == 0) {
+    return std::make_unique<impls::allgather::allgather>(std::forward<Args>(args)...);
   } else if (name == "allreduce-rabenseifner") {
     return std::make_unique<impls::allreduce_rabenseifner::allreduce_rabenseifner>(std::forward<Args>(args)...);
   } else if (name == "rabenseifner-gather") {
