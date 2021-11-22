@@ -36,7 +36,6 @@ list(APPEND cxx_linker_flags ${cxx_flags})
 
 set(MAIN_SOURCES
         src/vector.cpp
-        src/matrix.cpp
         src/dsop_single.cpp
         src/util.cpp
         src/allreduce/impl.cpp
