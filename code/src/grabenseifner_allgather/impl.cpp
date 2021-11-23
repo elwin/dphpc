@@ -26,18 +26,18 @@ void grabenseifner_allgather::compute(
   // partition the rows of the final matrix among all processes
   // If there are not enough rows --> divide rows among first n_rows processes
   size_t my_n_rows = n_rows / n_processors;
-  size_t last_n_rows = n_rows - ((n_processors-1) * my_n_rows);
+  size_t last_n_rows = n_rows - ((n_processors - 1) * my_n_rows);
   size_t residual_rows = last_n_rows - my_n_rows;
   size_t last_chunk_start_row = n_processors * my_n_rows;
   size_t my_start_row = my_n_rows * rank;
   size_t my_block_size = my_n_rows * n_cols;
-  int i_compute = 1;
+  //  int i_compute = 1; // TODO
   if (n_rows < n_processors) {
     my_n_rows = 1;
     my_start_row = rank;
-    if (my_rank >= n_rows) {
-      i_compute = 0;
-    }
+    //    if (my_rank >= n_rows) {
+    //      i_compute = 0; // TODO
+    //    }
   }
   bool special_last_block = (my_n_rows != last_n_rows);
   if (my_rank == n_processors - 1) {
@@ -81,10 +81,10 @@ void grabenseifner_allgather::compute(
       }
     }
   }
-//  fprintf(stderr,
-//      "%d [Special Last Block] my_start_row=%zu, my_n_rows=%zu, n_rows=%zu, n_cols=%zu, last_chunk_start_row=%zu, "
-//      "residual_rows=%zu, last_n_rows=%zu\n",
-//      rank, my_start_row, my_n_rows, n_rows, n_cols, last_chunk_start_row, residual_rows, last_n_rows);
+  //  fprintf(stderr,
+  //      "%d [Special Last Block] my_start_row=%zu, my_n_rows=%zu, n_rows=%zu, n_cols=%zu, last_chunk_start_row=%zu, "
+  //      "residual_rows=%zu, last_n_rows=%zu\n",
+  //      rank, my_start_row, my_n_rows, n_rows, n_cols, last_chunk_start_row, residual_rows, last_n_rows);
 
   if (special_last_block) {
     // second allgather round matrix prefix
@@ -99,11 +99,11 @@ void grabenseifner_allgather::compute(
         MPI_DOUBLE, comm);
   }
 
-//  auto result_str = result.string();
-//  auto appended_vec_str = appended_vectors.string();
-//  auto receive_buffer_str = receive_buffer.string();
-//  fprintf(stderr, "%d: Current State:\n Sending-Vectors = %s\n Result = %s\n...\n", rank, appended_vec_str.c_str(),
-//      result_str.c_str());
+  //  auto result_str = result.string();
+  //  auto appended_vec_str = appended_vectors.string();
+  //  auto receive_buffer_str = receive_buffer.string();
+  //  fprintf(stderr, "%d: Current State:\n Sending-Vectors = %s\n Result = %s\n...\n", rank, appended_vec_str.c_str(),
+  //      result_str.c_str());
 
   //  fprintf(stderr, "%d: Current State:\n Receive buffer = %s\n Sending-Vectors = %s\n Result = %s\n...\n", rank,
   //      receive_buffer_str.c_str(), appended_vec_str.c_str(), result_str.c_str());
