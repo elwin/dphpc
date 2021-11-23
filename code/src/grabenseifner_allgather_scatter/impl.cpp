@@ -32,13 +32,13 @@ void grabenseifner_allgather_scatter::compute(
   size_t last_chunk_start_row = n_processors * my_n_rows;
   size_t my_start_row = my_n_rows * rank;
   size_t my_block_size = my_n_rows * n_cols;
-  int i_compute = 1;
+//  int i_compute = 1; // TODO
   if (n_rows < n_processors) {
     my_n_rows = 1;
     my_start_row = rank;
-    if (my_rank >= n_rows) {
-      i_compute = 0;
-    }
+//    if (my_rank >= n_rows) {
+//      i_compute = 0; // TODO
+//    }
   }
   bool special_last_block = (my_n_rows != last_n_rows);
   // send and receive buffers -->
