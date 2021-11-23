@@ -14,7 +14,8 @@ if(NOT CMAKE_BUILD_TYPE)
 endif()
 string(TOUPPER ${CMAKE_BUILD_TYPE} CMAKE_BUILD_TYPE_UPPER)
 
-list(APPEND cxx_base -Wall -Wextra -Wpedantic -Wsuggest-override)
+list(APPEND cxx_base -Wall -Wextra -Wpedantic -Wsuggest-override -std=c++17 -mavx -mavx2 -mfma)
+list(APPEND cxx_release -ffast-math)
 list(APPEND cxx_debug -DDEBUG -g2)
 list(APPEND cxx_sanitize -O0 -g -fsanitize=address -fsanitize=undefined -fno-omit-frame-pointer -fno-optimize-sibling-calls)
 
@@ -27,13 +28,14 @@ if (CMAKE_BUILD_TYPE_UPPER STREQUAL "DEBUG")
   list(APPEND cxx_flags ${cxx_debug})
 elseif (CMAKE_BUILD_TYPE_UPPER STREQUAL "SANITIZE")
   list(APPEND cxx_flags ${cxx_sanitize})
+elseif (CMAKE_BUILD_TYPE_UPPER STREQUAL "RELEASE")
+  list(APPEND cxx_flags ${cxx_release})
 endif()
 
 list(APPEND cxx_linker_flags ${cxx_flags})
 
 set(MAIN_SOURCES
         src/vector.cpp
-        src/matrix.cpp
         src/dsop_single.cpp
         src/util.cpp
         src/allreduce/impl.cpp
@@ -41,8 +43,10 @@ set(MAIN_SOURCES
         src/allreduce_rabenseifner/impl.cpp
         src/rabenseifner_gather/impl.cpp
         src/rabenseifner_scatter/impl.cpp
+        src/allreduce_ring/impl.cpp
         src/allgather/impl.cpp
         src/allgather_async/impl.cpp
+        src/bruck_async/impl.cpp
         )
 
 set(INCLUDE_DIRS include)

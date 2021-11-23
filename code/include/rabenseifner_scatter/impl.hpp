@@ -30,7 +30,4 @@ void addReceivedVectors(
 void setSendVector(std::vector<SubVec>* buffer_A, std::vector<SubVec>* buffer_B, double* sendBuffer,
     int* n_send_elements, int lower_index_A, int lower_index_B, int upper_index_A, int upper_index_B);
 
-void submatrixToBuffer(matrix& M, double* sendbuffer, int start_row, int end_row, int start_col, int end_col);
-void copyBufferToSubmatrix(matrix& M, double* sendbuffer, int start_row, int end_row, int start_col, int end_col);
-
 } // namespace impls::rabenseifner_scatter
