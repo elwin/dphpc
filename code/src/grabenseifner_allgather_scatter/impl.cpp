@@ -23,7 +23,7 @@ void grabenseifner_allgather_scatter::compute(
   size_t n_processors = num_procs;
   size_t n_rows = (size_t)a.size();
   size_t n_cols = (size_t)b.size();
-  size_t my_rank = (size_t)rank;
+//  size_t my_rank = (size_t)rank; // TODO
   // partition the rows of the final matrix among all processes
   // If there are not enough rows --> divide rows among first n_rows processes
   size_t my_n_rows = n_rows / n_processors;
