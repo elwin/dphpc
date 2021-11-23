@@ -49,7 +49,7 @@ allreduce_butterfly = Implementation(name='allreduce-butterfly')
 allgather_async = Implementation(name='allgather-async')
 allreduce_rabenseifner = Implementation(name='allreduce-rabenseifner')
 rabenseifner_gather = Implementation(name='rabenseifner-gather')
-rabenseifner_scatter = Implementation(name='rabenseifner-scatter')
+grabenseifner_allgather = Implementation(name='g-rabenseifner-allgather')
 bruck_async = Implementation(name='bruck-async')
 
 
