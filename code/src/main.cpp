@@ -23,7 +23,8 @@
 #include "bruck_async/impl.hpp"
 #include "dsop_single.h"
 #include "rabenseifner_gather/impl.hpp"
-#include "rabenseifner_scatter/impl.hpp"
+#include "grabenseifner_allgather/impl.hpp"
+#include "grabenseifner_allgather_scatter/impl.hpp"
 #include "util.hpp"
 #include "vector.h"
 
@@ -146,8 +147,10 @@ static std::unique_ptr<dsop> get_impl(const std::string& name, Args&&... args) {
     return std::make_unique<impls::allreduce_rabenseifner::allreduce_rabenseifner>(std::forward<Args>(args)...);
   } else if (name == "rabenseifner-gather") {
     return std::make_unique<impls::rabenseifner_gather::rabenseifner_gather>(std::forward<Args>(args)...);
-  } else if (name == "rabenseifner-scatter") {
-    return std::make_unique<impls::rabenseifner_scatter::rabenseifner_scatter>(std::forward<Args>(args)...);
+  } else if (name == "g-rabenseifner-allgather") {
+    return std::make_unique<impls::grabenseifner_allgather::grabenseifner_allgather>(std::forward<Args>(args)...);
+  } else if (name == "g-rabenseifner-allgather-scatter") {
+    return std::make_unique<impls::grabenseifner_allgather_scatter::grabenseifner_allgather_scatter>(std::forward<Args>(args)...);
   } else if (name == "bruck-async") {
     return std::make_unique<impls::bruck_async::bruck_async>(std::forward<Args>(args)...);
   } else {

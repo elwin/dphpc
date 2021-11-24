@@ -1,7 +1,6 @@
 #include "vector.h"
 
 #include <string>
-
 #include "iostream"
 
 void vector::print() const {

@@ -7,6 +7,7 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include <string>
 
 #include "common.h"
 #include "vector.h"
@@ -157,5 +158,17 @@ class matrix {
     add_outer_product(a.size(), a.data(), b.size(), b.data());
   }
 };
+
+// Compute outer product and write to matrix C in place
+void set_outer_product(matrix& C, const vector& a, const vector& b);
+
+// Compute and add the outer product and write to matrix C in-place
+void add_outer_product(matrix& C, const vector& a, const vector& b);
+
+// Compute outer product and write to sub-matrix in C in-place. Submatrix defined by start row and column.
+void set_submatrix_outer_product(matrix& C, int start_row, int start_col, const vector& a, const vector& b);
+
+// Compute and add the outer product and write to sub-matrix in C in-place. Submatrix defined by start row and column.
+void add_submatrix_outer_product(matrix& C, int start_row, int start_col, const vector& a, const vector& b);
 
 #endif // CODE_MATRIX_H

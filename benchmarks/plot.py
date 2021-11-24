@@ -278,7 +278,6 @@ def plot(input_files: typing.List[str], output_dir: str):
     df['runtime'] /= 1_000_000
     df['fraction'] = df['runtime_compute'] / df['runtime']
     df['iteration'] += 1
-    df = df[df['implementation'] != 'rabenseifner-scatter']
 
     # pm.plot_for_analysis(df)
 

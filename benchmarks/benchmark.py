@@ -14,7 +14,7 @@ implementations = [
     bruck_async,
     allreduce_rabenseifner,
     rabenseifner_gather,
-    # rabenseifner_scatter, # not ready yet
+    grabenseifner_allgather,
 
     # Native implementations
     allreduce_native_ring,
