@@ -1,15 +1,16 @@
 import collections.abc
 import dataclasses
 import enum
+import io
 import json
 import logging
 import os.path
 import pathlib
-import subprocess
 import re
-import io
+import subprocess
 import sys
 import typing
+
 from config import *
 
 logging.basicConfig(stream=sys.stdout, level=logging.INFO)
@@ -31,6 +32,7 @@ def drop(li: list, keys: typing.List[str]) -> list:
 class Implementation:
     name: str
     allreduce_algorithm: int = None
+    allgather_algorithm: int = None
 
     def __str__(self):
         return self.name
@@ -39,18 +41,30 @@ class Implementation:
 allgather = Implementation(name='allgather')
 allreduce = Implementation(name='allreduce')
 allreduce_ring = Implementation(name='allreduce-ring')
-allreduce_native_ring = Implementation(name='allreduce-native-ring', allreduce_algorithm=4)
-allreduce_native_rabenseifner = Implementation(name='allreduce-native-rabenseifner', allreduce_algorithm=6)
-allreduce_native_nonoverlapping = Implementation(name='allreduce-native-nonoverlapping', allreduce_algorithm=2)
-allreduce_native_recursive_doubling = Implementation(name='allreduce-native-recursive_doubling', allreduce_algorithm=3)
-allreduce_native_segmented_ring = Implementation(name='allreduce-native-segmented_ring', allreduce_algorithm=5)
-allreduce_native_basic_linear = Implementation(name='allreduce-native-basic_linear', allreduce_algorithm=1)
 allreduce_butterfly = Implementation(name='allreduce-butterfly')
 allgather_async = Implementation(name='allgather-async')
 allreduce_rabenseifner = Implementation(name='allreduce-rabenseifner')
 rabenseifner_gather = Implementation(name='rabenseifner-gather')
 grabenseifner_allgather = Implementation(name='g-rabenseifner-allgather')
 bruck_async = Implementation(name='bruck-async')
+
+native_allreduce = [
+    Implementation(name='allreduce-native-basic_linear', allreduce_algorithm=1),
+    Implementation(name='allreduce-native-nonoverlapping', allreduce_algorithm=2),
+    Implementation(name='allreduce-native-recursive_doubling', allreduce_algorithm=3),
+    Implementation(name='allreduce-native-ring', allreduce_algorithm=4),
+    Implementation(name='allreduce-native-segmented_ring', allreduce_algorithm=5),
+    Implementation(name='allreduce-native-rabenseifner', allreduce_algorithm=6),
+]
+
+native_allgather = [
+    Implementation(name='allgather-native-linear', allgather_algorithm=1),
+    Implementation(name='allgather-native-bruck', allgather_algorithm=2),
+    Implementation(name='allgather-native-recursive_doubling', allgather_algorithm=3),
+    Implementation(name='allgather-native-ring', allgather_algorithm=4),
+    Implementation(name='allgather-native-neighbor', allgather_algorithm=5),
+    Implementation(name='allgather-native-sparbit', allgather_algorithm=6),
+]
 
 
 @dataclasses.dataclass(eq=True, frozen=True, order=True)
@@ -60,7 +74,7 @@ class Configuration:
     nodes: int
     implementation: Implementation
     repetitions: int = 1  # used for repetitions within a job (-t ${repetitions})
-    repetition: int = 0  # used for repeated jobs, probably deprecated
+    job_repetition: int = 0  # used for repeated jobs
     verify: bool = False
 
     def __str__(self):
@@ -185,6 +199,16 @@ class EulerRunner(Runner):
                 '--mca', 'coll_tuned_allreduce_algorithm', f'{config.implementation.allreduce_algorithm}'
             ])
 
+        if config.implementation.allreduce_algorithm is not None:
+            mpi_args.extend([
+                '--mca', 'coll_tuned_use_dynamic_rules', '1',
+                '--mca', 'coll_tuned_allgather_algorithm', f'{config.implementation.allgather_algorithm}'
+            ])
+
+        if config.implementation.allreduce_algorithm is not None \
+                and config.implementation.allgather_algorithm is not None:
+            raise Exception("can only specify one of {allreduce_algorithm, allgather_algorithm), not both")
+
         args = [
             'bsub',
             # '-J', f'"{config.__str__()}"',
@@ -213,7 +237,7 @@ class EulerRunner(Runner):
             .search(process_output) \
             .group(1)
 
-        with open(f"{self.raw_dir}/jobs-{config.repetition}", "a") as f:
+        with open(f"{self.raw_dir}/jobs-{config.job_repetition}", "a") as f:
             f.write(job_id + "\n")
 
         logger.info(f'submitted job {job_id}')

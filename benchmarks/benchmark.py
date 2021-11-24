@@ -16,33 +16,27 @@ implementations = [
     rabenseifner_gather,
     grabenseifner_allgather,
 
-    # Native implementations
-    allreduce_native_ring,
-    allreduce_native_basic_linear,
-    allreduce_native_rabenseifner,
-    allreduce_native_nonoverlapping,
-    allreduce_native_recursive_doubling,
-    allreduce_native_segmented_ring,
+    *native_allreduce,
+    *native_allgather,
 ]
-repetitions = 40
+
+repetitions = 20
+job_repetitions = 3
 
 configs = []
 configs.extend([
-    Configuration(n=2 ** n, m=2 ** n, nodes=2 ** p, repetitions=repetitions, implementation=implementation)
-    for n in inclusive(4, 13)
-    for p in inclusive(1, 5)
+    Configuration(
+        n=n,
+        m=n,
+        nodes=nodes,
+        repetitions=repetitions,
+        job_repetition=job_repetition,
+        implementation=implementation,
+    )
+    for n in inclusive(1000, 8000, 500)
+    for nodes in [8, 16, 32]
+    for job_repetition in range(job_repetitions)
     for implementation in implementations
-])
-
-configs.extend([
-    Configuration(n=2 ** n, m=2 ** n, nodes=p, repetitions=repetitions, implementation=implementation)
-    for p in inclusive(2, 48, 2)
-    for n in inclusive(4, 13)
-    for implementation in drop(implementations, [
-        allreduce_rabenseifner,
-        allreduce_butterfly,
-        rabenseifner_gather,
-    ])
 ])
 
 verify_configs = [
