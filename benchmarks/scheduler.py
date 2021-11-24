@@ -206,7 +206,7 @@ class EulerRunner(Runner):
             ])
 
         if config.implementation.allreduce_algorithm is not None \
-                and config.implementation.allgather_algorithm is None:
+                and config.implementation.allgather_algorithm is not None:
             raise Exception("can only specify one of {allreduce_algorithm, allgather_algorithm), not both")
 
         args = [
