@@ -60,7 +60,7 @@ class Configuration:
     nodes: int
     implementation: Implementation
     repetitions: int = 1  # used for repetitions within a job (-t ${repetitions})
-    repetition: int = 0  # used for repeated jobs, probably deprecated
+    job_repetition: int = 0  # used for repeated jobs
     verify: bool = False
 
     def __str__(self):
@@ -213,7 +213,7 @@ class EulerRunner(Runner):
             .search(process_output) \
             .group(1)
 
-        with open(f"{self.raw_dir}/jobs-{config.repetition}", "a") as f:
+        with open(f"{self.raw_dir}/jobs-{config.job_repetition}", "a") as f:
             f.write(job_id + "\n")
 
         logger.info(f'submitted job {job_id}')
