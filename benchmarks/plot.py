@@ -2,7 +2,6 @@ import dataclasses
 import json
 import pathlib
 import typing
-import tikzplotlib
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -126,7 +125,6 @@ class PlotManager:
         output_dir = self.output_dir if self.prefix is None else f'{self.output_dir}/{self.prefix}'
         pathlib.Path(output_dir).mkdir(parents=True, exist_ok=True)
         plt.savefig(f'{output_dir}/{name}.svg')
-        tikzplotlib.save(f'{output_dir}/{name}.tex')
         plt.close()
 
     def plot_runtime(self, df: pd.DataFrame):
