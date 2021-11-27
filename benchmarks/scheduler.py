@@ -199,7 +199,7 @@ class EulerRunner(Runner):
                 '--mca', 'coll_tuned_allreduce_algorithm', f'{config.implementation.allreduce_algorithm}'
             ])
 
-        if config.implementation.allreduce_algorithm is not None:
+        if config.implementation.allgather_algorithm is not None:
             mpi_args.extend([
                 '--mca', 'coll_tuned_use_dynamic_rules', '1',
                 '--mca', 'coll_tuned_allgather_algorithm', f'{config.implementation.allgather_algorithm}'
