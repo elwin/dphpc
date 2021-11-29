@@ -6,6 +6,9 @@
 
 namespace impls::grabenseifner_subgroup {
 
+// Default number of subgroups (overwritten in main)
+int SUBGROUP_N_GROUPS = 4;
+
 /**
  * G-Rabenseifner-Subgroup tries to evaluate a tradeoff between communication time and communication.
  * The algorithm divides the processes into subgroups based on their rank (ignoring any kind of network topology).
@@ -24,7 +27,7 @@ void grabenseifner_subgroup::compute(const std::vector<vector>& a_in, const std:
   const auto& b = b_in[rank];
 
   // Change the number of groups here
-  int N_GROUPS = 1;
+  int N_GROUPS = impls::grabenseifner_subgroup::SUBGROUP_N_GROUPS;
 
   // Check if number of processes assumption true
   if (num_procs < 1) {
@@ -33,7 +36,7 @@ void grabenseifner_subgroup::compute(const std::vector<vector>& a_in, const std:
   }
   // for handling github-CI --> if the number of groups is larger than the number of processes
   // --> choose N_GROUPS = num_procs, ie. implement allgather, and each process computes individually
-  if (N_GROUPS > num_procs) {
+  if (N_GROUPS > num_procs || N_GROUPS < 1) {
     N_GROUPS = num_procs;
   }
 
@@ -167,22 +170,22 @@ void grabenseifner_subgroup::compute(const std::vector<vector>& a_in, const std:
     row_offset += n_cols;
   }
 
-  //      for (row_i = my_start_row; row_i < row_idx_upper; row_i++) {
-  //        for (col_i = 0; col_i < n_cols; col_i++) {
-  //          a_base = 0;
-  //          b_base = n_rows;
-  //          for (proc_i = 0; proc_i < num_procs; proc_i++) {
-  //            a_val = receive_buf[a_base + row_i];
-  //            b_val = receive_buf[b_base + col_i];
-  //            res_val = result_ptr[row_offset + col_i];
-  //            res_val += a_val * b_val;
-  //            result_ptr[row_offset + col_i] = res_val;
-  //            a_base += appended_vec_size;
-  //            b_base += appended_vec_size;
-  //          }
-  //        }
-  //        row_offset += n_cols;
+  //  for (row_i = my_start_row; row_i < row_idx_upper; row_i++) {
+  //    for (col_i = 0; col_i < n_cols; col_i++) {
+  //      a_base = 0;
+  //      b_base = n_rows;
+  //      for (proc_i = 0; proc_i < num_procs; proc_i++) {
+  //        a_val = receive_buf[a_base + row_i];
+  //        b_val = receive_buf[b_base + col_i];
+  //        res_val = result_ptr[row_offset + col_i];
+  //        res_val += a_val * b_val;
+  //        result_ptr[row_offset + col_i] = res_val;
+  //        a_base += appended_vec_size;
+  //        b_base += appended_vec_size;
   //      }
+  //    }
+  //    row_offset += n_cols;
+  //  }
 
   //  for (proc_i = 0; proc_i < n_processors; proc_i++) {
   //    a_base = proc_i * appended_vec_size;
@@ -208,4 +211,5 @@ void grabenseifner_subgroup::compute(const std::vector<vector>& a_in, const std:
         MPI_DOUBLE, subgroup);
   }
 }
+
 } // namespace impls::grabenseifner_subgroup
