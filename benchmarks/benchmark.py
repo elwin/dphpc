@@ -22,13 +22,13 @@ implementations = [
     grabenseifner_allgather,
     grabenseifner_subgroup_1,
     grabenseifner_subgroup_2,
-    # grabenseifner_subgroup_4,
-    # grabenseifner_subgroup_8,
-    # grabenseifner_subgroup_16
+    grabenseifner_subgroup_4,
+    grabenseifner_subgroup_8,
+    grabenseifner_subgroup_16
 ]
 
 repetitions = 20
-job_repetitions = 1 # 3
+job_repetitions = 3
 
 configs = []
 configs.extend([
@@ -40,16 +40,12 @@ configs.extend([
         job_repetition=job_repetition,
         implementation=implementation,
     )
-    for n in inclusive(1000, 2000, 1000)
-    for nodes in [2, 4]
+    for n in inclusive(1000, 8000, 1000)
+    for nodes in [8, 16, 32]
     for job_repetition in range(job_repetitions)
     for implementation in implementations
 
 ])
-# for n in inclusive(1000, 8000, 1000)
-#     for nodes in [8, 16, 32]
-#         for job_repetition in range(job_repetitions)
-#         for implementation in implementations
 
 verify_configs = [
     Configuration(n=2 ** n, m=2 ** n, nodes=2 ** p, implementation=implementation, verify=True)
