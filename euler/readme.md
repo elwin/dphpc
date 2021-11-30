@@ -83,3 +83,11 @@ bsub -n <number of processes> mpirun -np <number of processes> <binary>
 # Example:
 bsub -n 4 mpirun -np 4 ./main -n 5 -m 5 -i allreduce
 ```
+
+## Check status manually
+
+```shell
+bbjobs -a | grep -o 'DONE' | wc -l
+bbjobs -a | grep -o 'PENDING' | wc -l
+bbjobs -a | grep -o 'RUNNING' | wc -l
+```
