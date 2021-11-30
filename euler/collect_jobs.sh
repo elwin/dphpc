@@ -8,4 +8,4 @@ set -e # Exit on first failure
 # If not finished:  exit
 # If finished:      collect files and copy to local machine
 ssh -t euler < ./euler/wrapper/run_verify_completed.sh
-scp -r euler:~/dphpc/results/tmp results
+rsync -r euler:~/dphpc/results/tmp results
