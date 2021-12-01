@@ -152,7 +152,7 @@ class Scheduler:
         )
 
         for nodes, configs in grouped:
-            self.runner.run_grouped(nodes, list(configs))
+            self.runner.run_grouped(nodes, list(configs)[:3])
 
     def run(self):
         for config in self.configurations():
