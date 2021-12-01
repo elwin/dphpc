@@ -212,7 +212,7 @@ class EulerRunner(Runner):
         for path in [self.raw_dir, self.parsed_dir]:
             pathlib.Path(path).mkdir(parents=True, exist_ok=True)
 
-    def actually_run(self, nodes: int, job_repetition: int, mpi_args: str, time: int = None):
+    def actually_run(self, nodes: int, job_repetition: int, mpi_args: typing.List[str], time: int = None):
         args = [
             'bsub',
             # '-J', f'"{config.__str__()}"',
@@ -280,7 +280,7 @@ class EulerRunner(Runner):
 
         mpi_args = self.prepare_cmd(config)
 
-        self.actually_run(config.nodes, config.job_repetition, ' '.join(mpi_args))
+        self.actually_run(config.nodes, config.job_repetition, [' '.join(mpi_args)])
 
     def run_grouped(self, keys, configs: typing.List[Configuration]):
         nodes = configs[0].nodes
@@ -311,7 +311,7 @@ class EulerRunner(Runner):
             for line in commands:
                 f.write(f'{line}\n')
 
-            self.actually_run(nodes, repetition, f'< {f.name}', time)
+            self.actually_run(nodes, repetition, ['<', f.name]', time)
 
     def verify(self, repetition: int) -> bool:
         completed = True
