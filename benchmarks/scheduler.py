@@ -233,19 +233,19 @@ class EulerRunner(Runner):
         logger.debug("executing the following command:")
         logger.info(" ".join(args))
 
-        # proc = subprocess.run(args, stdout=subprocess.PIPE)
-        # process_output = proc.stdout.decode()
-        # logger.debug(process_output)
-        #
-        # job_id = re \
-        #     .compile("Job <(.*)> is submitted to queue.") \
-        #     .search(process_output) \
-        #     .group(1)
-        #
-        # with open(f"{self.raw_dir}/jobs-{job_repetition}", "a") as f:
-        #     f.write(job_id + "\n")
+        proc = subprocess.run(args, stdout=subprocess.PIPE)
+        process_output = proc.stdout.decode()
+        logger.debug(process_output)
 
-        # logger.info(f'submitted job {job_id}')
+        job_id = re \
+            .compile("Job <(.*)> is submitted to queue.") \
+            .search(process_output) \
+            .group(1)
+
+        with open(f"{self.raw_dir}/jobs-{job_repetition}", "a") as f:
+            f.write(job_id + "\n")
+
+        logger.info(f'submitted job {job_id}')
 
     @staticmethod
     def prepare_cmd(config: Configuration):
