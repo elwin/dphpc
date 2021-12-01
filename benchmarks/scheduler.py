@@ -227,7 +227,7 @@ class EulerRunner(Runner):
         if time is not None and time > 4 * 60:
             args.extend(['-W', str(time)])
 
-        args.append(mpi_args)
+        args.extend(mpi_args)
 
         logger.debug("executing the following command:")
         logger.info(" ".join(args))
