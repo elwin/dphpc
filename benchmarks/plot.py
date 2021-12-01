@@ -256,6 +256,21 @@ class PlotManager:
         self.plot_mem_usage(df)
         self.plot_repetitions(df)
 
+    def plot_job_stats(self, df: pd.DataFrame):
+        self.prefix = 'job'
+
+        df['job.runtime'].plot(
+            ylabel='runtime (s)'
+        )
+        self.plot_and_save('runtime_hist')
+
+        data = df['job.turnaround_time']
+        data /= 60 * 60
+        data.plot(
+            ylabel='queueing time (h)'
+        )
+        self.plot_and_save('queueing_hist')
+
 
 def plot(input_files: typing.List[str], output_dir: str):
     sns.set()
@@ -279,5 +294,6 @@ def plot(input_files: typing.List[str], output_dir: str):
 
     # pm.plot_for_analysis(df)
 
+    pm.plot_job_stats(df)
     pm.plot_all(df[~df['implementation'].str.contains('native')])
     pm.plot_all(df[df['implementation'].str.startswith('allreduce')], prefix='native')
