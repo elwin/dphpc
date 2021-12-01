@@ -2,6 +2,7 @@ import collections.abc
 import dataclasses
 import enum
 import io
+import itertools
 import json
 import logging
 import os.path
@@ -87,7 +88,7 @@ class Configuration:
 
     def command(self):
         args = [
-            binary_path,
+            f'./{binary_path}',  # Make sure we use a proper path
             '-n', str(self.n),
             '-m', str(self.m),
             '-t', str(self.repetitions),
@@ -117,13 +118,16 @@ class Configuration:
 
 class Runner:
     def run(self, config: Configuration):
-        pass
+        raise NotImplemented
+
+    def run_grouped(self, keys, configs: typing.List[Configuration]):
+        raise NotImplemented
 
     def collect(self, repetition: int):
-        pass
+        raise NotImplemented
 
     def verify(self, repetition: int) -> bool:
-        return True
+        raise NotImplemented
 
 
 class Scheduler:
@@ -137,12 +141,31 @@ class Scheduler:
         else:
             self.configs.append(config)
 
+    @staticmethod
+    def grouping_key(c: Configuration):
+        return c.nodes, c.job_repetition
+
+    def run_grouped(self):
+        grouped = itertools.groupby(
+            sorted(self.valid_configurations(), key=self.grouping_key),
+            self.grouping_key,
+        )
+
+        for nodes, configs in grouped:
+            self.runner.run_grouped(nodes, list(configs))
+
     def run(self):
         for config in self.configurations():
             self.runner.run(config)
 
     def configurations(self):
         configs = list(set(self.configs))
+        configs.sort()
+        return configs
+
+    def valid_configurations(self):
+        configs = list(set(self.configs))
+        configs = list(filter(lambda c: c.runnable(), configs))
         configs.sort()
         return configs
 
@@ -154,6 +177,9 @@ class DryRun(Runner):
         runnable, reason = config.runnable()
         if not runnable:
             logging.warning(reason)
+
+    def run_grouped(self, keys, configs: typing.List[Configuration]):
+        logging.info(f'{keys} -> {len(configs)} configurations')
 
 
 class LocalRunner(Runner):
@@ -186,13 +212,46 @@ class EulerRunner(Runner):
         for path in [self.raw_dir, self.parsed_dir]:
             pathlib.Path(path).mkdir(parents=True, exist_ok=True)
 
-    def run(self, config: Configuration):
-        runnable, reason = config.runnable()
-        if not runnable:
-            logger.warning(f'skipping configuration: {reason}')
-            return
+    def actually_run(self, nodes: int, job_repetition: int, mpi_args: str, time: int = None):
+        args = [
+            'bsub',
+            # '-J', f'"{config.__str__()}"',
+            '-o', f'{self.raw_dir}/%J',
+            '-e', f'{self.raw_dir}/%J.err',
+            '-n', str(nodes),
+            '-R', 'span[ptile=1]',  # use 1 core per node
+            '-R', 'select[model==XeonE3_1585Lv5]',  # use Euler III nodes (4 cores)
+            '-R', 'select[!ib]',  # disable infiniband (not available on Euler III)
+            '-r',  # make jobs retryable
+        ]
+        if time is not None:
+            args.extend(['-W', str(time)])
 
-        mpi_args = []
+        args.append(mpi_args)
+
+        logger.debug("executing the following command:")
+        logger.info(" ".join(args))
+
+        proc = subprocess.run(args, stdout=subprocess.PIPE)
+        process_output = proc.stdout.decode()
+        logger.debug(process_output)
+
+        job_id = re \
+            .compile("Job <(.*)> is submitted to queue <normal.4h>.") \
+            .search(process_output) \
+            .group(1)
+
+        with open(f"{self.raw_dir}/jobs-{job_repetition}", "a") as f:
+            f.write(job_id + "\n")
+
+        logger.info(f'submitted job {job_id}')
+
+    @staticmethod
+    def prepare_cmd(config: Configuration):
+        mpi_args = [
+            'mpirun',
+            '-np', str(config.nodes),
+        ]
         if config.implementation.allreduce_algorithm is not None:
             mpi_args.extend([
                 '--mca', 'coll_tuned_use_dynamic_rules', '1',
@@ -209,38 +268,46 @@ class EulerRunner(Runner):
                 and config.implementation.allgather_algorithm is not None:
             raise Exception("can only specify one of {allreduce_algorithm, allgather_algorithm), not both")
 
-        args = [
-            'bsub',
-            # '-J', f'"{config.__str__()}"',
-            '-o', f'{self.raw_dir}/%J',
-            '-e', f'{self.raw_dir}/%J.err',
-            '-n', str(config.nodes),
-            '-R', 'span[ptile=1]',  # use 1 core per node
-            '-R', 'select[model==XeonE3_1585Lv5]',  # use Euler III nodes (4 cores)
-            '-R', 'select[!ib]',  # disable infiniband (not available on Euler III)
-            '-r',  # make jobs retryable
-            'mpirun',
-            *mpi_args,
-            '-np', str(config.nodes),
-            *config.command(),
-        ]
+        mpi_args.extend(config.command())
 
-        logger.debug("executing the following command:")
-        logger.debug(" ".join(args))
+        return mpi_args
 
-        proc = subprocess.run(args, stdout=subprocess.PIPE)
-        process_output = proc.stdout.decode()
-        logger.debug(process_output)
+    def run(self, config: Configuration):
+        runnable, reason = config.runnable()
+        if not runnable:
+            logger.warning(f'skipping configuration: {reason}')
+            return
 
-        job_id = re \
-            .compile("Job <(.*)> is submitted to queue <normal.4h>.") \
-            .search(process_output) \
-            .group(1)
+        mpi_args = self.prepare_cmd(config)
 
-        with open(f"{self.raw_dir}/jobs-{config.job_repetition}", "a") as f:
-            f.write(job_id + "\n")
+        self.actually_run(config.nodes, config.job_repetition, ' '.join(mpi_args))
 
-        logger.info(f'submitted job {job_id}')
+    def run_grouped(self, keys, configs: typing.List[Configuration]):
+        nodes = configs[0].nodes
+        repetition = configs[0].job_repetition
+
+        commands = []
+        for config in configs:
+            runnable, reason = config.runnable()
+            if not runnable:
+                logger.warning(f'skipping configuration: {reason}')
+                continue
+
+            if config.nodes != nodes:
+                raise Exception(
+                    f'different number of nodes in same grouping, expected {nodes}, received {config.nodes}')
+
+            if config.job_repetition != repetition:
+                raise Exception(
+                    f'different job repetition in same grouping, expected {repetition}, received {config.job_repetition}')
+
+            mpi_args = self.prepare_cmd(config)
+            commands.append(' '.join(mpi_args))
+
+        command = '; '.join(commands)
+        time = 2 * len(configs)  # roughly 1.25 minutes / run on average
+
+        self.actually_run(nodes, repetition, f'\'{command}\'', time)
 
     def verify(self, repetition: int) -> bool:
         completed = True
