@@ -40,6 +40,7 @@ struct settings {
   int numprocs;
   MPI_Comm COMM;
   int num_iterations{1};
+  int repetition; // when running the entire binary multiple times
 };
 
 using json = nlohmann::json;
@@ -56,6 +57,7 @@ static void print_usage(const char* exec) {
   fprintf(stderr, "  -m        Size of vector B\n");
   fprintf(stderr, "  -i        Name of implementation to run\n");
   fprintf(stderr, "  -t        Number of iterations (default: 1)\n");
+  fprintf(stderr, "  -r        Repetition number (default: 0)\n");
 }
 
 static settings parse_cmdline(int argc, char** argv) {
@@ -66,7 +68,7 @@ static settings parse_cmdline(int argc, char** argv) {
 
   bool has_impl = false;
   int opt;
-  while ((opt = getopt(argc, argv, "hn:m:vi:ct:")) != -1) {
+  while ((opt = getopt(argc, argv, "hn:m:vi:ct:r:")) != -1) {
     switch (opt) {
       case 'n':
         has_N = true;
@@ -81,6 +83,10 @@ static settings parse_cmdline(int argc, char** argv) {
       case 't':
         s.num_iterations = std::stoi(optarg);
         assert(s.num_iterations > 0);
+        break;
+      case 'r':
+        s.repetition = std::stoi(optarg);
+        assert(s.repetition >= 0);
         break;
       case 'c':
         s.validate = true;
@@ -167,6 +173,7 @@ static json prepare_json_dump(const settings& s, int iteration) {
       {"numprocs", s.numprocs},
       {"num_iterations", s.num_iterations},
       {"iteration", iteration},
+      {"repetition", s.repetition},
   };
 }
 
