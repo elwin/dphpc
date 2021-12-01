@@ -212,7 +212,7 @@ class EulerRunner(Runner):
         for path in [self.raw_dir, self.parsed_dir]:
             pathlib.Path(path).mkdir(parents=True, exist_ok=True)
 
-    def actually_run(self, nodes: int, job_repetition: int, mpi_args: typing.List[str], time: int = None):
+    def actually_run(self, nodes: int, job_repetition: int, mpi_args: typing.List[str], time: int = None, stdin=None):
         args = [
             'bsub',
             # '-J', f'"{config.__str__()}"',
@@ -231,8 +231,10 @@ class EulerRunner(Runner):
 
         logger.debug("executing the following command:")
         logger.info(" ".join(args))
+        if stdin is not None:
+            logger.info(stdin.name)
 
-        proc = subprocess.run(args, stdout=subprocess.PIPE)
+        proc = subprocess.run(args, stdout=subprocess.PIPE, stdin=stdin)
         process_output = proc.stdout.decode()
         logger.debug(process_output)
 
@@ -311,7 +313,7 @@ class EulerRunner(Runner):
             for line in commands:
                 f.write(f'{line}\n')
 
-            self.actually_run(nodes, repetition, ['<', f.name], time)
+            self.actually_run(nodes, repetition, [], time, stdin=f)
 
     def verify(self, repetition: int) -> bool:
         completed = True
