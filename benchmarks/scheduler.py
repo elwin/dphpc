@@ -237,7 +237,7 @@ class EulerRunner(Runner):
         logger.debug(process_output)
 
         job_id = re \
-            .compile("Job <(.*)> is submitted to queue <normal.4h>.") \
+            .compile("Job <(.*)> is submitted to queue.") \
             .search(process_output) \
             .group(1)
 
