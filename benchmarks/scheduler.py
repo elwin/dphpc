@@ -306,7 +306,8 @@ class EulerRunner(Runner):
 
         time = 2 * len(configs)  # roughly 1.25 minutes / run on average
 
-        with open(f"{self.raw_dir}/batch-{'-'.join(map(str, keys))}", "a") as f:
+        batch_filename = f"./{self.raw_dir}/batch-{'-'.join(map(str, keys))}"
+        with open(batch_filename, "a") as f:
             for line in commands:
                 f.write(f'{line}\n')
 
