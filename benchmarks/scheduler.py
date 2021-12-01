@@ -212,10 +212,16 @@ class EulerRunner(Runner):
         for path in [self.raw_dir, self.parsed_dir]:
             pathlib.Path(path).mkdir(parents=True, exist_ok=True)
 
-    def actually_run(self, nodes: int, job_repetition: int, mpi_args: typing.List[str], time: int = None, stdin=None):
+    def actually_run(self,
+                     nodes: int,
+                     job_repetition: int,
+                     mpi_args: typing.List[str],
+                     time: int = None,
+                     stdin=None,
+                     job_name: str = None,
+                     ):
         args = [
             'bsub',
-            # '-J', f'"{config.__str__()}"',
             '-o', f'{self.raw_dir}/%J',
             '-e', f'{self.raw_dir}/%J.err',
             '-n', str(nodes),
@@ -224,6 +230,9 @@ class EulerRunner(Runner):
             '-R', 'select[!ib]',  # disable infiniband (not available on Euler III)
             '-r',  # make jobs retryable
         ]
+        if job_name is not None:
+            args.extend(['-J', job_name])
+
         if time is not None and time > 4 * 60:
             args.extend(['-W', str(time)])
 
@@ -308,14 +317,15 @@ class EulerRunner(Runner):
 
         time = 2 * len(configs)  # roughly 1.25 minutes / run on average
 
-        batch_filename = f"./{self.raw_dir}/batch-{'-'.join(map(str, keys))}"
+        job_name = '-'.join(map(str, keys))
+        batch_filename = f'./{self.raw_dir}/batch-{job_name}'
         with open(batch_filename, "w+") as f:
             for line in commands:
                 f.write(f'{line}\n')
 
             f.seek(0)
 
-            self.actually_run(nodes, repetition, [], time, stdin=f)
+            self.actually_run(nodes, repetition, [], time, stdin=f, job_name=job_name)
 
     def verify(self, repetition: int) -> bool:
         completed = True
