@@ -311,7 +311,7 @@ class EulerRunner(Runner):
             for line in commands:
                 f.write(f'{line}\n')
 
-            self.actually_run(nodes, repetition, ['<', f.name]', time)
+            self.actually_run(nodes, repetition, ['<', f.name], time)
 
     def verify(self, repetition: int) -> bool:
         completed = True
