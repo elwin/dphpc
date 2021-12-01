@@ -10,7 +10,6 @@ import pathlib
 import re
 import subprocess
 import sys
-import tempfile
 import typing
 
 from config import *
@@ -307,7 +306,7 @@ class EulerRunner(Runner):
 
         time = 2 * len(configs)  # roughly 1.25 minutes / run on average
 
-        with tempfile.NamedTemporaryFile(delete=False, mode='wt') as f:
+        with open(f"{self.raw_dir}/batch-{'-'.join(map(str, keys))}", "a") as f:
             for line in commands:
                 f.write(f'{line}\n')
 
