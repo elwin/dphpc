@@ -8,16 +8,16 @@ from scheduler import *
 implementations = [
     allgather,
     allreduce,
-    allreduce_ring,
-    allreduce_butterfly,
-    allgather_async,
-    bruck_async,
-    allreduce_rabenseifner,
-    rabenseifner_gather,
-    grabenseifner_allgather,
-
-    *native_allreduce,
-    *native_allgather,
+    # allreduce_ring,
+    # allreduce_butterfly,
+    # allgather_async,
+    # bruck_async,
+    # allreduce_rabenseifner,
+    # rabenseifner_gather,
+    # grabenseifner_allgather,
+    #
+    # *native_allreduce,
+    # *native_allgather,
 ]
 
 repetitions = 20

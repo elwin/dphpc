@@ -10,6 +10,7 @@ import pathlib
 import re
 import subprocess
 import sys
+import tempfile
 import typing
 
 from config import *
@@ -224,7 +225,7 @@ class EulerRunner(Runner):
             '-R', 'select[!ib]',  # disable infiniband (not available on Euler III)
             '-r',  # make jobs retryable
         ]
-        if time is not None:
+        if time is not None and time > 4 * 60:
             args.extend(['-W', str(time)])
 
         args.append(mpi_args)
@@ -232,19 +233,19 @@ class EulerRunner(Runner):
         logger.debug("executing the following command:")
         logger.info(" ".join(args))
 
-        proc = subprocess.run(args, stdout=subprocess.PIPE)
-        process_output = proc.stdout.decode()
-        logger.debug(process_output)
+        # proc = subprocess.run(args, stdout=subprocess.PIPE)
+        # process_output = proc.stdout.decode()
+        # logger.debug(process_output)
+        #
+        # job_id = re \
+        #     .compile("Job <(.*)> is submitted to queue.") \
+        #     .search(process_output) \
+        #     .group(1)
+        #
+        # with open(f"{self.raw_dir}/jobs-{job_repetition}", "a") as f:
+        #     f.write(job_id + "\n")
 
-        job_id = re \
-            .compile("Job <(.*)> is submitted to queue.") \
-            .search(process_output) \
-            .group(1)
-
-        with open(f"{self.raw_dir}/jobs-{job_repetition}", "a") as f:
-            f.write(job_id + "\n")
-
-        logger.info(f'submitted job {job_id}')
+        # logger.info(f'submitted job {job_id}')
 
     @staticmethod
     def prepare_cmd(config: Configuration):
@@ -304,10 +305,13 @@ class EulerRunner(Runner):
             mpi_args = self.prepare_cmd(config)
             commands.append(' '.join(mpi_args))
 
-        command = '; '.join(commands)
         time = 2 * len(configs)  # roughly 1.25 minutes / run on average
 
-        self.actually_run(nodes, repetition, f'\'{command}\'', time)
+        with tempfile.NamedTemporaryFile(delete=False, mode='wt') as f:
+            for line in commands:
+                f.write(f'{line}\n')
+
+            self.actually_run(nodes, repetition, f'< {f.name}', time)
 
     def verify(self, repetition: int) -> bool:
         completed = True
