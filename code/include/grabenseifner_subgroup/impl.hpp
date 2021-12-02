@@ -7,13 +7,15 @@
 
 #include "vector.h"
 
-namespace impls::grabenseifner_allgather_scatter {
+namespace impls::grabenseifner_subgroup {
 
-class grabenseifner_allgather_scatter : public dsop {
+class grabenseifner_subgroup : public dsop {
   using dsop::dsop;
 
  public:
   void compute(const std::vector<vector>& a_in, const std::vector<vector>& b_in, matrix& result) override;
 };
 
-} // namespace impls::grabenseifner_allgather
+extern int SUBGROUP_N_GROUPS;
+
+} // namespace impls::grabenseifner_subgroup

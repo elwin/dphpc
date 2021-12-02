@@ -47,6 +47,12 @@ allgather_async = Implementation(name='allgather-async')
 allreduce_rabenseifner = Implementation(name='allreduce-rabenseifner')
 rabenseifner_gather = Implementation(name='rabenseifner-gather')
 grabenseifner_allgather = Implementation(name='g-rabenseifner-allgather')
+grabenseifner_subgroup = Implementation(name='g-rabenseifner-subgroup')
+grabenseifner_subgroup_1 = Implementation(name='g-rabenseifner-subgroup-1')
+grabenseifner_subgroup_2 = Implementation(name='g-rabenseifner-subgroup-2')
+grabenseifner_subgroup_4 = Implementation(name='g-rabenseifner-subgroup-4')
+grabenseifner_subgroup_8 = Implementation(name='g-rabenseifner-subgroup-8')
+grabenseifner_subgroup_16 = Implementation(name='g-rabenseifner-subgroup-16')
 bruck_async = Implementation(name='bruck-async')
 
 native_allreduce = [
