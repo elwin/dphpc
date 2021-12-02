@@ -91,3 +91,6 @@ bbjobs -a | grep -o 'DONE' | wc -l
 bbjobs -a | grep -o 'PENDING' | wc -l
 bbjobs -a | grep -o 'RUNNING' | wc -l
 ```
+
+Get current Job IDs: ```bbjobs -a | grep 'Job ID' | grep -Eo '[0-9]{9}'```
+Kill all current jobs: ```bbjobs -p | grep 'Job ID' | grep -Eo '[0-9]{9}' | xargs bkill```

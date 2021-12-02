@@ -8,12 +8,12 @@ from scheduler import *
 implementations = [
     allgather,
     allreduce,
-    # allreduce_ring,
+    allreduce_ring,
     # allreduce_butterfly,
-    # allgather_async,
+    allgather_async,
     # bruck_async,
     # allreduce_rabenseifner,
-    # rabenseifner_gather,
+    rabenseifner_gather,
     # grabenseifner_allgather,
     #
     # *native_allreduce,
@@ -28,7 +28,7 @@ implementations = [
 ]
 
 repetitions = 50
-job_repetitions = 20
+job_repetitions = 100
 
 configs = []
 configs.extend([

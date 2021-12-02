@@ -158,7 +158,7 @@ class Scheduler:
         )
 
         for nodes, configs in grouped:
-            self.runner.run_grouped(nodes, list(configs)[:3])
+            self.runner.run_grouped(nodes, list(configs))
 
     def run(self):
         for config in self.configurations():
@@ -415,6 +415,7 @@ class EulerRunner(Runner):
                                 try:
                                     parsed = json.loads(line)
                                     parsed['job'] = job_data
+                                    parsed['repetition'] = repetition # Overwrites repetition with information from file-name
                                     o.write(json.dumps(parsed, separators=(',', ':')) + '\n')
                                 except Exception as e:
                                     logging.error(f'[{job_id}] failed to parse line {line_nr}, "{subject}": {e}')
