@@ -27,8 +27,8 @@ implementations = [
     # grabenseifner_subgroup_16
 ]
 
-repetitions = 50
-job_repetitions = 100
+repetitions = 25
+job_repetitions = 50
 
 configs = []
 configs.extend([
