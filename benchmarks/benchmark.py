@@ -13,7 +13,7 @@ implementations = [
     # allgather_async,
     # bruck_async,
     # allreduce_rabenseifner,
-    rabenseifner_gather,
+    # rabenseifner_gather,
     # grabenseifner_allgather,
     #
     # *native_allreduce,
