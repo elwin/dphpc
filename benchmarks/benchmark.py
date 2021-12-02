@@ -6,8 +6,8 @@ import shutil
 from scheduler import *
 
 implementations = [
-    # allgather,
-    # allreduce,
+    allgather,
+    allreduce,
     # allreduce_ring,
     # allreduce_butterfly,
     # allgather_async,
@@ -20,15 +20,15 @@ implementations = [
     # *native_allgather,
 
     grabenseifner_allgather,
-    grabenseifner_subgroup_1,
+    # grabenseifner_subgroup_1,
     grabenseifner_subgroup_2,
     grabenseifner_subgroup_4,
     grabenseifner_subgroup_8,
-    grabenseifner_subgroup_16
+    # grabenseifner_subgroup_16
 ]
 
-repetitions = 20
-job_repetitions = 3
+repetitions = 50
+job_repetitions = 20
 
 configs = []
 configs.extend([
@@ -44,7 +44,6 @@ configs.extend([
     for nodes in [8, 16, 32]
     for job_repetition in range(job_repetitions)
     for implementation in implementations
-
 ])
 
 verify_configs = [
