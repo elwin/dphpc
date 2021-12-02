@@ -8,6 +8,7 @@ import pandas as pd
 import pandas.io.json
 import math
 import seaborn as sns
+from scipy.stats import bootstrap
 
 agg_func = np.median
 
@@ -24,13 +25,13 @@ class PlotManager:
         self.plot_runtime_by_key(df, 'numprocs', 'N', func_key=func_key)
 
     def plot_runtime_by_key(self, df: pd.DataFrame, filter_key='N', index_key='numprocs', func_key='mean',
-                            powers_of_two=True):
+                            percentile=99, powers_of_two=True):
         if func_key == 'mean':
             agg_func = np.mean
         elif func_key == 'median':
             agg_func = np.median
-        elif func_key == '99':
-            agg_func = self.ninety_nine
+        elif func_key == 'percentile':
+            agg_func = self.percentile_agg_func()
         else:
             agg_func = np.mean
 
@@ -59,14 +60,80 @@ class PlotManager:
             plt.savefig(f'{self.output_dir}/runtime_{i}_{filter_key}_{func_key}.svg')
             plt.close()
 
-    def plot_runtime_with_scatter(self, df: pd.DataFrame, filter_key='N', index_key='numprocs', func_key='median',
-                                  powers_of_two=True):
+    def plot_runtime_with_errorbars(self, df: pd.DataFrame, filter_key='N', index_key='numprocs', func_key='median',
+                                    percentile=99, CI_bound=0.95, powers_of_two=False):
         if func_key == 'mean':
             agg_func = np.mean
         elif func_key == 'median':
             agg_func = np.median
-        elif func_key == '99':
-            agg_func = self.ninety_nine
+        elif func_key == 'max':
+            agg_func = np.max
+        elif func_key == 'min':
+            agg_func = np.min
+        elif func_key == 'percentile':
+            agg_func = self.percentile_agg_func(percentile)
+        else:
+            agg_func = np.mean
+
+        def CI(data):
+            # take mean of statistic!
+            res = bootstrap(data.to_numpy().reshape((-1, data.shape[0])), np.mean, confidence_level=CI_bound,
+                            n_resamples=10000, method='basic', axis=0).confidence_interval
+            return res.low, res.high
+
+        for i in df[index_key].unique():
+            if powers_of_two and not math.log(i, 2).is_integer():
+                continue
+            data = df[df[index_key] == i]
+            color_dict = self.map_colors(data['implementation'].unique())
+
+            # aggregate the data
+            data_aggregated = data.groupby([filter_key, index_key, 'implementation', 'repetition']).agg(
+                {'runtime': agg_func})
+            data = data_aggregated.reset_index()
+            data_CI = data.groupby([filter_key, index_key, 'implementation']).agg(
+                confidence_interval=pd.NamedAgg(column="runtime", aggfunc=CI),
+                median_runtime=pd.NamedAgg(column="runtime", aggfunc=np.median),
+                mean_runtime=pd.NamedAgg(column="runtime", aggfunc=np.mean)
+            )
+            data = data_CI.reset_index()
+            data['CI_low'] = data.apply(lambda x: x.confidence_interval[0], axis=1)
+            data['CI_high'] = data.apply(lambda x: x.confidence_interval[1], axis=1)
+            data['yerr_low'] = data.apply(lambda x: x.mean_runtime - x.CI_low, axis=1)
+            data['yerr_high'] = data.apply(lambda x: x.CI_high - x.mean_runtime, axis=1)
+
+            fig, ax = plt.subplots()
+            # ax = plt.gca()
+            for algo in data['implementation'].unique():
+                data_filtered = data[data['implementation'] == algo]
+                # print(data_filtered[['CI_low', 'CI_high']].to_numpy().transpose())
+                # # ax.plot(data_filtered[filter_key], data_filtered['runtime'], marker='+', color=color_dict.get(algo))
+                # ax.errorbar(x=data_filtered[filter_key], y=data_filtered['runtime'],
+                #             yerr=data_filtered[['CI_low', 'CI_high']].to_numpy().transpose(),
+                #             color=color_dict.get(algo), label=algo, fmt='none', capsize=2.5)
+
+
+                ax.errorbar(x=data_filtered[filter_key], y=data_filtered['mean_runtime'],
+                            yerr=data_filtered[['yerr_low', 'yerr_high']].to_numpy().transpose(),
+                            color=color_dict.get(algo), label=algo, fmt=':', alpha=0.9, capsize=3, capthick=1)
+                ax.fill_between(x=data_filtered[filter_key], y1=data_filtered['CI_low'], y2=data_filtered['CI_high'],
+                                 color=color_dict.get(algo), alpha=0.25)
+
+            # plt.ylim((data['CI_low'].min(), data['CI_high'].max()))
+            ax.set_yscale('log')
+            plt.tight_layout()
+            plt.legend(loc="upper left")
+            plt.savefig(f'{self.output_dir}/runtime_{index_key}_{i}_{filter_key}_{func_key}_with_errorbar.svg')
+            plt.close()
+
+    def plot_runtime_with_scatter(self, df: pd.DataFrame, filter_key='N', index_key='numprocs', func_key='median',
+                                  percentile=99, powers_of_two=True):
+        if func_key == 'mean':
+            agg_func = np.mean
+        elif func_key == 'median':
+            agg_func = np.median
+        elif func_key == 'percentile':
+            agg_func = self.percentile_agg_func(percentile)
         else:
             agg_func = np.mean
 
@@ -117,8 +184,11 @@ class PlotManager:
         return x, y
 
     @staticmethod
-    def ninety_nine(p):
-        return np.percentile(p, 99)
+    def percentile_agg_func(percentile):
+        def percentile(p):
+            return np.percentile(p, percentile)
+
+        return percentile
 
     def plot_and_save(self, name: str):
         plt.tight_layout()
@@ -251,6 +321,7 @@ class PlotManager:
 
     def plot_all(self, df: pd.DataFrame, prefix=None):
         self.prefix = prefix
+        self.plot_runtime_with_errorbars(df)
         self.plot_runtime(df)
         self.plot_compute_ratio(df)
         self.plot_mem_usage(df)
