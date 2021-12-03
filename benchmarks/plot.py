@@ -25,13 +25,13 @@ class PlotManager:
         self.plot_runtime_by_key(df, 'numprocs', 'N', func_key=func_key)
 
     def plot_runtime_by_key(self, df: pd.DataFrame, filter_key='N', index_key='numprocs', func_key='mean',
-                            percentile=99, powers_of_two=True):
+                            percentile=99., powers_of_two=True):
         if func_key == 'mean':
             agg_func = np.mean
         elif func_key == 'median':
             agg_func = np.median
         elif func_key == 'percentile':
-            agg_func = self.percentile_agg_func()
+            agg_func = self.percentile_agg_func(percentile)
         else:
             agg_func = np.mean
 
@@ -61,7 +61,7 @@ class PlotManager:
             plt.close()
 
     def plot_runtime_with_errorbars(self, df: pd.DataFrame, filter_key='N', index_key='numprocs', func_key='median',
-                                    percentile=99, CI_bound=0.95, powers_of_two=False):
+                                    percentile=99., CI_bound=0.95, powers_of_two=False):
         if func_key == 'mean':
             agg_func = np.mean
         elif func_key == 'median':
@@ -71,6 +71,7 @@ class PlotManager:
         elif func_key == 'min':
             agg_func = np.min
         elif func_key == 'percentile':
+            func_key = f"percentile_{percentile}"
             agg_func = self.percentile_agg_func(percentile)
         else:
             agg_func = np.mean
@@ -112,7 +113,6 @@ class PlotManager:
                 #             yerr=data_filtered[['CI_low', 'CI_high']].to_numpy().transpose(),
                 #             color=color_dict.get(algo), label=algo, fmt='none', capsize=2.5)
 
-
                 ax.errorbar(x=data_filtered[filter_key], y=data_filtered['mean_runtime'],
                             yerr=data_filtered[['yerr_low', 'yerr_high']].to_numpy().transpose(),
                             color=color_dict.get(algo), label=algo, fmt=':', alpha=0.9, capsize=3, capthick=1)
@@ -120,14 +120,23 @@ class PlotManager:
                                  color=color_dict.get(algo), alpha=0.25)
 
             # plt.ylim((data['CI_low'].min(), data['CI_high'].max()))
-            ax.set_yscale('log')
-            plt.tight_layout()
-            plt.legend(loc="upper left")
-            plt.savefig(f'{self.output_dir}/runtime_{index_key}_{i}_{filter_key}_{func_key}_with_errorbar.svg')
+            # plt.yscale('log', nonposy='clip')
+            plt.tight_layout(pad=3.)
+            plt.legend() # loc="upper left"
+            plt.xlabel('Input Dimension')
+            plt.ylabel('Runtime (s)')
+            plt.title(f'Runtime ({i} nodes)')
+
+            output_dir = self.output_dir if self.prefix is None else f'{self.output_dir}/{self.prefix}'
+            pathlib.Path(output_dir).mkdir(parents=True, exist_ok=True)
+
+            plt.savefig(f'{output_dir}/runtime_{index_key}_{i}_{filter_key}_{func_key}_CI_{CI_bound}_with_errorbar.svg')
+            plt.yscale('log')
+            plt.savefig(f'{output_dir}/runtime_{index_key}_{i}_{filter_key}_{func_key}_CI_{CI_bound}_with_errorbar_log_scale.svg')
             plt.close()
 
     def plot_runtime_with_scatter(self, df: pd.DataFrame, filter_key='N', index_key='numprocs', func_key='median',
-                                  percentile=99, powers_of_two=True):
+                                  percentile=99., powers_of_two=True):
         if func_key == 'mean':
             agg_func = np.mean
         elif func_key == 'median':
@@ -185,8 +194,9 @@ class PlotManager:
 
     @staticmethod
     def percentile_agg_func(percentile):
+        perc = [percentile]
         def percentile(p):
-            return np.percentile(p, percentile)
+            return np.percentile(p, perc)
 
         return percentile
 
@@ -320,8 +330,16 @@ class PlotManager:
             self.plot_and_save(f'runtime_repetition_{num_procs}')
 
     def plot_all(self, df: pd.DataFrame, prefix=None):
+        CI_bounds = [0.5, 0.66, 0.75, 0.9, 0.95, 0.99]
+        percentiles = [10., 25., 50., 75., 90., 95., 99.]
         self.prefix = prefix
-        self.plot_runtime_with_errorbars(df)
+        for CI_bound in CI_bounds:
+            for percentile in percentiles:
+                self.plot_runtime_with_errorbars(df, CI_bound=CI_bound, func_key='percentile', percentile=percentile)
+            self.plot_runtime_with_errorbars(df, CI_bound=CI_bound, func_key='mean')
+            self.plot_runtime_with_errorbars(df, CI_bound=CI_bound, func_key='median')
+            self.plot_runtime_with_errorbars(df, CI_bound=CI_bound, func_key='max')
+            self.plot_runtime_with_errorbars(df, CI_bound=CI_bound, func_key='min')
         self.plot_runtime(df)
         self.plot_compute_ratio(df)
         self.plot_mem_usage(df)
