@@ -1,4 +1,4 @@
-NODES=8
+NODES=${NODES:-8}
 REPETITIONS=25
 ALGORITHMS=(allgather allreduce allreduce-ring g-rabenseifner-allgather g-rabenseifner-subgroup-2 g-rabenseifner-subgroup-4 g-rabenseifner-subgroup-8)
 VECTOR_SIZES=(1000 2000 3000 4000 5000 6000 7000 8000)
