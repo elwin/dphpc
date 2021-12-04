@@ -99,6 +99,7 @@ class Configuration:
             '-m', str(self.m),
             '-t', str(self.repetitions),
             '-i', self.implementation.name,
+            '-r', str(self.job_repetition),
         ]
         if self.verify:
             args.append('-c')
@@ -112,12 +113,12 @@ class Configuration:
         return int((self.n * self.m / (2 ** 15)) * self.nodes)
 
     def runnable(self):
-        if self.nodes > 48:
-            return False, f'euler supports only up to 48 nodes'
+        # if self.nodes > 48:
+        #     return False, f'euler supports only up to 48 nodes'
 
-        threshold = 128_000
-        if self.memory_usage() > threshold:
-            return False, f'too much memory requested ({self.memory_usage()} > {threshold})'
+        # threshold = 128_000
+        # if self.memory_usage() > threshold:
+        #     return False, f'too much memory requested ({self.memory_usage()} > {threshold})'
 
         return True, None
 
@@ -160,10 +161,6 @@ class Scheduler:
         for nodes, configs in grouped:
             self.runner.run_grouped(nodes, list(configs))
 
-    def run(self):
-        for config in self.configurations():
-            self.runner.run(config)
-
     def configurations(self):
         configs = list(set(self.configs))
         configs.sort()
@@ -177,13 +174,6 @@ class Scheduler:
 
 
 class DryRun(Runner):
-    def run(self, config: Configuration):
-        logger.info(str(config))
-
-        runnable, reason = config.runnable()
-        if not runnable:
-            logging.warning(reason)
-
     def run_grouped(self, keys, configs: typing.List[Configuration]):
         logging.info(f'{keys} -> {len(configs)} configurations')
 
@@ -211,9 +201,10 @@ class Status(enum.Enum):
 
 
 class EulerRunner(Runner):
-    def __init__(self, results_dir):
+    def __init__(self, results_dir, submit: bool = True):
         self.raw_dir = f"{results_dir}/raw"
         self.parsed_dir = f"{results_dir}/parsed"
+        self.submit = submit
 
         for path in [self.raw_dir, self.parsed_dir]:
             pathlib.Path(path).mkdir(parents=True, exist_ok=True)
@@ -331,7 +322,8 @@ class EulerRunner(Runner):
 
             f.seek(0)
 
-            self.actually_run(nodes, repetition, [], time, stdin=f, job_name=job_name)
+            if self.submit:
+                self.actually_run(nodes, repetition, [], time, stdin=f, job_name=job_name)
 
     def verify(self, repetition: int) -> bool:
         completed = True
@@ -415,7 +407,8 @@ class EulerRunner(Runner):
                                 try:
                                     parsed = json.loads(line)
                                     parsed['job'] = job_data
-                                    parsed['repetition'] = repetition # Overwrites repetition with information from file-name
+                                    parsed[
+                                        'repetition'] = repetition  # Overwrites repetition with information from file-name
                                     o.write(json.dumps(parsed, separators=(',', ':')) + '\n')
                                 except Exception as e:
                                     logging.error(f'[{job_id}] failed to parse line {line_nr}, "{subject}": {e}')

@@ -56,10 +56,9 @@ verify_configs = [
 
 def main():
     parser = argparse.ArgumentParser(description='Run some benchmarks')
-    parser.add_argument('-m', '--mode', type=str, default="dry-run", help="One of {dry-run, euler}")
+    parser.add_argument('-m', '--mode', type=str, default="dry-run", help="One of {dry-run, euler, euler-files}")
     parser.add_argument('-c', '--clean', action="store_true", default=False, help="Clean results directory first")
     parser.add_argument('--check', '--verify', action="store_true", default=False, help="Check results for correctness")
-    parser.add_argument('--grouped', action="store_true", default=False, help="Submit jobs grouped")
     args = parser.parse_args()
 
     if args.clean:
@@ -71,16 +70,15 @@ def main():
         scheduler = Scheduler(DryRun())
     elif mode == "euler":
         scheduler = Scheduler(EulerRunner(results_dir=results_path))
+    elif mode == "euler-files":
+        scheduler = Scheduler(EulerRunner(results_dir=results_path, submit=False))
     else:
         parser.print_help()
         return
 
     scheduler.register(config=configs if not args.check else verify_configs)
 
-    if not args.grouped:
-        scheduler.run()
-    else:
-        scheduler.run_grouped()
+    scheduler.run_grouped()
 
     if mode == "dry-run":
         valid_configs = filter(lambda config: config.runnable()[0], scheduler.configurations())
