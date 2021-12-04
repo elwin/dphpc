@@ -17,7 +17,7 @@ clean:
 	rm -rf ${OUT} cmake-build-debug CMakeFiles
 
 main: build
-	mpiexec ${OUT}/main -n 4096 -m 4096 -i g-rabenseifner-allgather
+	mpiexec ${OUT}/main -n 4096 -m 4096 -i g-rabenseifner-subgroup-4 -t 25
 
 all: build
 	for impl in $(IMPLEMENTATIONS); do \

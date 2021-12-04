@@ -22,9 +22,9 @@
 #include "allreduce_ring/impl.hpp"
 #include "bruck_async/impl.hpp"
 #include "dsop_single.h"
-#include "rabenseifner_gather/impl.hpp"
 #include "grabenseifner_allgather/impl.hpp"
-#include "grabenseifner_allgather_scatter/impl.hpp"
+#include "grabenseifner_subgroup/impl.hpp"
+#include "rabenseifner_gather/impl.hpp"
 #include "util.hpp"
 #include "vector.h"
 
@@ -155,8 +155,13 @@ static std::unique_ptr<dsop> get_impl(const std::string& name, Args&&... args) {
     return std::make_unique<impls::rabenseifner_gather::rabenseifner_gather>(std::forward<Args>(args)...);
   } else if (name == "g-rabenseifner-allgather") {
     return std::make_unique<impls::grabenseifner_allgather::grabenseifner_allgather>(std::forward<Args>(args)...);
-  } else if (name == "g-rabenseifner-allgather-scatter") {
-    return std::make_unique<impls::grabenseifner_allgather_scatter::grabenseifner_allgather_scatter>(std::forward<Args>(args)...);
+  } else if (name.rfind("g-rabenseifner-subgroup-", 0) == 0) {
+    int n_groups;
+    sscanf( name.c_str(), "g-rabenseifner-subgroup-%d", &n_groups );
+    impls::grabenseifner_subgroup::SUBGROUP_N_GROUPS = n_groups;
+    return std::make_unique<impls::grabenseifner_subgroup::grabenseifner_subgroup>(std::forward<Args>(args)...);
+  } else if (name == "g-rabenseifner-subgroup") {
+    return std::make_unique<impls::grabenseifner_subgroup::grabenseifner_subgroup>(std::forward<Args>(args)...);
   } else if (name == "bruck-async") {
     return std::make_unique<impls::bruck_async::bruck_async>(std::forward<Args>(args)...);
   } else {
