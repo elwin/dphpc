@@ -83,3 +83,14 @@ bsub -n <number of processes> mpirun -np <number of processes> <binary>
 # Example:
 bsub -n 4 mpirun -np 4 ./main -n 5 -m 5 -i allreduce
 ```
+
+## Check status manually
+
+```shell
+bbjobs -a | grep -o 'DONE' | wc -l
+bbjobs -a | grep -o 'PENDING' | wc -l
+bbjobs -a | grep -o 'RUNNING' | wc -l
+```
+
+Get current Job IDs: ```bbjobs -a | grep 'Job ID' | grep -Eo '[0-9]{9}'```
+Kill all current jobs: ```bbjobs -p | grep 'Job ID' | grep -Eo '[0-9]{9}' | xargs bkill```

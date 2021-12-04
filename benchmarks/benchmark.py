@@ -9,19 +9,26 @@ implementations = [
     allgather,
     allreduce,
     allreduce_ring,
-    allreduce_butterfly,
-    allgather_async,
-    bruck_async,
-    allreduce_rabenseifner,
-    rabenseifner_gather,
-    grabenseifner_allgather,
+    # allreduce_butterfly,
+    # allgather_async,
+    # bruck_async,
+    # allreduce_rabenseifner,
+    # rabenseifner_gather,
+    # grabenseifner_allgather,
+    #
+    # *native_allreduce,
+    # *native_allgather,
 
-    *native_allreduce,
-    *native_allgather,
+    grabenseifner_allgather,
+    # grabenseifner_subgroup_1,
+    grabenseifner_subgroup_2,
+    grabenseifner_subgroup_4,
+    grabenseifner_subgroup_8,
+    # grabenseifner_subgroup_16
 ]
 
-repetitions = 20
-job_repetitions = 3
+repetitions = 25
+job_repetitions = 50
 
 configs = []
 configs.extend([
@@ -33,7 +40,7 @@ configs.extend([
         job_repetition=job_repetition,
         implementation=implementation,
     )
-    for n in inclusive(1000, 8000, 500)
+    for n in inclusive(1000, 8000, 1000)
     for nodes in [8, 16, 32]
     for job_repetition in range(job_repetitions)
     for implementation in implementations
@@ -49,7 +56,7 @@ verify_configs = [
 
 def main():
     parser = argparse.ArgumentParser(description='Run some benchmarks')
-    parser.add_argument('-m', '--mode', type=str, default="dry-run", help="One of {dry-run, euler}")
+    parser.add_argument('-m', '--mode', type=str, default="dry-run", help="One of {dry-run, euler, euler-files}")
     parser.add_argument('-c', '--clean', action="store_true", default=False, help="Clean results directory first")
     parser.add_argument('--check', '--verify', action="store_true", default=False, help="Check results for correctness")
     args = parser.parse_args()
@@ -63,12 +70,15 @@ def main():
         scheduler = Scheduler(DryRun())
     elif mode == "euler":
         scheduler = Scheduler(EulerRunner(results_dir=results_path))
+    elif mode == "euler-files":
+        scheduler = Scheduler(EulerRunner(results_dir=results_path, submit=False))
     else:
         parser.print_help()
         return
 
     scheduler.register(config=configs if not args.check else verify_configs)
-    scheduler.run()
+
+    scheduler.run_grouped()
 
     if mode == "dry-run":
         valid_configs = filter(lambda config: config.runnable()[0], scheduler.configurations())

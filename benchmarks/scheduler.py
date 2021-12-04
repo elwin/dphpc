@@ -2,6 +2,7 @@ import collections.abc
 import dataclasses
 import enum
 import io
+import itertools
 import json
 import logging
 import os.path
@@ -46,6 +47,12 @@ allgather_async = Implementation(name='allgather-async')
 allreduce_rabenseifner = Implementation(name='allreduce-rabenseifner')
 rabenseifner_gather = Implementation(name='rabenseifner-gather')
 grabenseifner_allgather = Implementation(name='g-rabenseifner-allgather')
+grabenseifner_subgroup = Implementation(name='g-rabenseifner-subgroup')
+grabenseifner_subgroup_1 = Implementation(name='g-rabenseifner-subgroup-1')
+grabenseifner_subgroup_2 = Implementation(name='g-rabenseifner-subgroup-2')
+grabenseifner_subgroup_4 = Implementation(name='g-rabenseifner-subgroup-4')
+grabenseifner_subgroup_8 = Implementation(name='g-rabenseifner-subgroup-8')
+grabenseifner_subgroup_16 = Implementation(name='g-rabenseifner-subgroup-16')
 bruck_async = Implementation(name='bruck-async')
 
 native_allreduce = [
@@ -87,11 +94,12 @@ class Configuration:
 
     def command(self):
         args = [
-            binary_path,
+            f'./{binary_path}',  # Make sure we use a proper path
             '-n', str(self.n),
             '-m', str(self.m),
             '-t', str(self.repetitions),
             '-i', self.implementation.name,
+            '-r', str(self.job_repetition),
         ]
         if self.verify:
             args.append('-c')
@@ -105,25 +113,28 @@ class Configuration:
         return int((self.n * self.m / (2 ** 15)) * self.nodes)
 
     def runnable(self):
-        if self.nodes > 48:
-            return False, f'euler supports only up to 48 nodes'
+        # if self.nodes > 48:
+        #     return False, f'euler supports only up to 48 nodes'
 
-        threshold = 128_000
-        if self.memory_usage() > threshold:
-            return False, f'too much memory requested ({self.memory_usage()} > {threshold})'
+        # threshold = 128_000
+        # if self.memory_usage() > threshold:
+        #     return False, f'too much memory requested ({self.memory_usage()} > {threshold})'
 
         return True, None
 
 
 class Runner:
     def run(self, config: Configuration):
-        pass
+        raise NotImplemented
+
+    def run_grouped(self, keys, configs: typing.List[Configuration]):
+        raise NotImplemented
 
     def collect(self, repetition: int):
-        pass
+        raise NotImplemented
 
     def verify(self, repetition: int) -> bool:
-        return True
+        raise NotImplemented
 
 
 class Scheduler:
@@ -137,23 +148,34 @@ class Scheduler:
         else:
             self.configs.append(config)
 
-    def run(self):
-        for config in self.configurations():
-            self.runner.run(config)
+    @staticmethod
+    def grouping_key(c: Configuration):
+        return c.nodes, c.job_repetition
+
+    def run_grouped(self):
+        grouped = itertools.groupby(
+            sorted(self.valid_configurations(), key=self.grouping_key),
+            self.grouping_key,
+        )
+
+        for nodes, configs in grouped:
+            self.runner.run_grouped(nodes, list(configs))
 
     def configurations(self):
         configs = list(set(self.configs))
         configs.sort()
         return configs
 
+    def valid_configurations(self):
+        configs = list(set(self.configs))
+        configs = list(filter(lambda c: c.runnable(), configs))
+        configs.sort()
+        return configs
+
 
 class DryRun(Runner):
-    def run(self, config: Configuration):
-        logger.info(str(config))
-
-        runnable, reason = config.runnable()
-        if not runnable:
-            logging.warning(reason)
+    def run_grouped(self, keys, configs: typing.List[Configuration]):
+        logging.info(f'{keys} -> {len(configs)} configurations')
 
 
 class LocalRunner(Runner):
@@ -179,20 +201,65 @@ class Status(enum.Enum):
 
 
 class EulerRunner(Runner):
-    def __init__(self, results_dir):
+    def __init__(self, results_dir, submit: bool = True):
         self.raw_dir = f"{results_dir}/raw"
         self.parsed_dir = f"{results_dir}/parsed"
+        self.submit = submit
 
         for path in [self.raw_dir, self.parsed_dir]:
             pathlib.Path(path).mkdir(parents=True, exist_ok=True)
 
-    def run(self, config: Configuration):
-        runnable, reason = config.runnable()
-        if not runnable:
-            logger.warning(f'skipping configuration: {reason}')
-            return
+    def actually_run(self,
+                     nodes: int,
+                     job_repetition: int,
+                     mpi_args: typing.List[str],
+                     time: int = None,
+                     stdin=None,
+                     job_name: str = None,
+                     ):
+        args = [
+            'bsub',
+            '-o', f'{self.raw_dir}/%J',
+            '-e', f'{self.raw_dir}/%J.err',
+            '-n', str(nodes),
+            '-R', 'span[ptile=1]',  # use 1 core per node
+            '-R', 'select[model==XeonE3_1585Lv5]',  # use Euler III nodes (4 cores)
+            '-R', 'select[!ib]',  # disable infiniband (not available on Euler III)
+            '-r',  # make jobs retryable
+        ]
+        if job_name is not None:
+            args.extend(['-J', job_name])
 
-        mpi_args = []
+        if time is not None and time > 4 * 60:
+            args.extend(['-W', str(time)])
+
+        args.extend(mpi_args)
+
+        logger.debug("executing the following command:")
+        logger.info(" ".join(args))
+        if stdin is not None:
+            logger.info(stdin.name)
+
+        proc = subprocess.run(args, stdout=subprocess.PIPE, stdin=stdin)
+        process_output = proc.stdout.decode()
+        logger.debug(process_output)
+
+        job_id = re \
+            .compile("Job <(.*)> is submitted to queue.") \
+            .search(process_output) \
+            .group(1)
+
+        with open(f"{self.raw_dir}/jobs-{job_repetition}", "a") as f:
+            f.write(job_id + "\n")
+
+        logger.info(f'submitted job {job_id}')
+
+    @staticmethod
+    def prepare_cmd(config: Configuration):
+        mpi_args = [
+            'mpirun',
+            '-np', str(config.nodes),
+        ]
         if config.implementation.allreduce_algorithm is not None:
             mpi_args.extend([
                 '--mca', 'coll_tuned_use_dynamic_rules', '1',
@@ -209,38 +276,54 @@ class EulerRunner(Runner):
                 and config.implementation.allgather_algorithm is not None:
             raise Exception("can only specify one of {allreduce_algorithm, allgather_algorithm), not both")
 
-        args = [
-            'bsub',
-            # '-J', f'"{config.__str__()}"',
-            '-o', f'{self.raw_dir}/%J',
-            '-e', f'{self.raw_dir}/%J.err',
-            '-n', str(config.nodes),
-            '-R', 'span[ptile=1]',  # use 1 core per node
-            '-R', 'select[model==XeonE3_1585Lv5]',  # use Euler III nodes (4 cores)
-            '-R', 'select[!ib]',  # disable infiniband (not available on Euler III)
-            '-r',  # make jobs retryable
-            'mpirun',
-            *mpi_args,
-            '-np', str(config.nodes),
-            *config.command(),
-        ]
+        mpi_args.extend(config.command())
 
-        logger.debug("executing the following command:")
-        logger.debug(" ".join(args))
+        return mpi_args
 
-        proc = subprocess.run(args, stdout=subprocess.PIPE)
-        process_output = proc.stdout.decode()
-        logger.debug(process_output)
+    def run(self, config: Configuration):
+        runnable, reason = config.runnable()
+        if not runnable:
+            logger.warning(f'skipping configuration: {reason}')
+            return
 
-        job_id = re \
-            .compile("Job <(.*)> is submitted to queue <normal.4h>.") \
-            .search(process_output) \
-            .group(1)
+        mpi_args = self.prepare_cmd(config)
 
-        with open(f"{self.raw_dir}/jobs-{config.job_repetition}", "a") as f:
-            f.write(job_id + "\n")
+        self.actually_run(config.nodes, config.job_repetition, [' '.join(mpi_args)])
 
-        logger.info(f'submitted job {job_id}')
+    def run_grouped(self, keys, configs: typing.List[Configuration]):
+        nodes = configs[0].nodes
+        repetition = configs[0].job_repetition
+
+        commands = []
+        for config in configs:
+            runnable, reason = config.runnable()
+            if not runnable:
+                logger.warning(f'skipping configuration: {reason}')
+                continue
+
+            if config.nodes != nodes:
+                raise Exception(
+                    f'different number of nodes in same grouping, expected {nodes}, received {config.nodes}')
+
+            if config.job_repetition != repetition:
+                raise Exception(
+                    f'different job repetition in same grouping, expected {repetition}, received {config.job_repetition}')
+
+            mpi_args = self.prepare_cmd(config)
+            commands.append(' '.join(mpi_args))
+
+        time = 2 * len(configs)  # roughly 1.25 minutes / run on average
+
+        job_name = '-'.join(map(str, keys))
+        batch_filename = f'./{self.raw_dir}/batch-{job_name}'
+        with open(batch_filename, "w+") as f:
+            for line in commands:
+                f.write(f'{line}\n')
+
+            f.seek(0)
+
+            if self.submit:
+                self.actually_run(nodes, repetition, [], time, stdin=f, job_name=job_name)
 
     def verify(self, repetition: int) -> bool:
         completed = True
@@ -324,6 +407,8 @@ class EulerRunner(Runner):
                                 try:
                                     parsed = json.loads(line)
                                     parsed['job'] = job_data
+                                    parsed[
+                                        'repetition'] = repetition  # Overwrites repetition with information from file-name
                                     o.write(json.dumps(parsed, separators=(',', ':')) + '\n')
                                 except Exception as e:
                                     logging.error(f'[{job_id}] failed to parse line {line_nr}, "{subject}": {e}')
