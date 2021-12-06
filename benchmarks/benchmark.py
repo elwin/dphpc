@@ -20,6 +20,7 @@ implementations = [
     # *native_allgather,
 
     grabenseifner_allgather,
+    grabenseifner_allgather_segmented,
     # grabenseifner_subgroup_1,
     grabenseifner_subgroup_2,
     grabenseifner_subgroup_4,

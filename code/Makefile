@@ -1,7 +1,7 @@
 # cannot be named "build", otherwise clashes with the target
 # and never re-builds once created
 OUT="build_output"
-IMPLEMENTATIONS = allreduce allreduce-butterfly allreduce-ring allgather allgather-async allreduce-rabenseifner rabenseifner-gather g-rabenseifner-allgather g-rabenseifner-allgather-scatter bruck-async
+IMPLEMENTATIONS = allreduce allreduce-butterfly allreduce-ring allgather allgather-async allreduce-rabenseifner rabenseifner-gather g-rabenseifner-allgather g-rabenseifner-allgather-scatter bruck-async g-rabenseifner-allgather-segmented
 
 build:
 	cmake -S . -B ${OUT}

@@ -23,6 +23,7 @@
 #include "bruck_async/impl.hpp"
 #include "dsop_single.h"
 #include "grabenseifner_allgather/impl.hpp"
+#include "grabenseifner_allgather_segmented/impl.hpp"
 #include "grabenseifner_subgroup/impl.hpp"
 #include "rabenseifner_gather/impl.hpp"
 #include "util.hpp"
@@ -155,6 +156,8 @@ static std::unique_ptr<dsop> get_impl(const std::string& name, Args&&... args) {
     return std::make_unique<impls::rabenseifner_gather::rabenseifner_gather>(std::forward<Args>(args)...);
   } else if (name == "g-rabenseifner-allgather") {
     return std::make_unique<impls::grabenseifner_allgather::grabenseifner_allgather>(std::forward<Args>(args)...);
+  } else if (name == "g-rabenseifner-allgather-segmented") {
+    return std::make_unique<impls::grabenseifner_allgather_segmented::grabenseifner_allgather_segmented>(std::forward<Args>(args)...);
   } else if (name.rfind("g-rabenseifner-subgroup-", 0) == 0) {
     int n_groups;
     sscanf( name.c_str(), "g-rabenseifner-subgroup-%d", &n_groups );

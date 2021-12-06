@@ -48,6 +48,7 @@ set(MAIN_SOURCES
         src/allgather/impl.cpp
         src/allgather_async/impl.cpp
         src/bruck_async/impl.cpp
+        src/grabenseifner_allgather_segmented/impl.cpp
         )
 
 set(INCLUDE_DIRS include)
