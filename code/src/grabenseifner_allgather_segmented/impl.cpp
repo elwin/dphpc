@@ -83,25 +83,28 @@ void grabenseifner_allgather_segmented::compute(
    */
   vector all_bs(n_cols * num_procs);
 
-  // TODO support general case
-  assert(b.size() % SEG_EL == 0);
-
   // allgather round
 
   // First receive the A vectors
+  // TODO use blocking allgather with the smaller vector
   mpi_timer(MPI_Allgather, a.data(), a.size(), MPI_DOUBLE, all_as.data(), a.size(), MPI_DOUBLE, comm);
-
-  const int segment_size = SEG_EL * num_procs;
-  // Number of elements (per process) in last segment
-  const int last_segment_elements = SEG_EL - (b.size() % SEG_EL);
 
   MPI_Request req = MPI_REQUEST_NULL;
   mpi_timer(MPI_Iallgather, b.data(), SEG_EL, MPI_DOUBLE, all_bs.data(), SEG_EL, MPI_DOUBLE, comm, &req);
+
+  const int segment_size = SEG_EL * num_procs;
+  // Number of elements (per process) in last segment
+  int last_segment_elements = (b.size() % SEG_EL);
+
+  if (last_segment_elements == 0) {
+    last_segment_elements = SEG_EL;
+  }
 
   for (int seg_i = 0; seg_i < num_segments; seg_i++) {
     bool is_last = seg_i == num_segments - 1;
     // Index in all_bs where this segment starts
     int base_index = seg_i * segment_size;
+    int base_column = seg_i * SEG_EL;
 
     // Wait for previous allgather to complete
     if (req != MPI_REQUEST_NULL) {
@@ -110,18 +113,22 @@ void grabenseifner_allgather_segmented::compute(
 
     // Allgather next segment
     if (!is_last) {
-      mpi_timer(MPI_Iallgather, b.data() + (seg_i + 1) * SEG_EL, SEG_EL, MPI_DOUBLE,
-          all_bs.data() + base_index + segment_size, SEG_EL, MPI_DOUBLE, comm, &req);
+      const int segment_elements = seg_i == num_segments - 2 ? last_segment_elements : SEG_EL;
+      mpi_timer(MPI_Iallgather, b.data() + base_column + SEG_EL, segment_elements, MPI_DOUBLE,
+          all_bs.data() + base_index + segment_size, segment_elements, MPI_DOUBLE, comm, &req);
     }
+
+    // Number of elements in currently processed segment
+    const int segment_elements = is_last ? last_segment_elements : SEG_EL;
 
     // Compute from current segment while next allgather is in flight
     const int row_idx_upper = my_start_row + my_n_rows;
     for (int proc_i = 0; proc_i < num_procs; proc_i++) {
       for (int row_i = my_start_row; row_i < row_idx_upper; row_i++) {
         double a_val = all_as[proc_i * n_rows + row_i];
-        for (int col_i = 0; col_i < SEG_EL; col_i++) {
-          double b_val = all_bs[SEG_EL * (seg_i * num_procs + proc_i) + col_i];
-          result.get(row_i, seg_i * SEG_EL + col_i) += a_val * b_val;
+        for (int col_i = 0; col_i < segment_elements; col_i++) {
+          double b_val = all_bs[base_index + proc_i * segment_elements + col_i];
+          result.get(row_i, base_column + col_i) += a_val * b_val;
         }
       }
     }
