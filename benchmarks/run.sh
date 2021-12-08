@@ -1,6 +1,6 @@
-NODES=${NODES:-8}
+NODES=${NODES:-8} # Can be overriden by specifying an env variable, e.g. NODES=16
 REPETITIONS=25
-ALGORITHMS=(allgather allreduce allreduce-ring g-rabenseifner-allgather g-rabenseifner-subgroup-2 g-rabenseifner-subgroup-4 g-rabenseifner-subgroup-8)
+ALGORITHMS=(allgather allreduce allreduce-ring g-rabenseifner-allgather g-rabenseifner-subgroup-2)
 VECTOR_SIZES=(1000 2000 3000 4000 5000 6000 7000 8000)
 BINARY="./code/build_output/main"
 OUTPUT="./results"
