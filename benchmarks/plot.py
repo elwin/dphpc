@@ -167,49 +167,53 @@ class PlotManager:
         )
         data = data.reset_index()
 
-        # make a plot per node configuration
-        for n_nodes in data['numprocs'].unique():
-            plt_data = data[data['numprocs'] == n_nodes]
-            rows = plt_data['implementation'].unique().tolist()
-            cols = plt_data['N'].unique().tolist()
-            rows.sort()
-            cols.sort()
-            n_rows = len(rows)
-            n_cols = len(cols)
-            if log:
-                plt_data = plt_data.apply(lambda x: np.log(x) if x.name == 'runtime' else x)
+        # make a plot per node configuration and one per algorithm
+        keys = [('numprocs', 'implementation'), ('implementation', 'numprocs')]
+        for key in keys:
+            for key_val in data[key[0]].unique():
+                plt_data = data[data[key[0]] == key_val]
+                rows = plt_data[key[1]].unique().tolist()
+                cols = plt_data['N'].unique().tolist()
+                rows.sort()
+                cols.sort()
+                n_rows = len(rows)
+                n_cols = len(cols)
+                value_range = (np.min(df['runtime']), np.max(df['runtime']))
+                if log:
+                    value_range = (np.min(np.log(df['runtime'])), np.max(np.log(df['runtime'])))
+                    plt_data = plt_data.apply(lambda x: np.log(x) if x.name == 'runtime' else x)
 
-            fig, axes = plt.subplots(nrows=n_rows, ncols=n_cols, sharex=True, sharey=True, figsize=(24, 13))
+                fig, axes = plt.subplots(nrows=n_rows, ncols=n_cols, sharex=True, sharey=True, figsize=(24, 13))
 
-            value_range = (plt_data['runtime'].min(), plt_data['runtime'].max())
 
-            for i, val_i in enumerate(rows):
+
+                for i, val_i in enumerate(rows):
+                    for j, val_j in enumerate(cols):
+                        filtered_data = plt_data[
+                            (plt_data[key[0]] == key_val) & (plt_data[key[1]] == val_i) & (
+                                    plt_data['N'] == val_j)]
+                        axes[i, j].hist(x=filtered_data['runtime'], bins=n_bins, color="skyblue", range=value_range)
+
+                # set plot labels
+                for i, val_i in enumerate(rows):
+                    axes[i, 0].set_ylabel(val_i, rotation=90, fontsize=9)
                 for j, val_j in enumerate(cols):
-                    filtered_data = plt_data[
-                        (plt_data['numprocs'] == n_nodes) & (plt_data['implementation'] == val_i) & (
-                                plt_data['N'] == val_j)]
-                    axes[i, j].hist(x=filtered_data['runtime'], bins=n_bins, color="skyblue", range=value_range)
+                    axes[0, j].set_title(val_j)
 
-            # set plot labels
-            for i, val_i in enumerate(rows):
-                axes[i, 0].set_ylabel(val_i, rotation=90, fontsize=9)
-            for j, val_j in enumerate(cols):
-                axes[0, j].set_title(val_j)
+                output_dir = self.output_dir if self.prefix is None else f'{self.output_dir}/{self.prefix}'
+                pathlib.Path(output_dir).mkdir(parents=True, exist_ok=True)
 
-            output_dir = self.output_dir if self.prefix is None else f'{self.output_dir}/{self.prefix}'
-            pathlib.Path(output_dir).mkdir(parents=True, exist_ok=True)
+                log_str = ''
+                log_title = ''
+                if log:
+                    log_str = '_log_scale'
+                    log_title = ' (log of runtime)'
 
-            log_str = ''
-            log_title = ''
-            if log:
-                log_str = '_log_scale'
-                log_title = ' (log of runtime)'
+                fig.suptitle(f"Runtime Histogram for {key[0]}={key_val} {log_title}")
 
-            fig.suptitle(f"Runtime Histogram for {n_nodes} nodes{log_title}")
-
-            plt.tight_layout()
-            plt.savefig(f'{output_dir}/histogram_runtime_{n_nodes}_nodes_{n_bins}_bins{log_str}.svg')
-            plt.close()
+                plt.tight_layout()
+                plt.savefig(f'{output_dir}/histogram_runtime_{key_val}_{key[0]}_{n_bins}_bins{log_str}.svg')
+                plt.close()
 
     def plot_runtime_with_scatter(self, df: pd.DataFrame, filter_key='N', index_key='numprocs', func_key='median',
                                   percentile=99., powers_of_two=True):
@@ -420,7 +424,7 @@ class PlotManager:
         # # self.plot_runtime_with_errorbars(df, CI_bound=CI_bound, func_key='max')
         # # self.plot_runtime_with_errorbars(df, CI_bound=CI_bound, func_key='min')
 
-        for n_bins in [25, 75]:
+        for n_bins in [50]:
             self.plot_subplot_histograms(df, n_bins=n_bins, log=False)
             self.plot_subplot_histograms(df, n_bins=n_bins, log=True)
 
