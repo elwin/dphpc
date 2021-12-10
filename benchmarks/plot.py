@@ -420,7 +420,7 @@ class PlotManager:
         # # self.plot_runtime_with_errorbars(df, CI_bound=CI_bound, func_key='max')
         # # self.plot_runtime_with_errorbars(df, CI_bound=CI_bound, func_key='min')
 
-        for n_bins in [25]:
+        for n_bins in [25, 75]:
             self.plot_subplot_histograms(df, n_bins=n_bins, log=False)
             self.plot_subplot_histograms(df, n_bins=n_bins, log=True)
 
