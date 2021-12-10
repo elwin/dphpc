@@ -7,7 +7,6 @@
 #include <memory>
 #include <string>
 #include <vector>
-#include <string>
 
 #include "common.h"
 #include "vector.h"

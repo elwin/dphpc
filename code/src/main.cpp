@@ -18,6 +18,7 @@
 #include "allgather_async/impl.hpp"
 #include "allreduce/impl.hpp"
 #include "allreduce_butterfly/impl.hpp"
+#include "allreduce_butterfly_segmented/impl.hpp"
 #include "allreduce_rabenseifner/impl.hpp"
 #include "allreduce_ring/impl.hpp"
 #include "bruck_async/impl.hpp"
@@ -140,6 +141,9 @@ static std::unique_ptr<dsop> get_impl(const std::string& name, Args&&... args) {
     return std::make_unique<impls::allreduce::allreduce>(std::forward<Args>(args)...);
   } else if (name == "allreduce-butterfly") {
     return std::make_unique<impls::allreduce_butterfly::allreduce_butterfly>(std::forward<Args>(args)...);
+  } else if (name == "allreduce-butterfly-segmented") {
+    return std::make_unique<impls::allreduce_butterfly_segmented::allreduce_butterfly_segmented>(
+        std::forward<Args>(args)...);
   } else if (name == "allreduce-ring") {
     return std::make_unique<impls::allreduce::allreduce_ring>(std::forward<Args>(args)...);
   } else if (name == "allgather") {
@@ -157,10 +161,11 @@ static std::unique_ptr<dsop> get_impl(const std::string& name, Args&&... args) {
   } else if (name == "g-rabenseifner-allgather") {
     return std::make_unique<impls::grabenseifner_allgather::grabenseifner_allgather>(std::forward<Args>(args)...);
   } else if (name == "g-rabenseifner-allgather-segmented") {
-    return std::make_unique<impls::grabenseifner_allgather_segmented::grabenseifner_allgather_segmented>(std::forward<Args>(args)...);
+    return std::make_unique<impls::grabenseifner_allgather_segmented::grabenseifner_allgather_segmented>(
+        std::forward<Args>(args)...);
   } else if (name.rfind("g-rabenseifner-subgroup-", 0) == 0) {
     int n_groups;
-    sscanf( name.c_str(), "g-rabenseifner-subgroup-%d", &n_groups );
+    sscanf(name.c_str(), "g-rabenseifner-subgroup-%d", &n_groups);
     impls::grabenseifner_subgroup::SUBGROUP_N_GROUPS = n_groups;
     return std::make_unique<impls::grabenseifner_subgroup::grabenseifner_subgroup>(std::forward<Args>(args)...);
   } else if (name == "g-rabenseifner-subgroup") {

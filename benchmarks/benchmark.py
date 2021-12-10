@@ -10,6 +10,7 @@ implementations = [
     allreduce,
     allreduce_ring,
     # allreduce_butterfly,
+    # allreduce_butterfly_segmented,
     # allgather_async,
     # bruck_async,
     # allreduce_rabenseifner,
