@@ -29,7 +29,7 @@ void allreduce_ring::compute(const std::vector<vector>& a_in, const std::vector<
     }
 
     // Send current chunk to next node
-    MPI_Request sendRequest;
+    MPI_Request sendRequest = MPI_REQUEST_NULL;
     mpi_timer(MPI_Isend, current + chunk_offset, chunk_length, MPI_DOUBLE, destination, 0, comm, &sendRequest);
 
     // Calculate chunk length of receiving chunk
@@ -70,7 +70,7 @@ void allreduce_ring::compute(const std::vector<vector>& a_in, const std::vector<
     }
 
     // Send current chunk to next node
-    MPI_Request sendRequest;
+    MPI_Request sendRequest = MPI_REQUEST_NULL;
     mpi_timer(MPI_Isend, current + chunk_offset, chunk_length, MPI_DOUBLE, destination, 0, comm, &sendRequest);
 
     // Calculate chunk length of receiving chunk

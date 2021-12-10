@@ -33,10 +33,10 @@ void allgather_async::compute(const std::vector<vector>& a_in, const std::vector
       continue;
     }
 
-    send_reqs.push_back(nullptr);
+    send_reqs.push_back(MPI_REQUEST_NULL);
     mpi_timer(MPI_Isend, send_vec.data(), vec_size, MPI_DOUBLE, i, TAG_ALLGATHER_ASYNC, comm, &send_reqs.back());
 
-    recv_reqs.push_back(nullptr);
+    recv_reqs.push_back(MPI_REQUEST_NULL);
     rec_map.push_back(i);
     mpi_timer(MPI_Irecv, rec[i].data(), vec_size, MPI_DOUBLE, i, TAG_ALLGATHER_ASYNC, comm, &recv_reqs.back());
   }

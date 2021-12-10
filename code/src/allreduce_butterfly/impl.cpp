@@ -23,7 +23,7 @@ void allreduce_butterfly::compute(const std::vector<vector>& a_in, const std::ve
   int one = 1UL;
   int matrix_size = N * M;
   MPI_Status status;
-  MPI_Request request;
+  MPI_Request request = MPI_REQUEST_NULL;
   // Write initial outer product to result matrix
   result.set_outer_product(a, b);
   double* receivedMatrixPtr = new double[N * M];
