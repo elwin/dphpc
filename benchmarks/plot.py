@@ -192,7 +192,7 @@ class PlotManager:
 
             # set plot labels
             for i, val_i in enumerate(rows):
-                axes[i, 0].set_ylabel(val_i, rotation=90, size='medium')
+                axes[i, 0].set_ylabel(val_i, rotation=90, fontsize=9)
             for j, val_j in enumerate(cols):
                 axes[0, j].set_title(val_j)
 
@@ -205,7 +205,7 @@ class PlotManager:
                 log_str = '_log_scale'
                 log_title = ' (log of runtime)'
 
-            plt.title(f"Runtime Histogram for {n_nodes} nodes{log_title}")
+            fig.suptitle(f"Runtime Histogram for {n_nodes} nodes{log_title}")
 
             plt.tight_layout()
             plt.savefig(f'{output_dir}/histogram_runtime_{n_nodes}_nodes_{n_bins}_bins{log_str}.svg')
@@ -433,10 +433,8 @@ class PlotManager:
         self.prefix = 'job'
 
         data = df[['N', 'numprocs', 'job.turnaround_time']]
-        data['queue_time'] = data['job.turnaround_time'] / (60. * 60.)
 
-        # plt_data = plt_data.apply(lambda x: np.log(x) if x.name == 'runtime' else x)
-        # data['queue_time'] = data.apply(lambda x: x['job.turnaround_time'] / (60 * 60), axis=1)
+        data['queue_time'] = data.apply(lambda x: x['job.turnaround_time'] / (60 * 60), axis=1)
 
         # df['job.runtime']
         for x_data in [('N', 'numprocs'), ('numprocs', 'N')]:
