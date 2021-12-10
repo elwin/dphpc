@@ -8,6 +8,7 @@ import pandas as pd
 import pandas.io.json
 import math
 import seaborn as sns
+import os
 from scipy.stats import bootstrap
 
 agg_func = np.median
@@ -155,6 +156,59 @@ class PlotManager:
             plt.yscale('log')
             plt.savefig(
                 f'{output_dir}/runtime_{index_key}_{i}_{filter_key}_{func_key}_CI_{CI_bound}_with_errorbar_log_scale.svg')
+            plt.close()
+
+    def plot_subplot_histograms(self, df: pd.DataFrame, log: bool = True, n_bins: int = 25):
+        # TODO: Put histogram sizes also into the arguments
+        agg_func = np.mean
+
+        data = df.groupby(['N', 'numprocs', 'repetition', 'implementation']).agg(
+            runtime=pd.NamedAgg(column="runtime", aggfunc=agg_func)
+        )
+        data = data.reset_index()
+
+        # make a plot per node configuration
+        for n_nodes in data['numprocs'].unique():
+            plt_data = data[data['numprocs'] == n_nodes]
+            rows = plt_data['implementation'].unique().tolist()
+            cols = plt_data['N'].unique().tolist()
+            rows.sort()
+            cols.sort()
+            n_rows = len(rows)
+            n_cols = len(cols)
+            if log:
+                plt_data = plt_data.apply(lambda x: np.log(x) if x.name == 'runtime' else x)
+
+            fig, axes = plt.subplots(nrows=n_rows, ncols=n_cols, sharex=True, sharey=True, figsize=(24, 13))
+
+            value_range = (plt_data['runtime'].min(), plt_data['runtime'].max())
+
+            for i, val_i in enumerate(rows):
+                for j, val_j in enumerate(cols):
+                    filtered_data = plt_data[
+                        (plt_data['numprocs'] == n_nodes) & (plt_data['implementation'] == val_i) & (
+                                plt_data['N'] == val_j)]
+                    axes[i, j].hist(x=filtered_data['runtime'], bins=n_bins, color="skyblue", range=value_range)
+
+            # set plot labels
+            for i, val_i in enumerate(rows):
+                axes[i, 0].set_ylabel(val_i, rotation=90, size='medium')
+            for j, val_j in enumerate(cols):
+                axes[0, j].set_title(val_j)
+
+            output_dir = self.output_dir if self.prefix is None else f'{self.output_dir}/{self.prefix}'
+            pathlib.Path(output_dir).mkdir(parents=True, exist_ok=True)
+
+            log_str = ''
+            log_title = ''
+            if log:
+                log_str = '_log_scale'
+                log_title = ' (log of runtime)'
+
+            plt.title(f"Runtime Histogram for {n_nodes} nodes{log_title}")
+
+            plt.tight_layout()
+            plt.savefig(f'{output_dir}/histogram_runtime_{n_nodes}_nodes_{n_bins}_bins{log_str}.svg')
             plt.close()
 
     def plot_runtime_with_scatter(self, df: pd.DataFrame, filter_key='N', index_key='numprocs', func_key='median',
@@ -353,16 +407,22 @@ class PlotManager:
             self.plot_and_save(f'runtime_repetition_{num_procs}')
 
     def plot_all(self, df: pd.DataFrame, prefix=None):
-        CI_bounds = [0.99, 0.9, 0.95, 0.75]
-        percentiles = [99., 50., 75., 90., 95.]
         self.prefix = prefix
-        for percentile in percentiles:
-            for CI_bound in CI_bounds:
-                self.plot_runtime_with_errorbars(df, CI_bound=CI_bound, func_key='percentile', percentile=percentile)
-        # self.plot_runtime_with_errorbars(df, CI_bound=CI_bound, func_key='mean')
-        self.plot_runtime_with_errorbars(df, CI_bound=CI_bound, func_key='median')
-        # self.plot_runtime_with_errorbars(df, CI_bound=CI_bound, func_key='max')
-        # self.plot_runtime_with_errorbars(df, CI_bound=CI_bound, func_key='min')
+
+        # CI_bounds = [0.99, 0.9, 0.95, 0.75]
+        # percentiles = [99., 50., 75., 90., 95.]
+        # self.prefix = prefix
+        # for percentile in percentiles:
+        #     for CI_bound in CI_bounds:
+        #         self.plot_runtime_with_errorbars(df, CI_bound=CI_bound, func_key='percentile', percentile=percentile)
+        # # self.plot_runtime_with_errorbars(df, CI_bound=CI_bound, func_key='mean')
+        # self.plot_runtime_with_errorbars(df, CI_bound=CI_bound, func_key='median')
+        # # self.plot_runtime_with_errorbars(df, CI_bound=CI_bound, func_key='max')
+        # # self.plot_runtime_with_errorbars(df, CI_bound=CI_bound, func_key='min')
+
+        for n_bins in [25]:
+            self.plot_subplot_histograms(df, n_bins=n_bins, log=False)
+            self.plot_subplot_histograms(df, n_bins=n_bins, log=True)
 
         self.plot_runtime(df)
         self.plot_compute_ratio(df)
@@ -373,7 +433,10 @@ class PlotManager:
         self.prefix = 'job'
 
         data = df[['N', 'numprocs', 'job.turnaround_time']]
-        data['queue_time'] = data.apply(lambda x: x['job.turnaround_time'] / (60 * 60), axis=1)
+        data['queue_time'] = data['job.turnaround_time'] / (60. * 60.)
+
+        # plt_data = plt_data.apply(lambda x: np.log(x) if x.name == 'runtime' else x)
+        # data['queue_time'] = data.apply(lambda x: x['job.turnaround_time'] / (60 * 60), axis=1)
 
         # df['job.runtime']
         for x_data in [('N', 'numprocs'), ('numprocs', 'N')]:
@@ -394,17 +457,22 @@ class PlotManager:
             self.plot_and_save(f"queueing_hist_{x_data[0]}")
 
 
-def plot(input_files: typing.List[str], output_dir: str):
+def plot(input_files: typing.List[str], input_dir: str, output_dir: str):
     sns.set()
 
     pm = PlotManager(output_dir=output_dir)
 
-    dfs = []
-    for input_file in input_files:
-        df = pandas.io.json.read_json(input_file, lines=True)
-        df = pd.json_normalize(json.loads(df.to_json(orient="records")))  # flatten nested json
-        dfs.append(df)
-    df = pd.concat(dfs)
+    aggregated_file = f"{input_dir}/aggregated.csv"
+    if os.path.isfile(aggregated_file):
+        df = pd.read_csv(aggregated_file)
+    else:
+        dfs = []
+        for input_file in input_files:
+            df = pandas.io.json.read_json(input_file, lines=True)
+            df = pd.json_normalize(json.loads(df.to_json(orient="records")))  # flatten nested json
+            dfs.append(df)
+        df = pd.concat(dfs)
+        df.to_csv(aggregated_file)
 
     df = df.rename(columns={'name': 'implementation'})
     df['job.mem_max'] /= 1000
@@ -416,12 +484,12 @@ def plot(input_files: typing.List[str], output_dir: str):
 
     # pm.plot_for_analysis(df)
 
-    cutoff = 12000
-    outliers = df[df['job.runtime'] >= cutoff]
-    df = df[df['job.runtime'] < cutoff]
+    # cutoff = 12000
+    # outliers = df[df['job.runtime'] >= cutoff]
+    # df = df[df['job.runtime'] < cutoff]
 
     pm.plot_all(df[~df['implementation'].str.contains('native')])
     pm.plot_all(df[df['implementation'].str.startswith('allreduce')], prefix='native')
-    pm.plot_all(outliers, prefix='outliers')
+    # pm.plot_all(outliers, prefix='outliers')
 
     pm.plot_job_stats(df)

@@ -21,7 +21,14 @@ def main():
             subfolders = os.listdir(f"{args.dir}/{args.aggregate}")
             folders = [f"{args.aggregate}/{f}" for f in subfolders]
 
-        # TODO: Delete all current aggregated files
+        # Delete all current aggregated files
+        try:
+            parsed_dir = f"{args.dir}/parsed/"
+            files = [f for f in os.listdir(parsed_dir)]
+            for file in files:
+                os.remove(f"{parsed_dir}{file}")
+        except OSError as e:
+            print(f"Error when deleting aggregated files: {e}")
 
         # jesus what have I done...
         for folder in folders:
@@ -32,11 +39,13 @@ def main():
                 repetition = int(filename.strip('jobs-'))
                 EulerRunner(results_dir=args.dir, raw_dir=folder).collect(repetition)
 
+
     if args.action in ['all', 'plot']:
+        input_dir = f"{args.dir}/parsed"
         input_files = glob.glob(f'{args.dir}/parsed/*.json')
         output_dir = f'{args.dir}/plots'
         pathlib.Path(output_dir).mkdir(exist_ok=True)
-        plot.plot(input_files=input_files, output_dir=output_dir)
+        plot.plot(input_files=input_files, input_dir=input_dir, output_dir=output_dir)
 
 
 if __name__ == '__main__':
