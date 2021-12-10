@@ -14,20 +14,10 @@ void allreduce_butterfly_segmented::compute(
   const auto& a = a_in[rank];
   const auto& b = b_in[rank];
 
-  // Check if number of processes assumption true
-  if (num_procs == 0) {
-    fprintf(stderr, "%d: Starting Butterfly numprocs=%d\n", rank, num_procs);
-    return;
-  }
-
-  int round, recv_rank;
-  int one = 1UL;
   int matrix_size = N * M;
-  MPI_Status status;
-  MPI_Request request;
   // Write initial outer product to result matrix
   result.set_outer_product(a, b);
-  double* receivedMatrixPtr = new double[N * M];
+  auto receivedMatrix = std::make_unique<double[]>(matrix_size);
   double* resultPtr = result.get_ptr();
 
   int n_rounds = 0;
@@ -45,6 +35,10 @@ void allreduce_butterfly_segmented::compute(
   bool i_am_idle_rank = (rank >= power_2_ranks);                 // whether I am idle or not
   bool i_am_idle_partner = (rank < (num_procs - power_2_ranks)); // whether I am partner of an idle process
   int idle_partner_rank = 0;
+
+  // They should be mutually exclusive
+  assert(!(i_am_idle_rank && i_am_idle_partner));
+
   if (i_am_idle_rank) {
     idle_partner_rank = rank - power_2_ranks;
   } else if (i_am_idle_partner) {
@@ -52,66 +46,54 @@ void allreduce_butterfly_segmented::compute(
   }
 
   // Start Reducing to nearest power of 2
-  if (non_power_of_2_rounds && i_am_idle_rank) {
-    // send
-    mpi_timer(MPI_Ssend, resultPtr, matrix_size, MPI_DOUBLE, idle_partner_rank,
-        TAG_ALLREDUCE_BUTTERFLY_SEGMENTED_REDUCE, comm);
-  }
-  if (non_power_of_2_rounds && i_am_idle_partner) {
-    // receive
-    mpi_timer(MPI_Recv, receivedMatrixPtr, matrix_size, MPI_DOUBLE, idle_partner_rank,
-        TAG_ALLREDUCE_BUTTERFLY_SEGMENTED_REDUCE, comm, &status);
-    // add received data to the  temporary matrix
-    for (int i = 0; i < matrix_size; i++) {
-      resultPtr[i] += receivedMatrixPtr[i];
+  if (non_power_of_2_rounds) {
+    if (i_am_idle_rank) {
+      // send
+      mpi_timer(MPI_Ssend, resultPtr, matrix_size, MPI_DOUBLE, idle_partner_rank,
+          TAG_ALLREDUCE_BUTTERFLY_SEGMENTED_REDUCE, comm);
+    } else if (i_am_idle_partner) {
+      // receive
+      mpi_timer(MPI_Recv, receivedMatrix.get(), matrix_size, MPI_DOUBLE, idle_partner_rank,
+          TAG_ALLREDUCE_BUTTERFLY_SEGMENTED_REDUCE, comm, MPI_STATUS_IGNORE);
+      // add received data to the  temporary matrix
+      for (int i = 0; i < matrix_size; i++) {
+        resultPtr[i] += receivedMatrix[i];
+      }
     }
   }
 
   // [START BUTTERFLY ROUNDS]
   if (!i_am_idle_rank) {
-    for (round = 0; round < n_rounds; round++) {
+    for (int round = 0; round < n_rounds; round++) {
       // receiver rank (from who we should expect data), is the same rank we send data to
-      int bit_vec = (one << round);
-      recv_rank = rank ^ bit_vec;
+      int bit_vec = (1UL << round);
+      int recv_rank = rank ^ bit_vec;
 
-      // send
-      mpi_timer(
-          MPI_Isend, resultPtr, matrix_size, MPI_DOUBLE, recv_rank, TAG_ALLREDUCE_BUTTERFLY_SEGMENTED, comm, &request);
-      // receive
-      mpi_timer(MPI_Recv, receivedMatrixPtr, matrix_size, MPI_DOUBLE, recv_rank, TAG_ALLREDUCE_BUTTERFLY_SEGMENTED,
-          comm, &status);
-
-      // wait for receive --> to use buffer again
-      mpi_timer(MPI_Wait, &request, MPI_STATUS_IGNORE);
-
-      //    fprintf(stderr, "Process-%d: round=%d, receiver rank=%d, bit-vec=%d\n", rank, round, recv_rank, bit_vec);
-      //    fprintf(stderr, "Process-%d: RECEIVED DATA round=%d, receiver rank=%d\n", rank, round, recv_rank);
+      mpi_timer(MPI_Sendrecv, resultPtr, matrix_size, MPI_DOUBLE, recv_rank, TAG_ALLREDUCE_BUTTERFLY_SEGMENTED,
+          receivedMatrix.get(), matrix_size, MPI_DOUBLE, recv_rank, TAG_ALLREDUCE_BUTTERFLY_SEGMENTED, comm,
+          MPI_STATUS_IGNORE);
 
       // add received data to the  temporary matrix
       for (int i = 0; i < matrix_size; i++) {
-        resultPtr[i] += receivedMatrixPtr[i];
+        resultPtr[i] += receivedMatrix[i];
       }
     }
   }
   // [END BUTTERFLY ROUNDS]
 
   // [FINISH Reducing to nearest power of 2]
-  if (non_power_of_2_rounds && i_am_idle_partner) {
-    //    fprintf(stderr, "%d: [IDLE-PARTNER] Sending to rank=%d\n", rank, idle_partner_rank);
-    // send
-    mpi_timer(MPI_Isend, resultPtr, matrix_size, MPI_DOUBLE, idle_partner_rank,
-        TAG_ALLREDUCE_BUTTERFLY_SEGMENTED_REDUCE, comm, &request);
-    // --> ignore request, since I am finished after this
+  if (non_power_of_2_rounds) {
+    if (i_am_idle_partner) {
+      // send
+      mpi_timer(MPI_Send, resultPtr, matrix_size, MPI_DOUBLE, idle_partner_rank,
+          TAG_ALLREDUCE_BUTTERFLY_SEGMENTED_REDUCE, comm);
+      // --> ignore request, since I am finished after this
+    } else if (i_am_idle_rank) {
+      // receive --> puts results automatically in tempMatrix
+      mpi_timer(MPI_Recv, resultPtr, matrix_size, MPI_DOUBLE, idle_partner_rank,
+          TAG_ALLREDUCE_BUTTERFLY_SEGMENTED_REDUCE, comm, MPI_STATUS_IGNORE);
+    }
   }
-  if (non_power_of_2_rounds && i_am_idle_rank) {
-    //    fprintf(stderr, "%d: [IDLE] Receiving from rank=%d\n", rank, idle_partner_rank);
-    // receive --> puts results automatically in tempMatrix
-    mpi_timer(MPI_Recv, resultPtr, matrix_size, MPI_DOUBLE, idle_partner_rank, TAG_ALLREDUCE_BUTTERFLY_SEGMENTED_REDUCE,
-        comm, &status);
-  }
-  delete[] receivedMatrixPtr;
-
-  mpi_timer(MPI_Wait, &request, MPI_STATUS_IGNORE);
 }
 
 } // namespace impls::allreduce_butterfly_segmented
