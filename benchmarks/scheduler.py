@@ -201,8 +201,8 @@ class Status(enum.Enum):
 
 
 class EulerRunner(Runner):
-    def __init__(self, results_dir, submit: bool = True):
-        self.raw_dir = f"{results_dir}/raw"
+    def __init__(self, results_dir, submit: bool = True, raw_dir="raw"):
+        self.raw_dir = f"{results_dir}/{raw_dir}"
         self.parsed_dir = f"{results_dir}/parsed"
         self.submit = submit
 
@@ -382,7 +382,7 @@ class EulerRunner(Runner):
         return float(max_mem)
 
     def collect(self, repetition: int):
-        with open(f"{self.parsed_dir}/{repetition}.json", "w") as o:
+        with open(f"{self.parsed_dir}/{repetition}.json", "a") as o:  # append mode
             with open(f"{self.raw_dir}/jobs-{repetition}") as f:
                 for job_id in f.read().splitlines():
                     input_path = f'{self.raw_dir}/{job_id}'
