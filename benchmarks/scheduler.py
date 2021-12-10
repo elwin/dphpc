@@ -381,8 +381,8 @@ class EulerRunner(Runner):
 
         return float(max_mem)
 
-    def collect(self, repetition: int):
-        with open(f"{self.parsed_dir}/{repetition}.json", "a") as o:  # append mode
+    def collect(self, repetition: int, repetition_offset: int = 0):
+        with open(f"{self.parsed_dir}/{repetition+repetition_offset}.json", "a") as o:  # append mode
             with open(f"{self.raw_dir}/jobs-{repetition}") as f:
                 for job_id in f.read().splitlines():
                     input_path = f'{self.raw_dir}/{job_id}'
@@ -408,7 +408,7 @@ class EulerRunner(Runner):
                                     parsed = json.loads(line)
                                     parsed['job'] = job_data
                                     parsed[
-                                        'repetition'] = repetition  # Overwrites repetition with information from file-name
+                                        'repetition'] = repetition + repetition_offset # Overwrites repetition with information from file-name
                                     o.write(json.dumps(parsed, separators=(',', ':')) + '\n')
                                 except Exception as e:
                                     logging.error(f'[{job_id}] failed to parse line {line_nr}, "{subject}": {e}')

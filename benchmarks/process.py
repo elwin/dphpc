@@ -5,6 +5,15 @@ import glob
 from benchmark import *
 import plot
 
+folder_offsets = {  # sorry but i have no easier Idea to collect them easily
+    "mixed/dave": 0 * 17,
+    "mixed/elwin": 1 * 17,
+    "mixed/noe": 2 * 17,
+    "mixed/patrick": 3 * 17,
+    "mixed/roysc": 0,
+    "raw": 0,
+}
+
 
 def main():
     parser = argparse.ArgumentParser(description='Collect all raw benchmark files')
@@ -37,8 +46,7 @@ def main():
             for file in glob.glob(f'{args.dir}/{folder}/jobs-*'):
                 filename = pathlib.Path(file).name
                 repetition = int(filename.strip('jobs-'))
-                EulerRunner(results_dir=args.dir, raw_dir=folder).collect(repetition)
-
+                EulerRunner(results_dir=args.dir, raw_dir=folder).collect(repetition, repetition_offset=folder_offsets[folder])
 
     if args.action in ['all', 'plot']:
         input_dir = f"{args.dir}/parsed"
