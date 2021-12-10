@@ -82,7 +82,7 @@ void allreduce_butterfly_segmented::compute(
           comm, &status);
 
       // wait for receive --> to use buffer again
-      MPI_Wait(&request, MPI_STATUS_IGNORE);
+      mpi_timer(MPI_Wait, &request, MPI_STATUS_IGNORE);
 
       //    fprintf(stderr, "Process-%d: round=%d, receiver rank=%d, bit-vec=%d\n", rank, round, recv_rank, bit_vec);
       //    fprintf(stderr, "Process-%d: RECEIVED DATA round=%d, receiver rank=%d\n", rank, round, recv_rank);
@@ -110,6 +110,8 @@ void allreduce_butterfly_segmented::compute(
         comm, &status);
   }
   delete[] receivedMatrixPtr;
+
+  mpi_timer(MPI_Wait, &request, MPI_STATUS_IGNORE);
 }
 
 } // namespace impls::allreduce_butterfly_segmented

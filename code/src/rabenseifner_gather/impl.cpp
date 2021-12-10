@@ -174,7 +174,7 @@ void rabenseifner_gather::compute(const std::vector<vector>& a_in, const std::ve
         comm, &request);
     mpi_timer(MPI_Recv, resultPtr + idx_lower_recv, chunk_size_recv, MPI_DOUBLE, recv_rank, TAG_RABENSEIFNER_GATHER,
         comm, &status);
-    MPI_Wait(&request, &status);
+    mpi_timer(MPI_Wait, &request, &status);
   }
 
   MPI_Waitall(send_reqs.size(), send_reqs.data(), MPI_STATUSES_IGNORE);

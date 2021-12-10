@@ -107,9 +107,7 @@ void grabenseifner_allgather_segmented::compute(
     int base_column = seg_i * SEG_EL;
 
     // Wait for previous allgather to complete
-    if (req != MPI_REQUEST_NULL) {
-      MPI_Wait(&req, MPI_STATUS_IGNORE);
-    }
+    mpi_timer(MPI_Wait, &req, MPI_STATUS_IGNORE);
 
     // Allgather next segment
     if (!is_last) {
