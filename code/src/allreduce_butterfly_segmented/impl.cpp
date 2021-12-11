@@ -12,9 +12,8 @@ namespace impls::allreduce_butterfly_segmented {
 /**
  * Performs allreduce with explicit butterfly communication.
  *
- * The implementation assumes the number of processes to be a power of 2.
- *
- * Use MPI_Bsend, because on return of function, the data is buffered, and I can modify the data.
+ * The buttefly communication is done pipelined. While adding received matrices to the result, already computed chunks
+ * are already sent for the next round.
  */
 void allreduce_butterfly_segmented::compute(
     const std::vector<vector>& a_in, const std::vector<vector>& b_in, matrix& result) {
