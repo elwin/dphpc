@@ -385,4 +385,5 @@ def plot(input_files: typing.List[str], output_dir: str):
 
     pm.plot_job_stats(df)
     pm.plot_all(df[~df['implementation'].str.contains('native')])
-    pm.plot_all(df[df['implementation'].str.startswith('allreduce')], prefix='native')
+    pm.plot_all(df[df['implementation'].str.startswith('allreduce')], prefix='native_allreduce')
+    pm.plot_all(df[df['implementation'].str.startswith('allgather')], prefix='native_allgather')

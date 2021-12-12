@@ -176,6 +176,8 @@ void rabenseifner_gather::compute(const std::vector<vector>& a_in, const std::ve
         comm, &status);
     MPI_Wait(&request, &status);
   }
+
+  MPI_Waitall(send_reqs.size(), send_reqs.data(), MPI_STATUSES_IGNORE);
 }
 
 } // namespace impls::rabenseifner_gather
