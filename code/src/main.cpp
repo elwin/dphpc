@@ -21,6 +21,7 @@
 #include "allreduce_butterfly_segmented/impl.hpp"
 #include "allreduce_rabenseifner/impl.hpp"
 #include "allreduce_ring/impl.hpp"
+#include "allreduce_ring_pipeline/impl.hpp"
 #include "bruck_async/impl.hpp"
 #include "dsop_single.h"
 #include "grabenseifner_allgather/impl.hpp"
@@ -146,6 +147,8 @@ static std::unique_ptr<dsop> get_impl(const std::string& name, Args&&... args) {
         std::forward<Args>(args)...);
   } else if (name == "allreduce-ring") {
     return std::make_unique<impls::allreduce::allreduce_ring>(std::forward<Args>(args)...);
+  } else if (name == "allreduce-ring-pipeline") {
+    return std::make_unique<impls::allreduce::allreduce_ring_pipeline>(std::forward<Args>(args)...);
   } else if (name == "allgather") {
     return std::make_unique<impls::allgather::allgather>(std::forward<Args>(args)...);
   } else if (name == "allgather-async") {
