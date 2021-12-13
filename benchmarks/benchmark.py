@@ -11,6 +11,7 @@ implementations = [
     allreduce_ring,
     # allreduce_ring_pipeline,
     # allreduce_butterfly,
+    # allreduce_butterfly_segmented,
     # allgather_async,
     # bruck_async,
     # allreduce_rabenseifner,
@@ -21,6 +22,7 @@ implementations = [
     # *native_allgather,
 
     grabenseifner_allgather,
+    grabenseifner_allgather_segmented,
     # grabenseifner_subgroup_1,
     grabenseifner_subgroup_2,
     grabenseifner_subgroup_4,

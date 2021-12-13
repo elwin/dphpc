@@ -53,7 +53,8 @@ void bruck_async::compute(const std::vector<vector>& a_in, const std::vector<vec
     int target = ((rank - offset) + num_procs) % num_procs;
     int source = (rank + offset) % num_procs;
 
-    MPI_Request send_req, recv_req;
+    MPI_Request send_req = MPI_REQUEST_NULL;
+    MPI_Request recv_req = MPI_REQUEST_NULL;
 
     /*
      * In the last round for non-power-of-2 nodes, the number of remaining chunks will not match the exponential

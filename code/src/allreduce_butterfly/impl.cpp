@@ -23,7 +23,7 @@ void allreduce_butterfly::compute(const std::vector<vector>& a_in, const std::ve
   int one = 1UL;
   int matrix_size = N * M;
   MPI_Status status;
-  MPI_Request request;
+  MPI_Request request = MPI_REQUEST_NULL;
   // Write initial outer product to result matrix
   result.set_outer_product(a, b);
   double* receivedMatrixPtr = new double[N * M];
@@ -79,7 +79,7 @@ void allreduce_butterfly::compute(const std::vector<vector>& a_in, const std::ve
           MPI_Recv, receivedMatrixPtr, matrix_size, MPI_DOUBLE, recv_rank, TAG_ALLREDUCE_BUTTERFLY, comm, &status);
 
       // wait for receive --> to use buffer again
-      MPI_Wait(&request, MPI_STATUS_IGNORE);
+      mpi_timer(MPI_Wait, &request, MPI_STATUS_IGNORE);
 
       //    fprintf(stderr, "Process-%d: round=%d, receiver rank=%d, bit-vec=%d\n", rank, round, recv_rank, bit_vec);
       //    fprintf(stderr, "Process-%d: RECEIVED DATA round=%d, receiver rank=%d\n", rank, round, recv_rank);
@@ -107,6 +107,7 @@ void allreduce_butterfly::compute(const std::vector<vector>& a_in, const std::ve
         MPI_Recv, resultPtr, matrix_size, MPI_DOUBLE, idle_partner_rank, TAG_ALLREDUCE_BUTTERFLY_REDUCE, comm, &status);
   }
   delete[] receivedMatrixPtr;
+  mpi_timer(MPI_Wait, &request, MPI_STATUS_IGNORE);
 }
 
 } // namespace impls::allreduce_butterfly
