@@ -9,6 +9,7 @@ implementations = [
     allgather,
     allreduce,
     allreduce_ring,
+    # allreduce_ring_pipeline,
     # allreduce_butterfly,
     # allgather_async,
     # bruck_async,

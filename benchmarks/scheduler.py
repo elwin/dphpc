@@ -42,6 +42,7 @@ class Implementation:
 allgather = Implementation(name='allgather')
 allreduce = Implementation(name='allreduce')
 allreduce_ring = Implementation(name='allreduce-ring')
+allreduce_ring_pipeline = Implementation(name='allreduce-ring-pipeline')
 allreduce_butterfly = Implementation(name='allreduce-butterfly')
 allgather_async = Implementation(name='allgather-async')
 allreduce_rabenseifner = Implementation(name='allreduce-rabenseifner')
