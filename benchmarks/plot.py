@@ -19,6 +19,7 @@ class PlotManager:
     prefix: str = None
 
     def plot_for_analysis(self, df: pd.DataFrame, func_key='median'):
+        print("Plotting for analysis")
         self.plot_runtime_with_scatter(df, 'numprocs', 'N', func_key=func_key)
         self.plot_runtime_with_scatter(df, 'N', 'numprocs', func_key=func_key)
         self.plot_runtime_by_key(df, 'N', 'numprocs', func_key=func_key)
@@ -160,7 +161,7 @@ class PlotManager:
             # plt.ylim((data['CI_low'].min(), data['CI_high'].max()))
             # plt.yscale('log', nonposy='clip')
             plt.tight_layout(pad=3.)
-            plt.legend() # loc="upper left"
+            plt.legend(bbox_to_anchor=(1,1)) # loc="upper left"
             plt.xlabel('Input Dimension')
             plt.ylabel('Runtime (s)')
             plt.title(f'Runtime ({i} nodes)')
@@ -270,7 +271,7 @@ class PlotManager:
                 ax.plot(x, y, color=color_dict.get(col), label=col)
             ax.set_yscale('log')
             plt.tight_layout()
-            plt.legend(loc="upper left")
+            plt.legend(loc="upper left", bbox_to_anchor=(1,1))
             plt.savefig(f'{self.output_dir}/runtime_{i}_{filter_key}_{func_key}_with_scatter.svg')
             plt.close()
 
@@ -303,6 +304,8 @@ class PlotManager:
         return percentile
 
     def plot_and_save(self, name: str):
+        plt.gcf().set_size_inches(10, 5)
+        plt.legend(bbox_to_anchor=(1,1)) # loc="upper left"
         plt.tight_layout()
         output_dir = self.output_dir if self.prefix is None else f'{self.output_dir}/{self.prefix}'
         pathlib.Path(output_dir).mkdir(parents=True, exist_ok=True)
@@ -351,6 +354,7 @@ class PlotManager:
             self.plot_and_save(f'runtime_dim_{n}')
 
     def plot_mem_usage(self, df: pd.DataFrame):
+        print("Plotting memory usage")
         for i in [2**i for i in range(1, 6)]:
             data = df[df['numprocs'] == i]
             data = data[['N', 'implementation', 'job.mem_max_avg', 'job.mem_requested']]
@@ -372,6 +376,7 @@ class PlotManager:
             self.plot_and_save(f'mem_usage_{i}')
 
     def plot_compute_ratio(self, df: pd.DataFrame):
+        print("Plotting compute ratio")
         for i in [2**i for i in range(1, 6)]:
             data = df[df['numprocs'] == i]
             if data.shape[0] == 0:
@@ -410,9 +415,10 @@ class PlotManager:
 
             self.plot_and_save(f'compute_ratio_dim_{n}')
 
-    def plot_repetitions(self, df: pd.DataFrame):
+    def plot_iterations(self, df: pd.DataFrame):
+        print("Plotting iterations")
         for num_procs in [2**i for i in range(1, 6)]:
-            vector_size = 4096
+            vector_size = 8000
 
             data = df[(df['M'] == vector_size) & (df['numprocs'] == num_procs)]
             if data.shape[0] == 0:
@@ -445,14 +451,14 @@ class PlotManager:
         # # self.plot_runtime_with_errorbars(df, CI_bound=CI_bound, func_key='max')
         # # self.plot_runtime_with_errorbars(df, CI_bound=CI_bound, func_key='min')
 
-        for n_bins in [50]:
-            self.plot_subplot_histograms(df, n_bins=n_bins, log=False)
-            self.plot_subplot_histograms(df, n_bins=n_bins, log=True)
-
+        # for n_bins in [50]:
+        #     self.plot_subplot_histograms(df, n_bins=n_bins, log=False)
+        #     self.plot_subplot_histograms(df, n_bins=n_bins, log=True)
+    
         self.plot_runtime(df)
         self.plot_compute_ratio(df)
-        self.plot_mem_usage(df)
-        self.plot_repetitions(df)
+        # self.plot_mem_usage(df)
+        # self.plot_iterations(df)
 
     def plot_job_stats(self, df: pd.DataFrame):
         self.prefix = 'job'
@@ -511,8 +517,11 @@ def plot(input_files: List[str], input_dir: str, output_dir: str):
     # outliers = df[df['job.runtime'] >= cutoff]
     # df = df[df['job.runtime'] < cutoff]
 
+    print("Plotting non-native implementation")
     pm.plot_all(df[~df['implementation'].str.contains('native')])
-    pm.plot_all(df[df['implementation'].str.startswith('allreduce')], prefix='native')
+    # print("Plotting allreduce implementations")
+    # pm.plot_all(df[df['implementation'].str.startswith('allreduce')], prefix='native')
     # pm.plot_all(outliers, prefix='outliers')
 
-    pm.plot_job_stats(df)
+    # print("Plotting job stats")
+    # pm.plot_job_stats(df)
