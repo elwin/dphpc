@@ -12,11 +12,72 @@ import os
 
 agg_func = np.median
 
+def get_agg_func(func_key: str, percentile=99.):
+    if func_key == 'mean':
+        return np.mean
+    elif func_key == 'median':
+        return np.median
+    elif func_key == 'max':
+        return np.max
+    elif func_key == 'min':
+        return np.min
+    elif func_key == 'percentile':
+        return PlotManager.percentile_agg_func(percentile)
+    else:
+        return np.mean
+
 
 @dataclasses.dataclass
 class PlotManager:
     output_dir: str
     prefix: str = None
+
+    def plot_for_report(self, df: pd.DataFrame, func_key='median'):
+        print("Plotting for report")
+        self.prefix = 'report'
+        # All measurements within the same repetition are aggregated as a single measurement
+        df = df.groupby(['N', 'numprocs', 'repetition', 'implementation']).agg(
+                runtime=pd.NamedAgg(column="runtime", aggfunc=agg_func)
+                )
+        df = df.reset_index()
+
+        df = df[~df['implementation'].str.contains('subgroup')]
+
+        sizes = df['N'].unique().tolist()
+        processes = df['numprocs'].unique().tolist()
+        impls = df['implementation'].unique().tolist()
+
+        print(f"sizes: {sizes}")
+        print(f"processes: {processes}")
+        print(f"impls: {impls}")
+
+        num_rows = len(processes)
+        num_cols = len(impls)
+
+        fig, axes = plt.subplots(nrows=num_rows, ncols=num_cols, sharex=False, sharey=False, figsize=(36, 13), squeeze=False)
+
+        for i, numprocs in enumerate(processes):
+            for j, impl in enumerate(impls):
+                data = df[(df['implementation'] == impl) & (df['numprocs'] == numprocs)]
+
+                xticks = data['N'].unique().tolist()
+                l = [data[data['N'] == x]['runtime'].to_list() for x in xticks]
+                quantiles = [[0.05, 0.95]] * len(xticks)
+                axes[i, j].violinplot(l, positions=xticks, quantiles=quantiles, showmedians=True, showextrema=False, widths=[xticks[-1] / len(xticks) * 0.5] * len(xticks))
+                # data.boxplot(column='runtime', by=['N'], ax=axes[i, j], whis=(5,95), notch=False, showfliers=False)
+
+        for i, val_i in enumerate(processes):
+            axes[i, 0].set_ylabel(val_i, rotation=90, fontsize=9)
+
+        for j, val_j in enumerate(impls):
+            axes[0, j].set_title(val_j)
+
+            for i in range(0, len(processes)):
+                if i != 0:
+                    axes[i, j].set_title('')
+                axes[i, j].set_xlabel('')
+
+        self.plot_and_save('box', None, None)
 
     def plot_for_analysis(self, df: pd.DataFrame, func_key='median'):
         print("Plotting for analysis")
@@ -32,14 +93,7 @@ class PlotManager:
                             func_key='mean',
                             percentile=99.,
                             powers_of_two=True):
-        if func_key == 'mean':
-            agg_func = np.mean
-        elif func_key == 'median':
-            agg_func = np.median
-        elif func_key == 'percentile':
-            agg_func = self.percentile_agg_func(percentile)
-        else:
-            agg_func = np.mean
+        agg_func = get_agg_func(func_key, percentile)
 
         # print(df[filter_key].unique())
         # print(df)
@@ -74,19 +128,10 @@ class PlotManager:
                                     percentile=99.,
                                     CI_bound=0.95,
                                     powers_of_two=False):
-        if func_key == 'mean':
-            agg_func = np.mean
-        elif func_key == 'median':
-            agg_func = np.median
-        elif func_key == 'max':
-            agg_func = np.max
-        elif func_key == 'min':
-            agg_func = np.min
-        elif func_key == 'percentile':
+        agg_func = get_agg_func(func_key, percentile)
+
+        if func_key == 'percentile':
             func_key = f"percentile_{percentile}"
-            agg_func = self.percentile_agg_func(percentile)
-        else:
-            agg_func = np.mean
 
         def CI(data):
             data = data.to_numpy()
@@ -200,7 +245,7 @@ class PlotManager:
                     value_range = (np.min(np.log(df['runtime'])), np.max(np.log(df['runtime'])))
                     plt_data = plt_data.apply(lambda x: np.log(x) if x.name == 'runtime' else x)
 
-                fig, axes = plt.subplots(nrows=n_rows, ncols=n_cols, sharex=True, sharey=True, figsize=(24, 13))
+                fig, axes = plt.subplots(nrows=n_rows, ncols=n_cols, sharex=True, sharey=True, figsize=(24, 13), squeeze=False)
 
 
 
@@ -239,14 +284,7 @@ class PlotManager:
                                   func_key='median',
                                   percentile=99.,
                                   powers_of_two=True):
-        if func_key == 'mean':
-            agg_func = np.mean
-        elif func_key == 'median':
-            agg_func = np.median
-        elif func_key == 'percentile':
-            agg_func = self.percentile_agg_func(percentile)
-        else:
-            agg_func = np.mean
+        agg_func = get_agg_func(func_key, percentile)
 
         for i in df[filter_key].unique():
             if powers_of_two and not math.log(i, 2).is_integer():
@@ -297,20 +335,17 @@ class PlotManager:
 
     @staticmethod
     def percentile_agg_func(percentile):
-        perc = [percentile]
+        return lambda p: np.percentile(p, [percentile])
 
-        def percentile(p):
-            return np.percentile(p, perc)
-
-        return percentile
-
-    def plot_and_save(self, name: str):
-        plt.gcf().set_size_inches(10, 5)
-        plt.legend(bbox_to_anchor=(1,1)) # loc="upper left"
+    def plot_and_save(self, name: str, width: float = 10, height: float = 5):
+        if width is not None and height is not None:
+            plt.gcf().set_size_inches(width, height)
+        plt.legend(bbox_to_anchor=(1,1))
         plt.tight_layout()
         output_dir = self.output_dir if self.prefix is None else f'{self.output_dir}/{self.prefix}'
         pathlib.Path(output_dir).mkdir(parents=True, exist_ok=True)
         plt.savefig(f'{output_dir}/{name}.svg')
+        plt.savefig(f'{output_dir}/{name}.png')
         plt.close()
 
     def plot_runtime(self, df: pd.DataFrame):
@@ -513,14 +548,16 @@ def plot(input_files: List[str], input_dir: str, output_dir: str):
     # Drop the first iteration because it is a warmup iteration
     df = df[df['iteration'] > 0]
 
+    pm.plot_for_report(df)
+
     # pm.plot_for_analysis(df)
 
     # cutoff = 12000
     # outliers = df[df['job.runtime'] >= cutoff]
     # df = df[df['job.runtime'] < cutoff]
 
-    print("Plotting non-native implementation")
-    pm.plot_all(df[~df['implementation'].str.contains('native')])
+    # print("Plotting non-native implementation")
+    # pm.plot_all(df[~df['implementation'].str.contains('native')])
     # print("Plotting allreduce implementations")
     # pm.plot_all(df[df['implementation'].str.startswith('allreduce')], prefix='native')
     # pm.plot_all(outliers, prefix='outliers')
