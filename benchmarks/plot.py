@@ -270,8 +270,9 @@ class PlotManager:
                 x, y = self.remove_nan_from_cols(data_filtered.index, data_filtered[col])
                 ax.plot(x, y, color=color_dict.get(col), label=col)
             ax.set_yscale('log')
-            plt.tight_layout()
+            plt.gcf().set_size_inches(10, 5)
             plt.legend(loc="upper left", bbox_to_anchor=(1,1))
+            plt.tight_layout()
             plt.savefig(f'{self.output_dir}/runtime_{i}_{filter_key}_{func_key}_with_scatter.svg')
             plt.close()
 
@@ -430,12 +431,12 @@ class PlotManager:
                 values='runtime',
                 aggfunc=agg_func,
             ).plot(
-                title=f'Runtime across repetition number ({vector_size} vector size, {num_procs} nodes)',
+                title=f'Runtime across iteration number ({vector_size} vector size, {num_procs} nodes)',
                 ylabel='Runtime (s)',
                 logy=True,
                 xlabel='Iteration',
             )
-            self.plot_and_save(f'runtime_repetition_{num_procs}')
+            self.plot_and_save(f'runtime_iteration_{num_procs}')
 
     def plot_all(self, df: pd.DataFrame, prefix=None):
         self.prefix = prefix
