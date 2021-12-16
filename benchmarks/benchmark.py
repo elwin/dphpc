@@ -3,7 +3,22 @@
 import argparse
 import shutil
 
-from scheduler import *
+from scheduler import \
+        allgather, \
+        allreduce, \
+        allreduce_ring, \
+        grabenseifner_allgather, \
+        grabenseifner_subgroup_2, \
+        grabenseifner_subgroup_4, \
+        grabenseifner_subgroup_8, \
+        logger, \
+        inclusive, \
+        Configuration, \
+        EulerRunner, \
+        DryRun,\
+        Scheduler
+
+from config import results_path
 
 implementations = [
     allgather,
@@ -18,7 +33,6 @@ implementations = [
     #
     # *native_allreduce,
     # *native_allgather,
-
     grabenseifner_allgather,
     # grabenseifner_subgroup_1,
     grabenseifner_subgroup_2,
@@ -39,18 +53,13 @@ configs.extend([
         repetitions=repetitions,
         job_repetition=job_repetition,
         implementation=implementation,
-    )
-    for n in inclusive(1000, 8000, 1000)
-    for nodes in [48]
-    for job_repetition in range(job_repetitions)
+    ) for n in inclusive(1000, 8000, 1000) for nodes in [48] for job_repetition in range(job_repetitions)
     for implementation in implementations
 ])
 
 verify_configs = [
-    Configuration(n=2 ** n, m=2 ** n, nodes=2 ** p, implementation=implementation, verify=True)
-    for n in inclusive(4, 10)
-    for p in inclusive(2, 5)
-    for implementation in implementations
+    Configuration(n=2**n, m=2**n, nodes=2**p, implementation=implementation, verify=True) for n in inclusive(4, 10)
+    for p in inclusive(2, 5) for implementation in implementations
 ]
 
 

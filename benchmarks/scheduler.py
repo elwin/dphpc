@@ -12,7 +12,7 @@ import subprocess
 import sys
 import typing
 
-from config import *
+from config import binary_path
 
 logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 logger = logging.getLogger()
@@ -80,8 +80,8 @@ class Configuration:
     m: int
     nodes: int
     implementation: Implementation
-    repetitions: int = 1  # used for repetitions within a job (-t ${repetitions})
-    job_repetition: int = 0  # used for repeated jobs
+    repetitions: int = 1 # used for repetitions within a job (-t ${repetitions})
+    job_repetition: int = 0 # used for repeated jobs
     verify: bool = False
 
     def __str__(self):
@@ -110,7 +110,7 @@ class Configuration:
         if self.n < 8192 and self.m < 8192:
             return 1024 * self.nodes
 
-        return int((self.n * self.m / (2 ** 15)) * self.nodes)
+        return int((self.n * self.m / (2**15)) * self.nodes)
 
     def runnable(self):
         # if self.nodes > 48:
@@ -125,16 +125,16 @@ class Configuration:
 
 class Runner:
     def run(self, config: Configuration):
-        raise NotImplemented
+        raise NotImplementedError
 
     def run_grouped(self, keys, configs: typing.List[Configuration]):
-        raise NotImplemented
+        raise NotImplementedError
 
     def collect(self, repetition: int):
-        raise NotImplemented
+        raise NotImplementedError
 
     def verify(self, repetition: int) -> bool:
-        raise NotImplemented
+        raise NotImplementedError
 
 
 class Scheduler:
@@ -307,12 +307,13 @@ class EulerRunner(Runner):
 
             if config.job_repetition != repetition:
                 raise Exception(
-                    f'different job repetition in same grouping, expected {repetition}, received {config.job_repetition}')
+                    f'different job repetition in same grouping, expected {repetition}, received {config.job_repetition}'
+                )
 
             mpi_args = self.prepare_cmd(config)
             commands.append(' '.join(mpi_args))
 
-        time = 2 * len(configs)  # roughly 1.25 minutes / run on average
+        time = 2 * len(configs) # roughly 1.25 minutes / run on average
 
         job_name = '-'.join(map(str, keys))
         batch_filename = f'./{self.raw_dir}/batch-{job_name}'
@@ -371,7 +372,7 @@ class EulerRunner(Runner):
         start += 2
         end -= 2
 
-        line_nrs = range(start + 1, end + 1)  # line numbers are usually 1-indexed
+        line_nrs = range(start + 1, end + 1) # line numbers are usually 1-indexed
         return list(zip(line_nrs, data[start:end]))
 
     def find_mem_max(self, job_id: str, data: list) -> float:
@@ -382,7 +383,7 @@ class EulerRunner(Runner):
         return float(max_mem)
 
     def collect(self, repetition: int, repetition_offset: int = 0):
-        with open(f"{self.parsed_dir}/{repetition+repetition_offset}.json", "a") as o:  # append mode
+        with open(f"{self.parsed_dir}/{repetition+repetition_offset}.json", "a") as o: # append mode
             with open(f"{self.raw_dir}/jobs-{repetition}") as f:
                 for job_id in f.read().splitlines():
                     input_path = f'{self.raw_dir}/{job_id}'

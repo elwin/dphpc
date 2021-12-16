@@ -1,7 +1,7 @@
 import dataclasses
 import json
 import pathlib
-import typing
+from typing import List
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -9,7 +9,6 @@ import pandas.io.json
 import math
 import seaborn as sns
 import os
-from scipy.stats import bootstrap
 
 agg_func = np.median
 
@@ -25,8 +24,13 @@ class PlotManager:
         self.plot_runtime_by_key(df, 'N', 'numprocs', func_key=func_key)
         self.plot_runtime_by_key(df, 'numprocs', 'N', func_key=func_key)
 
-    def plot_runtime_by_key(self, df: pd.DataFrame, filter_key='N', index_key='numprocs', func_key='mean',
-                            percentile=99., powers_of_two=True):
+    def plot_runtime_by_key(self,
+                            df: pd.DataFrame,
+                            filter_key='N',
+                            index_key='numprocs',
+                            func_key='mean',
+                            percentile=99.,
+                            powers_of_two=True):
         if func_key == 'mean':
             agg_func = np.mean
         elif func_key == 'median':
@@ -61,8 +65,14 @@ class PlotManager:
             plt.savefig(f'{self.output_dir}/runtime_{i}_{filter_key}_{func_key}.svg')
             plt.close()
 
-    def plot_runtime_with_errorbars(self, df: pd.DataFrame, filter_key='N', index_key='numprocs', func_key='median',
-                                    percentile=99., CI_bound=0.95, powers_of_two=False):
+    def plot_runtime_with_errorbars(self,
+                                    df: pd.DataFrame,
+                                    filter_key='N',
+                                    index_key='numprocs',
+                                    func_key='median',
+                                    percentile=99.,
+                                    CI_bound=0.95,
+                                    powers_of_two=False):
         if func_key == 'mean':
             agg_func = np.mean
         elif func_key == 'median':
@@ -135,16 +145,22 @@ class PlotManager:
                 #             yerr=data_filtered[['CI_low', 'CI_high']].to_numpy().transpose(),
                 #             color=color_dict.get(algo), label=algo, fmt='none', capsize=2.5)
 
-                ax.errorbar(x=data_filtered[filter_key], y=data_filtered['agg_runtime'],
+                ax.errorbar(x=data_filtered[filter_key],
+                            y=data_filtered['agg_runtime'],
                             yerr=data_filtered[['yerr_low', 'yerr_high']].to_numpy().transpose(),
-                            color=color_dict.get(algo), label=algo, fmt=':', alpha=0.9, capsize=3, capthick=1)
+                            color=color_dict.get(algo),
+                            label=algo,
+                            fmt=':',
+                            alpha=0.9,
+                            capsize=3,
+                            capthick=1)
                 # ax.fill_between(x=data_filtered[filter_key], y1=data_filtered['CI_low'], y2=data_filtered['CI_high'],
                 #                 color=color_dict.get(algo), alpha=0.25)
 
             # plt.ylim((data['CI_low'].min(), data['CI_high'].max()))
             # plt.yscale('log', nonposy='clip')
             plt.tight_layout(pad=3.)
-            plt.legend()  # loc="upper left"
+            plt.legend() # loc="upper left"
             plt.xlabel('Input Dimension')
             plt.ylabel('Runtime (s)')
             plt.title(f'Runtime ({i} nodes)')
@@ -215,8 +231,13 @@ class PlotManager:
                 plt.savefig(f'{output_dir}/histogram_runtime_{key_val}_{key[0]}_{n_bins}_bins{log_str}.svg')
                 plt.close()
 
-    def plot_runtime_with_scatter(self, df: pd.DataFrame, filter_key='N', index_key='numprocs', func_key='median',
-                                  percentile=99., powers_of_two=True):
+    def plot_runtime_with_scatter(self,
+                                  df: pd.DataFrame,
+                                  filter_key='N',
+                                  index_key='numprocs',
+                                  func_key='median',
+                                  percentile=99.,
+                                  powers_of_two=True):
         if func_key == 'mean':
             agg_func = np.mean
         elif func_key == 'median':
@@ -289,7 +310,7 @@ class PlotManager:
         plt.close()
 
     def plot_runtime(self, df: pd.DataFrame):
-        for i in [2 ** i for i in range(1, 6)]:
+        for i in [2**i for i in range(1, 6)]:
             data = df[df['numprocs'] == i]
             if data.shape[0] == 0:
                 continue
@@ -309,7 +330,7 @@ class PlotManager:
             )
             self.plot_and_save(f'runtime_{i}')
 
-        for n in [2 ** n for n in range(4, 14)]:
+        for n in [2**n for n in range(4, 14)]:
             data = df[df['N'] == n]
             if data.shape[0] == 0:
                 continue
@@ -330,7 +351,7 @@ class PlotManager:
             self.plot_and_save(f'runtime_dim_{n}')
 
     def plot_mem_usage(self, df: pd.DataFrame):
-        for i in [2 ** i for i in range(1, 6)]:
+        for i in [2**i for i in range(1, 6)]:
             data = df[df['numprocs'] == i]
             data = data[['N', 'implementation', 'job.mem_max_avg', 'job.mem_requested']]
             if data.shape[0] == 0:
@@ -351,7 +372,7 @@ class PlotManager:
             self.plot_and_save(f'mem_usage_{i}')
 
     def plot_compute_ratio(self, df: pd.DataFrame):
-        for i in [2 ** i for i in range(1, 6)]:
+        for i in [2**i for i in range(1, 6)]:
             data = df[df['numprocs'] == i]
             if data.shape[0] == 0:
                 continue
@@ -369,7 +390,7 @@ class PlotManager:
             )
             self.plot_and_save(f'compute_ratio_{i}')
 
-        for n in [2 ** n for n in range(4, 14)]:
+        for n in [2**n for n in range(4, 14)]:
             data = df[df['N'] == n]
             if data.shape[0] == 0:
                 continue
@@ -390,7 +411,7 @@ class PlotManager:
             self.plot_and_save(f'compute_ratio_dim_{n}')
 
     def plot_repetitions(self, df: pd.DataFrame):
-        for num_procs in [2 ** i for i in range(1, 6)]:
+        for num_procs in [2**i for i in range(1, 6)]:
             vector_size = 4096
 
             data = df[(df['M'] == vector_size) & (df['numprocs'] == num_procs)]
@@ -459,7 +480,7 @@ class PlotManager:
             self.plot_and_save(f"queueing_hist_{x_data[0]}")
 
 
-def plot(input_files: typing.List[str], input_dir: str, output_dir: str):
+def plot(input_files: List[str], input_dir: str, output_dir: str):
     sns.set()
 
     pm = PlotManager(output_dir=output_dir)
@@ -471,7 +492,7 @@ def plot(input_files: typing.List[str], input_dir: str, output_dir: str):
         dfs = []
         for input_file in input_files:
             df = pandas.io.json.read_json(input_file, lines=True)
-            df = pd.json_normalize(json.loads(df.to_json(orient="records")))  # flatten nested json
+            df = pd.json_normalize(json.loads(df.to_json(orient="records"))) # flatten nested json
             dfs.append(df)
         df = pd.concat(dfs)
         df.to_csv(aggregated_file)

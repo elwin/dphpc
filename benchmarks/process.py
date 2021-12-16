@@ -1,8 +1,13 @@
 #!/usr/bin/env python3
 
 import glob
+import argparse
+import pathlib
+import os
 
-from benchmark import *
+from scheduler import EulerRunner
+from config import results_path
+
 import plot
 
 folder_offsets = {  # sorry but i have no easier Idea to collect them easily
@@ -18,9 +23,15 @@ folder_offsets = {  # sorry but i have no easier Idea to collect them easily
 def main():
     parser = argparse.ArgumentParser(description='Collect all raw benchmark files')
     parser.add_argument('action', choices=['all', 'collect', 'plot'], default='all', nargs='?')
-    parser.add_argument('-a', '--aggregate', type=str, default="raw",
+    parser.add_argument('-a',
+                        '--aggregate',
+                        type=str,
+                        default="raw",
                         help="Directory unaggregated results from multiple benchmarks")
-    parser.add_argument('-d', '--dir', type=str, default=results_path,
+    parser.add_argument('-d',
+                        '--dir',
+                        type=str,
+                        default=results_path,
                         help="Directory containing results (both in and output")
     args = parser.parse_args()
 
@@ -46,7 +57,8 @@ def main():
             for file in glob.glob(f'{args.dir}/{folder}/jobs-*'):
                 filename = pathlib.Path(file).name
                 repetition = int(filename.strip('jobs-'))
-                EulerRunner(results_dir=args.dir, raw_dir=folder).collect(repetition, repetition_offset=folder_offsets[folder])
+                EulerRunner(results_dir=args.dir, raw_dir=folder).collect(repetition,
+                                                                          repetition_offset=folder_offsets[folder])
 
     if args.action in ['all', 'plot']:
         input_dir = f"{args.dir}/parsed"
