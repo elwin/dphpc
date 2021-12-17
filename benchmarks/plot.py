@@ -10,6 +10,8 @@ import math
 import seaborn as sns
 import os
 
+from itertools import product
+
 from matplotlib.axes import Axes
 
 agg_func = np.median
@@ -37,11 +39,6 @@ class PlotManager:
     def plot_for_report(self, df: pd.DataFrame, func_key='median'):
         print("Plotting for report")
         self.prefix = 'report'
-        # All measurements within the same repetition are aggregated as a single measurement
-        df = df.groupby(['N', 'numprocs', 'repetition', 'implementation']).agg(
-                runtime=pd.NamedAgg(column="runtime", aggfunc=agg_func)
-                )
-        df = df.reset_index()
 
         selected_impls = ['allgather', 'allreduce', 'g-rabenseifner-allgather']
         selected_impls = ['allgather', 'allreduce', 'allreduce-ring', 'g-rabenseifner-allgather']
@@ -56,6 +53,15 @@ class PlotManager:
         print(f"processes: {processes}")
         print(f"impls: {impls}")
 
+        for N, num_procs in product(sizes, processes):
+            self.plot_report_all_node_configs(df, N, num_procs, impls, 95)
+
+        # All measurements within the same repetition are aggregated as a single measurement
+        df = df.groupby(['N', 'numprocs', 'repetition', 'implementation']).agg(
+                runtime=pd.NamedAgg(column="runtime", aggfunc=agg_func)
+                )
+        df = df.reset_index()
+
         self.plot_report_boxviolin('box', True, df, processes, impls, 95)
         self.plot_report_boxviolin('violin', False, df, processes, impls, 95)
 
@@ -68,16 +74,42 @@ class PlotManager:
 
         self.plot_report_runtime(df, processes, impls, 75)
 
-    def plot_report_speedup(self, df: pd.DataFrame, baseline: str, num_processes: List[int], impls: List[str], percentile: int=75):
+    def plot_report_all_node_configs(self, df: pd.DataFrame, N: int, num_procs: int, impls: List[str], percentile: float=95):
+        data = df.query("`N` == @N & `numprocs` == @num_procs")
+        repetitions = sorted(data['repetition'].unique().tolist())
+        num_reps = len(repetitions)
+
+        ncols = 6
+        nrows = math.ceil(num_reps / ncols)
+
+        fig, axes = plt.subplots(nrows=nrows, ncols=ncols, sharex=True, figsize=(45, 16))
+        axs = axes.flat
+
+        for i, rep in enumerate(repetitions):
+            ax = axs[i]
+            filtered = data.query("`repetition` == @rep")
+
+            if filtered.empty:
+                continue
+            print(f"{N=}, {num_procs=}, {i=}, {rep=}")
+
+            self.plot_report_boxviolin_comparison(False, filtered, ax, N, num_procs, impls, percentile)
+            ax.set_title(f'Repetition {rep}')
+            ax.set_xlabel('')
+
+        self.plot_and_save(f'all_configs_{N}_{num_procs}', None, None)
+
+    def plot_report_speedup(self, df: pd.DataFrame, baseline: str, num_processes: List[int], impls: List[str], percentile: float=75):
         assert baseline not in impls
         data = df.groupby(['numprocs', 'implementation', 'N']).agg(
             runtime=pd.NamedAgg(column="runtime", aggfunc=np.median),
         )
         data.reset_index(inplace=True)
 
-        baseline_runtimes = data[data['implementation'] == baseline]
+        # TODO
+        # baseline_runtimes = data[data['implementation'] == baseline]
 
-    def plot_report_runtime(self, df: pd.DataFrame, num_processes: List[int], impls: List[str], percentile: int=75):
+    def plot_report_runtime(self, df: pd.DataFrame, num_processes: List[int], impls: List[str], percentile: int=95):
         data_errors = df.groupby(['numprocs', 'implementation', 'N']).agg(
             runtime=pd.NamedAgg(column="runtime", aggfunc=np.median),
             yerr_low=pd.NamedAgg(column="runtime", aggfunc=lambda p: np.median(p) - np.percentile(p, [100 - percentile])),
@@ -119,6 +151,10 @@ class PlotManager:
             xticks = range(len(impls))
             l = [data[data['implementation'] == x]['runtime'].to_list() for x in impls]
             quantiles = [violin_quantiles] * len(xticks)
+
+            if min([len(x) for x in l]) == 0:
+                return
+
             ax.violinplot(l, positions=xticks, quantiles=quantiles, showmedians=True, showextrema=False)
             ax.set_xticks(xticks)
             ax.set_xticklabels(impls)
