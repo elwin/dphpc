@@ -10,6 +10,8 @@ import math
 import seaborn as sns
 import os
 
+from matplotlib.axes import Axes
+
 agg_func = np.median
 
 def get_agg_func(func_key: str, percentile=99.):
@@ -41,7 +43,10 @@ class PlotManager:
                 )
         df = df.reset_index()
 
-        df = df[~df['implementation'].str.contains('subgroup')]
+        selected_impls = ['allgather', 'allreduce', 'g-rabenseifner-allgather']
+        selected_impls = ['allgather', 'allreduce', 'allreduce-ring', 'g-rabenseifner-allgather']
+
+        df = df[df['implementation'].isin(selected_impls)]
 
         sizes = df['N'].unique().tolist()
         processes = df['numprocs'].unique().tolist()
@@ -51,33 +56,111 @@ class PlotManager:
         print(f"processes: {processes}")
         print(f"impls: {impls}")
 
-        num_rows = len(processes)
+        self.plot_report_boxviolin('box', True, df, processes, impls, 95)
+        self.plot_report_boxviolin('violin', False, df, processes, impls, 95)
+
+        fig, (ax_left, ax_right) = plt.subplots(ncols=2, sharey=True, figsize=(24, 9))
+        self.plot_report_boxviolin_comparison(True, df, ax_left, 8000, 48, impls, 95)
+        self.plot_report_boxviolin_comparison(False, df, ax_right, 8000, 48, impls, 95)
+        ax_left.set_ylabel('Runtime (s)', rotation=90, fontsize=12)
+        fig.suptitle("Runtime plots for N = M = 8000 and num_procs = 48")
+        self.plot_and_save('cmp', None, None)
+
+        self.plot_report_runtime(df, processes, impls, 75)
+
+    def plot_report_speedup(self, df: pd.DataFrame, baseline: str, num_processes: List[int], impls: List[str], percentile: int=75):
+        assert baseline not in impls
+        data = df.groupby(['numprocs', 'implementation', 'N']).agg(
+            runtime=pd.NamedAgg(column="runtime", aggfunc=np.median),
+        )
+        data.reset_index(inplace=True)
+
+        baseline_runtimes = data[data['implementation'] == baseline]
+
+    def plot_report_runtime(self, df: pd.DataFrame, num_processes: List[int], impls: List[str], percentile: int=75):
+        data_errors = df.groupby(['numprocs', 'implementation', 'N']).agg(
+            runtime=pd.NamedAgg(column="runtime", aggfunc=np.median),
+            yerr_low=pd.NamedAgg(column="runtime", aggfunc=lambda p: np.median(p) - np.percentile(p, [100 - percentile])),
+            yerr_high=pd.NamedAgg(column="runtime", aggfunc=lambda p: np.percentile(p, [percentile]) - np.median(p)),
+        )
+        data_errors.reset_index(inplace=True)
+
+        color_dict = self.map_colors(impls)
+
+        for i in num_processes:
+            fig, ax = plt.subplots()
+            for impl in impls:
+                data = data_errors[(data_errors['numprocs'] == i) & (data_errors['implementation'] == impl)]
+                if data.shape[0] == 0:
+                    continue
+                ax.errorbar(x=data['N'], y=data['runtime'], yerr=data[['yerr_low', 'yerr_high']].to_numpy().transpose(),
+                            color=color_dict.get(impl),
+                            label=impl,
+                            fmt=':',
+                            alpha=0.9,
+                            capsize=3,
+                            capthick=1)
+
+            plt.xlabel('Input Dimension')
+            plt.ylabel('Runtime (s)')
+            plt.title(f'Runtime ({i} nodes)')
+            self.plot_and_save(f'runtime_{i}')
+
+    def plot_report_boxviolin_comparison(self, boxplot: bool, df: pd.DataFrame, ax: Axes, N: int, num_procs: int, impls: List[str], percentile=95):
+        perc_high = percentile / 100
+        perc_low = 1 - perc_high
+        violin_quantiles = [perc_low, perc_high]
+        box_whiskers = (violin_quantiles[0] * 100, violin_quantiles[1] * 100)
+
+        data = df[(df['N'] == N) & (df['numprocs'] == num_procs)]
+        if boxplot:
+            data.boxplot(column='runtime', by=['implementation'], ax=ax, whis=box_whiskers, notch=False, showfliers=False)
+        else:
+            xticks = range(len(impls))
+            l = [data[data['implementation'] == x]['runtime'].to_list() for x in impls]
+            quantiles = [violin_quantiles] * len(xticks)
+            ax.violinplot(l, positions=xticks, quantiles=quantiles, showmedians=True, showextrema=False)
+            ax.set_xticks(xticks)
+            ax.set_xticklabels(impls)
+
+        ax.set_xlabel('[impl]')
+        ax.set_title('')
+
+    def plot_report_boxviolin(self, name: str, boxplot: bool, df: pd.DataFrame, num_processes: List[int], impls: List[str], percentile=95):
+        perc_high = percentile / 100
+        perc_low = 1 - perc_high
+        violin_quantiles = [perc_low, perc_high]
+        box_whiskers = (violin_quantiles[0] * 100, violin_quantiles[1] * 100)
+
+        num_rows = len(num_processes)
         num_cols = len(impls)
 
-        fig, axes = plt.subplots(nrows=num_rows, ncols=num_cols, sharex=False, sharey=False, figsize=(36, 13), squeeze=False)
+        fig, axes = plt.subplots(nrows=num_rows, ncols=num_cols, sharex=True, sharey='row', figsize=(36, 13), squeeze=False)
 
-        for i, numprocs in enumerate(processes):
+        for i, numprocs in enumerate(num_processes):
             for j, impl in enumerate(impls):
                 data = df[(df['implementation'] == impl) & (df['numprocs'] == numprocs)]
+                if boxplot:
+                    data.boxplot(column='runtime', by=['N'], ax=axes[i, j], whis=box_whiskers, notch=False, showfliers=False)
+                else:
+                    xticks = data['N'].unique().tolist()
+                    l = [data[data['N'] == x]['runtime'].to_list() for x in xticks]
+                    quantiles = [violin_quantiles] * len(xticks)
+                    axes[i, j].violinplot(l, positions=xticks, quantiles=quantiles, showmedians=True, showextrema=False, widths=[xticks[-1] / len(xticks) * 0.5] * len(xticks))
 
-                xticks = data['N'].unique().tolist()
-                l = [data[data['N'] == x]['runtime'].to_list() for x in xticks]
-                quantiles = [[0.05, 0.95]] * len(xticks)
-                axes[i, j].violinplot(l, positions=xticks, quantiles=quantiles, showmedians=True, showextrema=False, widths=[xticks[-1] / len(xticks) * 0.5] * len(xticks))
-                # data.boxplot(column='runtime', by=['N'], ax=axes[i, j], whis=(5,95), notch=False, showfliers=False)
-
-        for i, val_i in enumerate(processes):
-            axes[i, 0].set_ylabel(val_i, rotation=90, fontsize=9)
+        for i, val_i in enumerate(num_processes):
+            axes[i, 0].set_ylabel(val_i, rotation=90, fontsize=12)
 
         for j, val_j in enumerate(impls):
             axes[0, j].set_title(val_j)
 
-            for i in range(0, len(processes)):
+            for i in range(0, len(num_processes)):
                 if i != 0:
                     axes[i, j].set_title('')
                 axes[i, j].set_xlabel('')
 
-        self.plot_and_save('box', None, None)
+        fig.suptitle('Runtimes')
+        self.plot_and_save(name, None, None)
 
     def plot_for_analysis(self, df: pd.DataFrame, func_key='median'):
         print("Plotting for analysis")
