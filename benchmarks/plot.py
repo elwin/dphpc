@@ -17,7 +17,6 @@ from matplotlib.axes import Axes
 
 agg_func = np.median
 
-
 def get_agg_func(func_key: str, percentile=99.):
     if func_key == 'mean':
         return np.mean
@@ -42,13 +41,15 @@ class PlotManager:
         print("Plotting for report")
         self.prefix = 'report'
 
+        agg_func = get_agg_func(func_key)
+
         selected_impls = ['allgather', 'allreduce', 'g-rabenseifner-allgather']
         selected_impls = ['allgather', 'allreduce', 'allreduce-ring', 'g-rabenseifner-allgather']
 
         df = df[df['implementation'].isin(selected_impls)]
 
-        sizes = df['N'].unique().tolist()
-        processes = df['numprocs'].unique().tolist()
+        sizes = sorted(df['N'].unique().tolist())
+        processes = sorted(df['numprocs'].unique().tolist())
         impls = df['implementation'].unique().tolist()
 
         print(f"sizes: {sizes}")
@@ -60,8 +61,8 @@ class PlotManager:
 
         # All measurements within the same repetition are aggregated as a single measurement
         df = df.groupby(['N', 'numprocs', 'repetition', 'implementation']).agg(
-            runtime=pd.NamedAgg(column="runtime", aggfunc=agg_func)
-        )
+                runtime=pd.NamedAgg(column="runtime", aggfunc=agg_func)
+                )
         df = df.reset_index()
 
         self.plot_report_boxviolin('box', True, df, processes, impls, 95)
@@ -76,8 +77,33 @@ class PlotManager:
 
         self.plot_report_runtime(df, processes, impls, 75)
 
-    def plot_report_all_node_configs(self, df: pd.DataFrame, N: int, num_procs: int, impls: List[str],
-                                     percentile: float = 95):
+        self.plot_report_violin_cmp_all(df, 'numprocs', processes, 'N', selected_impls)
+        self.plot_report_violin_cmp_all(df, 'N', sizes, 'numprocs', selected_impls)
+
+    def plot_report_violin_cmp_all(self, df: pd.DataFrame, filter_key: str, filter_values: List[int], index_key: str, impls: List[str]):
+        fig, axs = plt.subplots(nrows=len(filter_values), sharex=True, figsize=(15, 20))
+
+        for i, filter_value in enumerate(filter_values):
+            ax = axs[i]
+            ax.set(xscale="linear", yscale="log")
+            ax.set_title(f'{filter_key} = {filter_value}')
+            self.plot_report_violin_cmp_single(df[df[filter_key] == filter_value], ax, index_key, impls)
+        self.plot_and_save(f'cmp_all_{filter_key}', None, None)
+
+    def plot_report_violin_cmp_single(self, df: pd.DataFrame, ax: Axes, index_key: str, impls: List[str], percentile: float=95):
+        data = df[df['implementation'].isin(impls)]
+
+        outlier_cutoff = 40
+        outliers = data[data['runtime'] >= outlier_cutoff]
+        if not outliers.empty:
+            print(f"Outliers ({len(outliers.index)}):")
+            print(outliers.to_string())
+        data = data[data['runtime'] < outlier_cutoff]
+        sns.violinplot(x=index_key, y='runtime', hue='implementation', data=data, ax=ax, inner='box', scale_hue=True, cut=0, scale='width')
+        sns.boxplot(x=index_key, y='runtime', hue='implementation', data=data, ax=ax, showfliers=False, showbox=False, whis=[100 - percentile, percentile])
+        ax.get_legend().remove()
+
+    def plot_report_all_node_configs(self, df: pd.DataFrame, N: int, num_procs: int, impls: List[str], percentile: float=95):
         data = df.query("`N` == @N & `numprocs` == @num_procs")
         repetitions = sorted(data['repetition'].unique().tolist())
         num_reps = len(repetitions)
@@ -94,7 +120,6 @@ class PlotManager:
 
             if filtered.empty:
                 continue
-            print(f"{N=}, {num_procs=}, {i=}, {rep=}")
 
             self.plot_report_boxviolin_comparison(False, filtered, ax, N, num_procs, impls, percentile)
             ax.set_title(f'Repetition {rep}')
@@ -102,11 +127,10 @@ class PlotManager:
 
         self.plot_and_save(f'all_configs_{N}_{num_procs}', None, None)
 
-    def plot_report_runtime(self, df: pd.DataFrame, num_processes: List[int], impls: List[str], percentile: int = 95):
+    def plot_report_runtime(self, df: pd.DataFrame, num_processes: List[int], impls: List[str], percentile: int=95):
         data_errors = df.groupby(['numprocs', 'implementation', 'N']).agg(
             runtime=pd.NamedAgg(column="runtime", aggfunc=np.median),
-            yerr_low=pd.NamedAgg(column="runtime",
-                                 aggfunc=lambda p: np.median(p) - np.percentile(p, [100 - percentile])),
+            yerr_low=pd.NamedAgg(column="runtime", aggfunc=lambda p: np.median(p) - np.percentile(p, [100 - percentile])),
             yerr_high=pd.NamedAgg(column="runtime", aggfunc=lambda p: np.percentile(p, [percentile]) - np.median(p)),
         )
         data_errors.reset_index(inplace=True)
@@ -132,8 +156,7 @@ class PlotManager:
             plt.title(f'Runtime ({i} nodes)')
             self.plot_and_save(f'runtime_{i}')
 
-    def plot_report_boxviolin_comparison(self, boxplot: bool, df: pd.DataFrame, ax: Axes, N: int, num_procs: int,
-                                         impls: List[str], percentile=95):
+    def plot_report_boxviolin_comparison(self, boxplot: bool, df: pd.DataFrame, ax: Axes, N: int, num_procs: int, impls: List[str], percentile=95):
         perc_high = percentile / 100
         perc_low = 1 - perc_high
         violin_quantiles = [perc_low, perc_high]
@@ -141,8 +164,7 @@ class PlotManager:
 
         data = df[(df['N'] == N) & (df['numprocs'] == num_procs)]
         if boxplot:
-            data.boxplot(column='runtime', by=['implementation'], ax=ax, whis=box_whiskers, notch=False,
-                         showfliers=False)
+            data.boxplot(column='runtime', by=['implementation'], ax=ax, whis=box_whiskers, notch=False, showfliers=False)
         else:
             xticks = range(len(impls))
             l = [data[data['implementation'] == x]['runtime'].to_list() for x in impls]
@@ -158,8 +180,7 @@ class PlotManager:
         ax.set_xlabel('[impl]')
         ax.set_title('')
 
-    def plot_report_boxviolin(self, name: str, boxplot: bool, df: pd.DataFrame, num_processes: List[int],
-                              impls: List[str], percentile=95):
+    def plot_report_boxviolin(self, name: str, boxplot: bool, df: pd.DataFrame, num_processes: List[int], impls: List[str], percentile=95):
         perc_high = percentile / 100
         perc_low = 1 - perc_high
         violin_quantiles = [perc_low, perc_high]
@@ -168,21 +189,18 @@ class PlotManager:
         num_rows = len(num_processes)
         num_cols = len(impls)
 
-        fig, axes = plt.subplots(nrows=num_rows, ncols=num_cols, sharex=True, sharey='row', figsize=(36, 13),
-                                 squeeze=False)
+        fig, axes = plt.subplots(nrows=num_rows, ncols=num_cols, sharex=True, sharey='row', figsize=(36, 13), squeeze=False)
 
         for i, numprocs in enumerate(num_processes):
             for j, impl in enumerate(impls):
                 data = df[(df['implementation'] == impl) & (df['numprocs'] == numprocs)]
                 if boxplot:
-                    data.boxplot(column='runtime', by=['N'], ax=axes[i, j], whis=box_whiskers, notch=False,
-                                 showfliers=False)
+                    data.boxplot(column='runtime', by=['N'], ax=axes[i, j], whis=box_whiskers, notch=False, showfliers=False)
                 else:
                     xticks = data['N'].unique().tolist()
                     l = [data[data['N'] == x]['runtime'].to_list() for x in xticks]
                     quantiles = [violin_quantiles] * len(xticks)
-                    axes[i, j].violinplot(l, positions=xticks, quantiles=quantiles, showmedians=True, showextrema=False,
-                                          widths=[xticks[-1] / len(xticks) * 0.5] * len(xticks))
+                    axes[i, j].violinplot(l, positions=xticks, quantiles=quantiles, showmedians=True, showextrema=False, widths=[xticks[-1] / len(xticks) * 0.5] * len(xticks))
 
         for i, val_i in enumerate(num_processes):
             axes[i, 0].set_ylabel(val_i, rotation=90, fontsize=12)
@@ -716,6 +734,8 @@ def plot(input_files: List[str], input_dir: str, output_dir: str):
     pm.plot_all(df, prefix="all")
 
     pm.plot_for_report(df)
+
+    # pm.plot_for_analysis(df)
 
     # cutoff = 12000
     # outliers = df[df['job.runtime'] >= cutoff]
