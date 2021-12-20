@@ -9,12 +9,14 @@ import pandas.io.json
 import math
 import seaborn as sns
 import os
+from scipy.stats import bootstrap
 
 from itertools import product
 
 from matplotlib.axes import Axes
 
 agg_func = np.median
+
 
 def get_agg_func(func_key: str, percentile=99.):
     if func_key == 'mean':
@@ -58,8 +60,8 @@ class PlotManager:
 
         # All measurements within the same repetition are aggregated as a single measurement
         df = df.groupby(['N', 'numprocs', 'repetition', 'implementation']).agg(
-                runtime=pd.NamedAgg(column="runtime", aggfunc=agg_func)
-                )
+            runtime=pd.NamedAgg(column="runtime", aggfunc=agg_func)
+        )
         df = df.reset_index()
 
         self.plot_report_boxviolin('box', True, df, processes, impls, 95)
@@ -74,7 +76,8 @@ class PlotManager:
 
         self.plot_report_runtime(df, processes, impls, 75)
 
-    def plot_report_all_node_configs(self, df: pd.DataFrame, N: int, num_procs: int, impls: List[str], percentile: float=95):
+    def plot_report_all_node_configs(self, df: pd.DataFrame, N: int, num_procs: int, impls: List[str],
+                                     percentile: float = 95):
         data = df.query("`N` == @N & `numprocs` == @num_procs")
         repetitions = sorted(data['repetition'].unique().tolist())
         num_reps = len(repetitions)
@@ -99,7 +102,8 @@ class PlotManager:
 
         self.plot_and_save(f'all_configs_{N}_{num_procs}', None, None)
 
-    def plot_report_speedup(self, df: pd.DataFrame, baseline: str, num_processes: List[int], impls: List[str], percentile: float=75):
+    def plot_report_speedup(self, df: pd.DataFrame, baseline: str, num_processes: List[int], impls: List[str],
+                            percentile: float = 75):
         assert baseline not in impls
         data = df.groupby(['numprocs', 'implementation', 'N']).agg(
             runtime=pd.NamedAgg(column="runtime", aggfunc=np.median),
@@ -109,10 +113,11 @@ class PlotManager:
         # TODO
         # baseline_runtimes = data[data['implementation'] == baseline]
 
-    def plot_report_runtime(self, df: pd.DataFrame, num_processes: List[int], impls: List[str], percentile: int=95):
+    def plot_report_runtime(self, df: pd.DataFrame, num_processes: List[int], impls: List[str], percentile: int = 95):
         data_errors = df.groupby(['numprocs', 'implementation', 'N']).agg(
             runtime=pd.NamedAgg(column="runtime", aggfunc=np.median),
-            yerr_low=pd.NamedAgg(column="runtime", aggfunc=lambda p: np.median(p) - np.percentile(p, [100 - percentile])),
+            yerr_low=pd.NamedAgg(column="runtime",
+                                 aggfunc=lambda p: np.median(p) - np.percentile(p, [100 - percentile])),
             yerr_high=pd.NamedAgg(column="runtime", aggfunc=lambda p: np.percentile(p, [percentile]) - np.median(p)),
         )
         data_errors.reset_index(inplace=True)
@@ -138,7 +143,8 @@ class PlotManager:
             plt.title(f'Runtime ({i} nodes)')
             self.plot_and_save(f'runtime_{i}')
 
-    def plot_report_boxviolin_comparison(self, boxplot: bool, df: pd.DataFrame, ax: Axes, N: int, num_procs: int, impls: List[str], percentile=95):
+    def plot_report_boxviolin_comparison(self, boxplot: bool, df: pd.DataFrame, ax: Axes, N: int, num_procs: int,
+                                         impls: List[str], percentile=95):
         perc_high = percentile / 100
         perc_low = 1 - perc_high
         violin_quantiles = [perc_low, perc_high]
@@ -146,7 +152,8 @@ class PlotManager:
 
         data = df[(df['N'] == N) & (df['numprocs'] == num_procs)]
         if boxplot:
-            data.boxplot(column='runtime', by=['implementation'], ax=ax, whis=box_whiskers, notch=False, showfliers=False)
+            data.boxplot(column='runtime', by=['implementation'], ax=ax, whis=box_whiskers, notch=False,
+                         showfliers=False)
         else:
             xticks = range(len(impls))
             l = [data[data['implementation'] == x]['runtime'].to_list() for x in impls]
@@ -162,7 +169,8 @@ class PlotManager:
         ax.set_xlabel('[impl]')
         ax.set_title('')
 
-    def plot_report_boxviolin(self, name: str, boxplot: bool, df: pd.DataFrame, num_processes: List[int], impls: List[str], percentile=95):
+    def plot_report_boxviolin(self, name: str, boxplot: bool, df: pd.DataFrame, num_processes: List[int],
+                              impls: List[str], percentile=95):
         perc_high = percentile / 100
         perc_low = 1 - perc_high
         violin_quantiles = [perc_low, perc_high]
@@ -171,18 +179,21 @@ class PlotManager:
         num_rows = len(num_processes)
         num_cols = len(impls)
 
-        fig, axes = plt.subplots(nrows=num_rows, ncols=num_cols, sharex=True, sharey='row', figsize=(36, 13), squeeze=False)
+        fig, axes = plt.subplots(nrows=num_rows, ncols=num_cols, sharex=True, sharey='row', figsize=(36, 13),
+                                 squeeze=False)
 
         for i, numprocs in enumerate(num_processes):
             for j, impl in enumerate(impls):
                 data = df[(df['implementation'] == impl) & (df['numprocs'] == numprocs)]
                 if boxplot:
-                    data.boxplot(column='runtime', by=['N'], ax=axes[i, j], whis=box_whiskers, notch=False, showfliers=False)
+                    data.boxplot(column='runtime', by=['N'], ax=axes[i, j], whis=box_whiskers, notch=False,
+                                 showfliers=False)
                 else:
                     xticks = data['N'].unique().tolist()
                     l = [data[data['N'] == x]['runtime'].to_list() for x in xticks]
                     quantiles = [violin_quantiles] * len(xticks)
-                    axes[i, j].violinplot(l, positions=xticks, quantiles=quantiles, showmedians=True, showextrema=False, widths=[xticks[-1] / len(xticks) * 0.5] * len(xticks))
+                    axes[i, j].violinplot(l, positions=xticks, quantiles=quantiles, showmedians=True, showextrema=False,
+                                          widths=[xticks[-1] / len(xticks) * 0.5] * len(xticks))
 
         for i, val_i in enumerate(num_processes):
             axes[i, 0].set_ylabel(val_i, rotation=90, fontsize=12)
@@ -256,7 +267,8 @@ class PlotManager:
             data = (data,)
             # data.to_numpy().reshape((-1, data.shape[0]))
             # take agg_func as statistic
-            res = bootstrap(data, agg_func, confidence_level=CI_bound, n_resamples=1000, method='percentile', axis=0).confidence_interval
+            res = bootstrap(data, agg_func, confidence_level=CI_bound, n_resamples=1000, method='percentile',
+                            axis=0).confidence_interval
             return res.low, res.high
 
         data = df
@@ -302,7 +314,8 @@ class PlotManager:
             # plt.ylim((data['CI_low'].min(), data['CI_high'].max()))
             # plt.yscale('log', nonposy='clip')
             plt.tight_layout(pad=3.)
-            plt.legend(bbox_to_anchor=(1,1)) # loc="upper left"
+            plt.legend()  # loc="upper left"
+            # plt.legend(bbox_to_anchor=(1,1)) # loc="upper left"
             plt.xlabel('Input Dimension')
             plt.ylabel('Runtime (s)')
             plt.title(f'Runtime ({i} nodes)')
@@ -341,9 +354,8 @@ class PlotManager:
                     value_range = (np.min(np.log(df['runtime'])), np.max(np.log(df['runtime'])))
                     plt_data = plt_data.apply(lambda x: np.log(x) if x.name == 'runtime' else x)
 
-                fig, axes = plt.subplots(nrows=n_rows, ncols=n_cols, sharex=True, sharey=True, figsize=(24, 13), squeeze=False)
-
-
+                fig, axes = plt.subplots(nrows=n_rows, ncols=n_cols, sharex=True, sharey=True, figsize=(24, 13),
+                                         squeeze=False)
 
                 for i, val_i in enumerate(rows):
                     for j, val_j in enumerate(cols):
@@ -405,7 +417,7 @@ class PlotManager:
                 ax.plot(x, y, color=color_dict.get(col), label=col)
             ax.set_yscale('log')
             plt.gcf().set_size_inches(10, 5)
-            plt.legend(loc="upper left", bbox_to_anchor=(1,1))
+            plt.legend(loc="upper left", bbox_to_anchor=(1, 1))
             plt.tight_layout()
             plt.savefig(f'{self.output_dir}/runtime_{i}_{filter_key}_{func_key}_with_scatter.svg')
             plt.close()
@@ -441,7 +453,7 @@ class PlotManager:
     def plot_and_save(self, name: str, width: float = 10, height: float = 5):
         if width is not None and height is not None:
             plt.gcf().set_size_inches(width, height)
-        plt.legend(bbox_to_anchor=(1,1))
+        plt.legend(bbox_to_anchor=(1, 1))
         plt.tight_layout()
         output_dir = self.output_dir if self.prefix is None else f'{self.output_dir}/{self.prefix}'
         pathlib.Path(output_dir).mkdir(parents=True, exist_ok=True)
@@ -450,7 +462,7 @@ class PlotManager:
         plt.close()
 
     def plot_runtime(self, df: pd.DataFrame):
-        for i in [2**i for i in range(1, 6)]:
+        for i in [2 ** i for i in range(1, 6)]:
             data = df[df['numprocs'] == i]
             if data.shape[0] == 0:
                 continue
@@ -470,7 +482,7 @@ class PlotManager:
             )
             self.plot_and_save(f'runtime_{i}')
 
-        for n in [2**n for n in range(4, 14)]:
+        for n in [2 ** n for n in range(4, 14)]:
             data = df[df['N'] == n]
             if data.shape[0] == 0:
                 continue
@@ -492,7 +504,7 @@ class PlotManager:
 
     def plot_mem_usage(self, df: pd.DataFrame):
         print("Plotting memory usage")
-        for i in [2**i for i in range(1, 6)]:
+        for i in [2 ** i for i in range(1, 6)]:
             data = df[df['numprocs'] == i]
             data = data[['N', 'implementation', 'job.mem_max_avg', 'job.mem_requested']]
             if data.shape[0] == 0:
@@ -514,7 +526,7 @@ class PlotManager:
 
     def plot_compute_ratio(self, df: pd.DataFrame):
         print("Plotting compute ratio")
-        for i in [2**i for i in range(1, 6)]:
+        for i in [2 ** i for i in range(1, 6)]:
             data = df[df['numprocs'] == i]
             if data.shape[0] == 0:
                 continue
@@ -532,7 +544,7 @@ class PlotManager:
             )
             self.plot_and_save(f'compute_ratio_{i}')
 
-        for n in [2**n for n in range(4, 14)]:
+        for n in [2 ** n for n in range(4, 14)]:
             data = df[df['N'] == n]
             if data.shape[0] == 0:
                 continue
@@ -554,7 +566,7 @@ class PlotManager:
 
     def plot_iterations(self, df: pd.DataFrame):
         print("Plotting iterations")
-        for num_procs in [2**i for i in range(1, 6)]:
+        for num_procs in [2 ** i for i in range(1, 6)]:
             vector_size = 8000
 
             data = df[(df['M'] == vector_size) & (df['numprocs'] == num_procs)]
@@ -579,7 +591,10 @@ class PlotManager:
 
         CI_bounds = [0.99, 0.95, 0.9]
         percentiles = [99., 50., 5., 10., 75., 90., 95.]
-        self.prefix = "errorbars"
+        if prefix is None:
+            self.prefix = "errorbars"
+        else:
+            self.prefix = f"{prefix}/errorbars"
         for percentile in percentiles:
             for CI_bound in CI_bounds:
                 self.plot_runtime_with_errorbars(df, CI_bound=CI_bound, func_key='percentile', percentile=percentile)
@@ -594,7 +609,7 @@ class PlotManager:
         # for n_bins in [50]:
         #     self.plot_subplot_histograms(df, n_bins=n_bins, log=False)
         #     self.plot_subplot_histograms(df, n_bins=n_bins, log=True)
-    
+
         self.plot_runtime(df)
         self.plot_compute_ratio(df)
         # self.plot_mem_usage(df)
@@ -638,7 +653,7 @@ def plot(input_files: List[str], input_dir: str, output_dir: str):
         dfs = []
         for input_file in input_files:
             df = pandas.io.json.read_json(input_file, lines=True)
-            df = pd.json_normalize(json.loads(df.to_json(orient="records"))) # flatten nested json
+            df = pd.json_normalize(json.loads(df.to_json(orient="records")))  # flatten nested json
             dfs.append(df)
         df = pd.concat(dfs)
         df.to_csv(aggregated_file)
@@ -652,9 +667,13 @@ def plot(input_files: List[str], input_dir: str, output_dir: str):
     # Drop the first iteration because it is a warmup iteration
     df = df[df['iteration'] > 0]
 
-    pm.plot_for_report(df)
+    selected_impls = ['allgather', 'allreduce', 'allreduce-ring', 'g-rabenseifner-allgather']
+    df_filtered = df[df['implementation'].isin(selected_impls)]
+    pm.plot_all(df_filtered, prefix="filtered")
 
-    # pm.plot_for_analysis(df)
+    pm.plot_all(df, prefix="all")
+
+    pm.plot_for_report(df)
 
     # cutoff = 12000
     # outliers = df[df['job.runtime'] >= cutoff]
