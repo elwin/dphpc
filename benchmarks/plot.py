@@ -102,17 +102,6 @@ class PlotManager:
 
         self.plot_and_save(f'all_configs_{N}_{num_procs}', None, None)
 
-    def plot_report_speedup(self, df: pd.DataFrame, baseline: str, num_processes: List[int], impls: List[str],
-                            percentile: float = 75):
-        assert baseline not in impls
-        data = df.groupby(['numprocs', 'implementation', 'N']).agg(
-            runtime=pd.NamedAgg(column="runtime", aggfunc=np.median),
-        )
-        data.reset_index(inplace=True)
-
-        # TODO
-        # baseline_runtimes = data[data['implementation'] == baseline]
-
     def plot_report_runtime(self, df: pd.DataFrame, num_processes: List[int], impls: List[str], percentile: int = 95):
         data_errors = df.groupby(['numprocs', 'implementation', 'N']).agg(
             runtime=pd.NamedAgg(column="runtime", aggfunc=np.median),
@@ -249,6 +238,53 @@ class PlotManager:
             plt.tight_layout()
             plt.savefig(f'{self.output_dir}/runtime_{i}_{filter_key}_{func_key}.svg')
             plt.close()
+
+    def plot_speedup(self, df: pd.DataFrame,
+                     filter_key: str ='N',
+                     index_key: str ='numprocs',
+                     baseline: str = 'allreduce'):
+        # aggregate data
+        data = df.groupby([filter_key, index_key, 'implementation', 'repetition']).agg(
+            {'runtime': np.median})
+        data.reset_index(inplace=True)
+        data = data.groupby([filter_key, index_key, 'implementation']).agg(
+            runtime=pd.NamedAgg(column="runtime", aggfunc=agg_func)
+        )
+        data.reset_index(inplace=True)
+
+        baseline_df = data[data['implementation'] == baseline]
+
+        def compute_speedup(filter_key_value, index_key_value, runtime):
+            baseline_runtime = baseline_df[(baseline_df[filter_key] == filter_key_value) & (baseline_df[index_key] == index_key_value)]
+            speedup = list(baseline_runtime['runtime'])[0] / runtime
+            return speedup
+
+        # compute the speedups
+        data['speedup'] = 1.0
+        data['speedup'] = data.apply(lambda x: compute_speedup(x[filter_key], x[index_key], x["runtime"]), axis=1)
+
+        for i in data[filter_key].unique():
+            plt_data = data[data[filter_key] == i]
+
+            plt_data_pivot = plt_data.pivot(
+                index=index_key,
+                columns='implementation',
+                values='speedup'
+            )
+            plt_data_pivot.plot()
+
+            plt.tight_layout(pad=3.)
+            plt.legend()  # loc="upper left"
+            # plt.legend(bbox_to_anchor=(1,1)) # loc="upper left"
+            plt.xlabel(filter_key)
+            plt.ylabel('Speedup')
+            plt.title(f'Speedup against {baseline} ({index_key} = {i})')
+
+            name = f"speedup_plot_{index_key}_{filter_key}_{i}_baseline_{baseline}"
+            self.plot_and_save(name, None, None)
+
+        # TODO
+        # baseline_runtimes = data[data['implementation'] == baseline]
 
     def plot_runtime_with_errorbars(self,
                                     df: pd.DataFrame,
@@ -589,6 +625,9 @@ class PlotManager:
     def plot_all(self, df: pd.DataFrame, prefix=None):
         self.prefix = prefix
 
+        self.plot_speedup(df, filter_key='N', index_key='numprocs', baseline='allreduce')
+        self.plot_speedup(df, filter_key='numprocs', index_key='N', baseline='allreduce')
+
         CI_bounds = [0.99, 0.95, 0.9]
         percentiles = [99., 50., 5., 10., 75., 90., 95.]
         if prefix is None:
@@ -600,6 +639,9 @@ class PlotManager:
                 self.plot_runtime_with_errorbars(df, CI_bound=CI_bound, func_key='percentile', percentile=percentile)
         self.prefix = prefix
         self.plot_runtime_with_errorbars(df, CI_bound=0.95, func_key='percentile', percentile=50.)
+        self.plot_runtime_with_errorbars(df, filter_key='numprocs', index_key='N', CI_bound=0.95, func_key='percentile',
+                                         percentile=50.)
+
         # for CI_bound in CI_bounds:
         #     self.plot_runtime_with_errorbars(df, CI_bound=CI_bound, func_key='median')
         #     # self.plot_runtime_with_errorbars(df, CI_bound=CI_bound, func_key='mean')
