@@ -78,28 +78,11 @@ class PlotManager:
             agg_func = np.mean
 
         def CI(data):
-            data = data.to_numpy()
-            n_bootstrap_samples = 1000
-            bootstrap_sample_size = len(data)
-            # theta : estimated mean on original data
-            theta = agg_func(data)
-            # compute bootstrap samples
-            sampler = lambda x: agg_func(np.random.choice(data, size=bootstrap_sample_size, replace=True))
-            vsampler = np.vectorize(sampler)
-            bootstrap_samples = vsampler(np.zeros(n_bootstrap_samples))
-            # compute the CI
-            quantiles = np.array([(1. - CI_bound) / 2., 1. - (1. - CI_bound) / 2.])
-            # print(f"Quantiles {quantiles} for CI_bound {CI_bound}")
-            # print(f"Quantiles: {quantiles}, bootstrap_samples = {bootstrap_samples}, theta = {theta}, data = {data}")
-
-            data_quantiles = np.quantile(np.subtract(bootstrap_samples, theta), quantiles)
-            # print(
-            #     f"Data quantiles = {data_quantiles}, theta = {theta}, lower CI {theta - data_quantiles[0]}, upper CI {theta - data_quantiles[1]}, quantiles = {quantiles}")
-            return theta - data_quantiles[1], theta - data_quantiles[0]
-
-            # take mean of statistic!
-            # res = bootstrap(data.to_numpy().reshape((-1, data.shape[0])), np.mean, confidence_level=CI_bound, n_resamples=10000, method='basic', axis=0).confidence_interval
-            # return res.low, res.high
+            data = (data,)
+            # data.to_numpy().reshape((-1, data.shape[0]))
+            # take agg_func as statistic
+            res = bootstrap(data, agg_func, confidence_level=CI_bound, n_resamples=1000, method='percentile', axis=0).confidence_interval
+            return res.low, res.high
 
         data = df
         # aggregate the data
@@ -109,14 +92,14 @@ class PlotManager:
         data_CI = data.groupby([filter_key, index_key, 'implementation']).agg(
             confidence_interval=pd.NamedAgg(column="runtime", aggfunc=CI),
             agg_runtime=pd.NamedAgg(column="runtime", aggfunc=agg_func),
-            median_runtime=pd.NamedAgg(column="runtime", aggfunc=np.median),
-            mean_runtime=pd.NamedAgg(column="runtime", aggfunc=np.mean)
+            # median_runtime=pd.NamedAgg(column="runtime", aggfunc=np.median),
+            # mean_runtime=pd.NamedAgg(column="runtime", aggfunc=np.mean)
         )
         data = data_CI.reset_index()
-        data['CI_low'] = data.apply(lambda x: x.confidence_interval[0], axis=1)
-        data['CI_high'] = data.apply(lambda x: x.confidence_interval[1], axis=1)
-        data['yerr_low'] = data.apply(lambda x: x.CI_low - x.agg_runtime, axis=1)
-        data['yerr_high'] = data.apply(lambda x: x.CI_high - x.agg_runtime, axis=1)
+        data['CI_low'] = data.apply(lambda x: x.confidence_interval[0][0], axis=1)
+        data['CI_high'] = data.apply(lambda x: x.confidence_interval[1][0], axis=1)
+        data['yerr_low'] = data.apply(lambda x: np.abs(x.CI_low - x.agg_runtime), axis=1)
+        data['yerr_high'] = data.apply(lambda x: np.abs(x.CI_high - x.agg_runtime), axis=1)
 
         color_dict = self.map_colors(data['implementation'].unique())
 
@@ -138,8 +121,8 @@ class PlotManager:
                 ax.errorbar(x=data_filtered[filter_key], y=data_filtered['agg_runtime'],
                             yerr=data_filtered[['yerr_low', 'yerr_high']].to_numpy().transpose(),
                             color=color_dict.get(algo), label=algo, fmt=':', alpha=0.9, capsize=3, capthick=1)
-                # ax.fill_between(x=data_filtered[filter_key], y1=data_filtered['CI_low'], y2=data_filtered['CI_high'],
-                #                 color=color_dict.get(algo), alpha=0.25)
+                ax.fill_between(x=data_filtered[filter_key], y1=data_filtered['CI_low'], y2=data_filtered['CI_high'],
+                                color=color_dict.get(algo), alpha=0.25)
 
             # plt.ylim((data['CI_low'].min(), data['CI_high'].max()))
             # plt.yscale('log', nonposy='clip')
@@ -276,8 +259,8 @@ class PlotManager:
     def percentile_agg_func(percentile):
         perc = [percentile]
 
-        def percentile(p):
-            return np.percentile(p, perc)
+        def percentile(p, axis=0):
+            return np.percentile(p, perc, axis=axis)
 
         return percentile
 
@@ -413,16 +396,19 @@ class PlotManager:
     def plot_all(self, df: pd.DataFrame, prefix=None):
         self.prefix = prefix
 
-        # CI_bounds = [0.99, 0.9, 0.95, 0.75]
-        # percentiles = [99., 50., 75., 90., 95.]
-        # self.prefix = prefix
-        # for percentile in percentiles:
-        #     for CI_bound in CI_bounds:
-        #         self.plot_runtime_with_errorbars(df, CI_bound=CI_bound, func_key='percentile', percentile=percentile)
-        # # self.plot_runtime_with_errorbars(df, CI_bound=CI_bound, func_key='mean')
-        # self.plot_runtime_with_errorbars(df, CI_bound=CI_bound, func_key='median')
-        # # self.plot_runtime_with_errorbars(df, CI_bound=CI_bound, func_key='max')
-        # # self.plot_runtime_with_errorbars(df, CI_bound=CI_bound, func_key='min')
+        CI_bounds = [0.99, 0.95, 0.9]
+        percentiles = [99., 50., 5., 10., 75., 90., 95.]
+        self.prefix = "errorbars"
+        for percentile in percentiles:
+            for CI_bound in CI_bounds:
+                self.plot_runtime_with_errorbars(df, CI_bound=CI_bound, func_key='percentile', percentile=percentile)
+        self.prefix = prefix
+        self.plot_runtime_with_errorbars(df, CI_bound=0.95, func_key='percentile', percentile=50.)
+        # for CI_bound in CI_bounds:
+        #     self.plot_runtime_with_errorbars(df, CI_bound=CI_bound, func_key='median')
+        #     # self.plot_runtime_with_errorbars(df, CI_bound=CI_bound, func_key='mean')
+        #     # self.plot_runtime_with_errorbars(df, CI_bound=CI_bound, func_key='max')
+        #     # self.plot_runtime_with_errorbars(df, CI_bound=CI_bound, func_key='min')
 
         for n_bins in [50]:
             self.plot_subplot_histograms(df, n_bins=n_bins, log=False)
