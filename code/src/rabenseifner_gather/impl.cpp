@@ -63,7 +63,7 @@ void rabenseifner_gather::compute(const std::vector<vector>& a_in, const std::ve
   int my_result_row_offset = rank * my_n_rows;
 
   std::vector<MPI_Request> send_reqs;
-  MPI_Request request;
+  MPI_Request request = MPI_REQUEST_NULL;
   vector recv_vec_A(recv_a_elements);
   vector recv_vec_B(n_cols);
   double* recv_vec_A_ptr = recv_vec_A.data();
@@ -81,11 +81,11 @@ void rabenseifner_gather::compute(const std::vector<vector>& a_in, const std::ve
       send_n_rows = last_n_rows;
     }
     // send full vector a
-    send_reqs.push_back(nullptr);
+    send_reqs.push_back(MPI_REQUEST_NULL);
     mpi_timer(MPI_Isend, &a[i * my_n_rows], send_n_rows, MPI_DOUBLE, i, TAG_RABENSEIFNER_GATHER_VEC_A, comm,
         &send_reqs.back());
     // send part of vector b
-    send_reqs.push_back(nullptr);
+    send_reqs.push_back(MPI_REQUEST_NULL);
     mpi_timer(MPI_Isend, &b[0], n_cols, MPI_DOUBLE, i, TAG_RABENSEIFNER_GATHER_VEC_B, comm, &send_reqs.back());
   }
 
@@ -174,8 +174,10 @@ void rabenseifner_gather::compute(const std::vector<vector>& a_in, const std::ve
         comm, &request);
     mpi_timer(MPI_Recv, resultPtr + idx_lower_recv, chunk_size_recv, MPI_DOUBLE, recv_rank, TAG_RABENSEIFNER_GATHER,
         comm, &status);
-    MPI_Wait(&request, &status);
+    mpi_timer(MPI_Wait, &request, &status);
   }
+
+  MPI_Waitall(send_reqs.size(), send_reqs.data(), MPI_STATUSES_IGNORE);
 }
 
 } // namespace impls::rabenseifner_gather

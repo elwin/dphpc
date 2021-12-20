@@ -664,6 +664,8 @@ def plot(input_files: List[str], input_dir: str, output_dir: str):
     # pm.plot_all(df[~df['implementation'].str.contains('native')])
     # print("Plotting allreduce implementations")
     # pm.plot_all(df[df['implementation'].str.startswith('allreduce')], prefix='native')
+    # print("Plotting allgather implementations")
+    # pm.plot_all(df[df['implementation'].str.startswith('allgather')], prefix='native_allgather')
     # pm.plot_all(outliers, prefix='outliers')
 
     # print("Plotting job stats")
