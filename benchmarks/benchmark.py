@@ -28,7 +28,7 @@ implementations = [
 ]
 
 repetitions = 25
-job_repetitions = 17
+job_repetitions = 15
 
 configs = []
 configs.extend([
@@ -41,7 +41,7 @@ configs.extend([
         implementation=implementation,
     )
     for n in inclusive(1000, 8000, 1000)
-    for nodes in [48]
+    for nodes in [32, 48]
     for job_repetition in range(job_repetitions)
     for implementation in implementations
 ])
