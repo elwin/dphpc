@@ -260,10 +260,10 @@ class PlotManager:
             return res.low, res.high
 
         data = df
-        # aggregate the data
-        # data_aggregated = data.groupby([filter_key, index_key, 'implementation', 'repetition']).agg(
-        #     {'runtime': agg_func})
-        # data = data_aggregated.reset_index()
+        # aggregate the data in one repetition using the median
+        data_aggregated = data.groupby([filter_key, index_key, 'implementation', 'repetition']).agg(
+            {'runtime': np.median})
+        data = data_aggregated.reset_index()
         data_CI = data.groupby([filter_key, index_key, 'implementation']).agg(
             confidence_interval=pd.NamedAgg(column="runtime", aggfunc=CI),
             agg_runtime=pd.NamedAgg(column="runtime", aggfunc=agg_func),
