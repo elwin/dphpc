@@ -33,6 +33,7 @@ implementations = [
     #
     # *native_allreduce,
     # *native_allgather,
+
     grabenseifner_allgather,
     # grabenseifner_subgroup_1,
     grabenseifner_subgroup_2,
@@ -53,7 +54,10 @@ configs.extend([
         repetitions=repetitions,
         job_repetition=job_repetition,
         implementation=implementation,
-    ) for n in inclusive(1000, 8000, 1000) for nodes in [48] for job_repetition in range(job_repetitions)
+    )
+    for n in inclusive(1000, 8000, 1000)
+    for nodes in [8, 16]
+    for job_repetition in range(job_repetitions)
     for implementation in implementations
 ])
 
