@@ -373,7 +373,7 @@ class PlotManager:
             columns='implementation',
             values='speedup'
         )
-        plt_data_pivot.plot(color=[color_dict.get(x) for x in df['implementation']], ax=ax)
+        plt_data_pivot.plot(color=[color_dict.get(x) for x in df['implementation']], ax=ax, marker='.', markersize=16)
 
     def plot_runtime_with_errorbars_subplots(self, df: pd.DataFrame,
                                              filter_key='implementation',
