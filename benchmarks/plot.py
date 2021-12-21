@@ -163,6 +163,7 @@ class PlotManager:
         box_whiskers = (violin_quantiles[0] * 100, violin_quantiles[1] * 100)
 
         data = df[(df['N'] == N) & (df['numprocs'] == num_procs)]
+        color_dict = self.map_colors(impls)  # TODO
         if boxplot:
             data.boxplot(column='runtime', by=['implementation'], ax=ax, whis=box_whiskers, notch=False, showfliers=False)
         else:
@@ -191,9 +192,12 @@ class PlotManager:
 
         fig, axes = plt.subplots(nrows=num_rows, ncols=num_cols, sharex=True, sharey='row', figsize=(36, 13), squeeze=False)
 
+        color_dict = self.map_colors(impls)  # TODO
+
         for i, numprocs in enumerate(num_processes):
             for j, impl in enumerate(impls):
                 data = df[(df['implementation'] == impl) & (df['numprocs'] == numprocs)]
+                c = color_dict.get(impl)  # TODO
                 if boxplot:
                     data.boxplot(column='runtime', by=['N'], ax=axes[i, j], whis=box_whiskers, notch=False, showfliers=False)
                 else:
@@ -231,6 +235,7 @@ class PlotManager:
                             percentile=99.,
                             powers_of_two=True):
         agg_func = get_agg_func(func_key, percentile)
+        color_dict = self.map_colors(df['implementation'].unique())
 
         # print(df[filter_key].unique())
         # print(df)
@@ -252,14 +257,15 @@ class PlotManager:
                 logy=True,
                 ylabel='Runtime (s)',
                 xlabel='Input Dimension',
+                color_map=color_dict,
             )
             plt.tight_layout()
             plt.savefig(f'{self.output_dir}/runtime_{i}_{filter_key}_{func_key}.svg')
             plt.close()
 
     def plot_speedup(self, df: pd.DataFrame,
-                     filter_key: str ='N',
-                     index_key: str ='numprocs',
+                     filter_key: str = 'N',
+                     index_key: str = 'numprocs',
                      baseline: str = 'allreduce'):
         # aggregate data
         data = df.groupby([filter_key, index_key, 'implementation', 'repetition']).agg(
@@ -270,10 +276,13 @@ class PlotManager:
         )
         data.reset_index(inplace=True)
 
+        color_dict = self.map_colors(data['implementation'].unique())
+
         baseline_df = data[data['implementation'] == baseline]
 
         def compute_speedup(filter_key_value, index_key_value, runtime):
-            baseline_runtime = baseline_df[(baseline_df[filter_key] == filter_key_value) & (baseline_df[index_key] == index_key_value)]
+            baseline_runtime = baseline_df[
+                (baseline_df[filter_key] == filter_key_value) & (baseline_df[index_key] == index_key_value)]
             speedup = list(baseline_runtime['runtime'])[0] / runtime
             return speedup
 
@@ -289,20 +298,120 @@ class PlotManager:
                 columns='implementation',
                 values='speedup'
             )
-            plt_data_pivot.plot()
+            plt_data_pivot.plot(color=[color_dict.get(x) for x in data['implementation']])
 
             plt.tight_layout(pad=3.)
             plt.legend()  # loc="upper left"
             # plt.legend(bbox_to_anchor=(1,1)) # loc="upper left"
-            plt.xlabel(filter_key)
+            plt.xlabel(index_key)
             plt.ylabel('Speedup')
-            plt.title(f'Speedup against {baseline} ({index_key} = {i})')
+            plt.title(f'Speedup against {baseline} ({filter_key} = {i})')
 
             name = f"speedup_plot_{index_key}_{filter_key}_{i}_baseline_{baseline}"
             self.plot_and_save(name, None, None)
 
         # TODO
         # baseline_runtimes = data[data['implementation'] == baseline]
+
+    def plot_runtime_with_errorbars_subplots(self, df: pd.DataFrame,
+                                             filter_key='implementation',
+                                             index_key='numprocs',
+                                             line_key='N',
+                                             func_key='median',
+                                             percentile=99.,
+                                             CI_bound=0.95):
+        agg_func = get_agg_func(func_key, percentile)
+        if func_key == 'percentile':
+            func_key = f"percentile_{percentile}"
+
+        def CI(data):
+            data = (data,)
+            # data.to_numpy().reshape((-1, data.shape[0]))
+            # take agg_func as statistic
+            res = bootstrap(data, agg_func, confidence_level=CI_bound, n_resamples=1000, method='percentile',
+                            axis=0).confidence_interval
+            return res.low, res.high
+
+        # define suplots
+        subplot_vals = df[filter_key].unique()
+        max_subplots_per_row = 4
+        nrows = int(math.ceil(len(subplot_vals) / max_subplots_per_row))
+        ncols = int(min(len(subplot_vals), max_subplots_per_row))
+        fig, axes = plt.subplots(nrows=nrows,
+                                 ncols=ncols, sharex=True, sharey=True, figsize=(20, 12))
+
+
+        data = df
+        # aggregate the data in one repetition using the median
+        data_aggregated = data.groupby([filter_key, index_key, line_key, 'repetition']).agg(
+            {'runtime': np.median})
+        data = data_aggregated.reset_index()
+        data_CI = data.groupby([filter_key, index_key, line_key]).agg(
+            confidence_interval=pd.NamedAgg(column="runtime", aggfunc=CI),
+            agg_runtime=pd.NamedAgg(column="runtime", aggfunc=agg_func),
+            # median_runtime=pd.NamedAgg(column="runtime", aggfunc=np.median),
+            # mean_runtime=pd.NamedAgg(column="runtime", aggfunc=np.mean)
+        )
+        data = data_CI.reset_index()
+        data['CI_low'] = data.apply(lambda x: x.confidence_interval[0][0], axis=1)
+        data['CI_high'] = data.apply(lambda x: x.confidence_interval[1][0], axis=1)
+        data['yerr_low'] = data.apply(lambda x: np.abs(x.CI_low - x.agg_runtime), axis=1)
+        data['yerr_high'] = data.apply(lambda x: np.abs(x.CI_high - x.agg_runtime), axis=1)
+
+        color_dict = self.map_colors(data['implementation'].unique(), n_shades=len(data[line_key].unique()))
+
+        # make multiple subplots
+        for i, i_val in enumerate(data[filter_key].unique()):
+            plt_data = data[data[filter_key] == i_val]
+
+            subplot_row = int(i / max_subplots_per_row)
+            subplot_col = i % max_subplots_per_row
+            if nrows > 1:
+                axref = axes[subplot_row, subplot_col]
+            else:
+                axref = axes[i]
+            axref.set_title(f"{i_val}")
+            axref.set_xlabel(index_key)
+            axref.set_ylabel('Runtime (s)')
+
+            # make multiple lines in suplot
+            for j, j_val in enumerate(plt_data[line_key].unique()):
+                # loop over algos to set color right if key not already an algo
+                subplt_data = plt_data[plt_data[line_key] == j_val]
+                for algo in subplt_data['implementation'].unique():
+                    # get color from the multiple shades
+                    c = color_dict.get(algo)[j]
+
+                    data_filtered = subplt_data[subplt_data['implementation'] == algo]
+
+                    axref.errorbar(x=data_filtered[index_key], y=data_filtered['agg_runtime'],
+                                                            yerr=data_filtered[
+                                                                ['yerr_low', 'yerr_high']].to_numpy().transpose(),
+                                                            color=c, label=f"{j_val} {line_key}", fmt=':', alpha=0.9, capsize=3,
+                                                            capthick=1)
+                    axref.fill_between(x=data_filtered[index_key], y1=data_filtered['CI_low'],
+                                                                y2=data_filtered['CI_high'],
+                                                                color=c, alpha=0.25)
+            axref.legend()
+
+        # plt.ylim((data['CI_low'].min(), data['CI_high'].max()))
+        # plt.yscale('log', nonposy='clip')
+        plt.tight_layout(pad=3.)
+        # plt.legend(bbox_to_anchor=(1,1)) # loc="upper left"
+
+        output_dir = self.output_dir if self.prefix is None else f'{self.output_dir}/{self.prefix}'
+        pathlib.Path(output_dir).mkdir(parents=True, exist_ok=True)
+
+        for format in ["svg", "png"]:
+            plt.savefig(
+                f'{output_dir}/runtime_subplots_{index_key}_{filter_key}_{line_key}_{func_key}_CI_{CI_bound}_with_errorbar.{format}')
+        plt.yscale('log')
+        for format in ["svg", "png"]:
+            plt.savefig(
+                f'{output_dir}/runtime_subplots_{index_key}_{filter_key}_{line_key}_{func_key}_CI_{CI_bound}_with_errorbar_log_scale.{format}')
+        plt.close()
+
+        return
 
     def plot_runtime_with_errorbars(self,
                                     df: pd.DataFrame,
@@ -370,9 +479,9 @@ class PlotManager:
             plt.tight_layout(pad=3.)
             plt.legend()  # loc="upper left"
             # plt.legend(bbox_to_anchor=(1,1)) # loc="upper left"
-            plt.xlabel('Input Dimension')
+            plt.xlabel(filter_key)
             plt.ylabel('Runtime (s)')
-            plt.title(f'Runtime ({i} nodes)')
+            plt.title(f'Runtime ({index_key} = {i})')
 
             output_dir = self.output_dir if self.prefix is None else f'{self.output_dir}/{self.prefix}'
             pathlib.Path(output_dir).mkdir(parents=True, exist_ok=True)
@@ -477,11 +586,30 @@ class PlotManager:
             plt.close()
 
     @staticmethod
-    def map_colors(implementation_types):
-        colors = ['red', 'blue', 'green', 'purple', 'yellow', 'pink', 'gray', 'orange']
+    def map_colors(implementation_types, n_shades=1):
+        # hard-code base algorithms
+        base_algorithms = ["allgather", "allreduce", "allreduce-ring", "g-rabenseifner-allgather",
+                           "g-rabenseifner-subgroup-2", "g-rabenseifner-subgroup-4", "g-rabenseifner-subgroup-8"]
+        for i in implementation_types:
+            if i not in base_algorithms:
+                base_algorithms.append(i)
+        # good choices: Set2, tab10, husl
+        colors = sns.color_palette("tab10", n_colors=len(base_algorithms))
+        brightness = list(np.linspace(0.5, 1.5, num=n_shades))
+        # colors = ['red', 'blue', 'green', 'purple', 'yellow', 'pink', 'gray', 'orange']
+
         color_dict = {}
         for i in range(len(implementation_types)):
-            color_dict[implementation_types[i]] = colors[i]
+            if n_shades == 1:
+                color_dict[implementation_types[i]] = colors[i]
+            else:
+                colors_list = []
+                for j in range(n_shades):
+                    r = min(1., colors[i][0] * brightness[j])
+                    g = min(1., colors[i][1] * brightness[j])
+                    b = min(1., colors[i][2] * brightness[j])
+                    colors_list.append((r, g, b))
+                color_dict[implementation_types[i]] = colors_list
         return color_dict
 
     @staticmethod
@@ -516,6 +644,7 @@ class PlotManager:
         plt.close()
 
     def plot_runtime(self, df: pd.DataFrame):
+        color_dict = self.map_colors(df['implementation'].unique()) # TODO
         for i in [2 ** i for i in range(1, 6)]:
             data = df[df['numprocs'] == i]
             if data.shape[0] == 0:
@@ -643,6 +772,11 @@ class PlotManager:
     def plot_all(self, df: pd.DataFrame, prefix=None):
         self.prefix = prefix
 
+        self.plot_runtime_with_errorbars_subplots(df, filter_key='implementation', index_key='numprocs', line_key='N',
+                                                  func_key='percentile', percentile=50.)
+        self.plot_runtime_with_errorbars_subplots(df, filter_key='implementation', index_key='N', line_key='numprocs',
+                                                  func_key='percentile', percentile=50.)
+
         self.plot_speedup(df, filter_key='N', index_key='numprocs', baseline='allreduce')
         self.plot_speedup(df, filter_key='numprocs', index_key='N', baseline='allreduce')
 
@@ -727,11 +861,13 @@ def plot(input_files: List[str], input_dir: str, output_dir: str):
     # Drop the first iteration because it is a warmup iteration
     df = df[df['iteration'] > 0]
 
+    pm.plot_all(df, prefix="all")
+
     selected_impls = ['allgather', 'allreduce', 'allreduce-ring', 'g-rabenseifner-allgather']
     df_filtered = df[df['implementation'].isin(selected_impls)]
     pm.plot_all(df_filtered, prefix="filtered")
 
-    pm.plot_all(df, prefix="all")
+
 
     pm.plot_for_report(df)
 
