@@ -31,7 +31,6 @@ def get_agg_func(func_key: str, percentile=99.):
     else:
         return np.mean
 
-
 @dataclasses.dataclass
 class PlotManager:
     output_dir: str
@@ -56,38 +55,97 @@ class PlotManager:
         print(f"processes: {processes}")
         print(f"impls: {impls}")
 
-        for N, num_procs in product(sizes, processes):
-            self.plot_report_all_node_configs(df, N, num_procs, impls, 95)
+        # for N, num_procs in product(sizes, processes):
+        #     self.plot_report_all_node_configs(df, N, num_procs, impls, 95)
 
         # All measurements within the same repetition are aggregated as a single measurement
         df = df.groupby(['N', 'numprocs', 'repetition', 'implementation']).agg(
                 runtime=pd.NamedAgg(column="runtime", aggfunc=agg_func)
                 )
         df = df.reset_index()
+        #
+        # self.plot_report_boxviolin('box', True, df, processes, impls, 95)
+        # self.plot_report_boxviolin('violin', False, df, processes, impls, 95)
+        #
+        # fig, (ax_left, ax_right) = plt.subplots(ncols=2, sharey=True, figsize=(24, 9))
+        # self.plot_report_boxviolin_comparison(True, df, ax_left, 8000, 48, impls, 95)
+        # self.plot_report_boxviolin_comparison(False, df, ax_right, 8000, 48, impls, 95)
+        # ax_left.set_ylabel('Runtime (s)', rotation=90, fontsize=12)
+        # fig.suptitle("Runtime plots for N = M = 8000 and num_procs = 48")
+        # self.plot_and_save('cmp', None, None)
+        #
+        # self.plot_report_runtime(df, processes, impls, 75)
 
-        self.plot_report_boxviolin('box', True, df, processes, impls, 95)
-        self.plot_report_boxviolin('violin', False, df, processes, impls, 95)
+        # self.plot_report_violin_cmp_all(df, 'numprocs', [16, 32, 48], 'N', selected_impls)
+        # self.plot_report_violin_cmp_all(df, 'N', sizes, 'numprocs', selected_impls)
 
-        fig, (ax_left, ax_right) = plt.subplots(ncols=2, sharey=True, figsize=(24, 9))
-        self.plot_report_boxviolin_comparison(True, df, ax_left, 8000, 48, impls, 95)
-        self.plot_report_boxviolin_comparison(False, df, ax_right, 8000, 48, impls, 95)
-        ax_left.set_ylabel('Runtime (s)', rotation=90, fontsize=12)
-        fig.suptitle("Runtime plots for N = M = 8000 and num_procs = 48")
-        self.plot_and_save('cmp', None, None)
+        self.plot_report_speedup(df, 'numprocs', [16, 32, 48], 'N', selected_impls, 'allreduce')
 
-        self.plot_report_runtime(df, processes, impls, 75)
+    def plot_report_speedup(self, df: pd.DataFrame, filter_key: str, filter_values: List[int], index_key: str, impls: List[str], baseline: str):
+        df = df[df['implementation'].isin(impls)]
+        # aggregate data
+        data = df.groupby([filter_key, index_key, 'implementation', 'repetition']).agg(
+            {'runtime': np.median})
+        data.reset_index(inplace=True)
+        data = data.groupby([filter_key, index_key, 'implementation']).agg(
+            runtime=pd.NamedAgg(column="runtime", aggfunc=agg_func)
+        )
+        data.reset_index(inplace=True)
 
-        self.plot_report_violin_cmp_all(df, 'numprocs', processes, 'N', selected_impls)
-        self.plot_report_violin_cmp_all(df, 'N', sizes, 'numprocs', selected_impls)
+        color_dict = self.map_colors(data['implementation'].unique())
+
+        baseline_df = data[data['implementation'] == baseline]
+
+        def compute_speedup(filter_key_value, index_key_value, runtime):
+            baseline_runtime = baseline_df[
+                (baseline_df[filter_key] == filter_key_value) & (baseline_df[index_key] == index_key_value)]
+            speedup = list(baseline_runtime['runtime'])[0] / runtime
+            return speedup
+
+        # compute the speedups
+        data['speedup'] = 1.0
+        data['speedup'] = data.apply(lambda x: compute_speedup(x[filter_key], x[index_key], x["runtime"]), axis=1)
+
+        fig, axs = plt.subplots(ncols=len(filter_values), sharey=True, figsize=(25, 7))
+
+        for i, filter_value in enumerate(filter_values):
+            ax = axs[i]
+            plt_data = data[data[filter_key] == filter_value]
+
+            self.plot_speedup_single(plt_data, ax, index_key, color_dict)
+
+            ax.set_title(f'{filter_key} = {filter_value}')
+            ax.set_xlabel(None)
+            if i == 0:
+                ax.set_ylabel('Speedup')
+            else:
+                ax.set_ylabel(None)
+                ax.legend().remove()
+
+        
+        fig.suptitle(f"Speedup against '{baseline}'")
+        fig.supxlabel('Number of vector elements N = M')
+        fig.patch.set_alpha(0)
+        name = f"speedup_plot_{index_key}_{filter_key}__baseline_{baseline}"
+        self.plot_and_save(name, None, None)
 
     def plot_report_violin_cmp_all(self, df: pd.DataFrame, filter_key: str, filter_values: List[int], index_key: str, impls: List[str]):
-        fig, axs = plt.subplots(nrows=len(filter_values), sharex=True, figsize=(15, 20))
+        fig, axs = plt.subplots(ncols=len(filter_values), sharey=True, figsize=(25, 7))
 
         for i, filter_value in enumerate(filter_values):
             ax = axs[i]
             ax.set(xscale="linear", yscale="log")
             ax.set_title(f'{filter_key} = {filter_value}')
             self.plot_report_violin_cmp_single(df[df[filter_key] == filter_value], ax, index_key, impls)
+            ax.set_xlabel(None)
+            if i == 0:
+                ax.set_ylabel('Runtime [s]')
+            else:
+                ax.set_ylabel(None)
+                ax.legend().remove()
+
+        fig.supxlabel('Number of vector elements N = M')
+        fig.patch.set_alpha(0)
         self.plot_and_save(f'cmp_all_{filter_key}', None, None)
 
     def plot_report_violin_cmp_single(self, df: pd.DataFrame, ax: Axes, index_key: str, impls: List[str], percentile: float=95):
@@ -99,9 +157,10 @@ class PlotManager:
             print(f"Outliers ({len(outliers.index)}):")
             print(outliers.to_string())
         data = data[data['runtime'] < outlier_cutoff]
-        sns.violinplot(x=index_key, y='runtime', hue='implementation', data=data, ax=ax, inner='box', scale_hue=True, cut=0, scale='width')
-        sns.boxplot(x=index_key, y='runtime', hue='implementation', data=data, ax=ax, showfliers=False, showbox=False, whis=[100 - percentile, percentile])
-        ax.get_legend().remove()
+        sns.violinplot(x=index_key, y='runtime', hue='implementation', data=data, ax=ax, inner='box', scale_hue=True, cut=0, scale='width', palette=self.map_colors(impls), saturation=0.7, linewidth=0.75)
+        handles, labels = ax.get_legend_handles_labels()
+        sns.boxplot(x=index_key, y='runtime', hue='implementation', data=data, ax=ax, showfliers=False, showbox=False, whis=[100 - percentile, percentile], palette=self.map_colors(impls))
+        ax.legend(handles, labels, loc="upper left")
 
     def plot_report_all_node_configs(self, df: pd.DataFrame, N: int, num_procs: int, impls: List[str], percentile: float=95):
         data = df.query("`N` == @N & `numprocs` == @num_procs")
@@ -293,12 +352,7 @@ class PlotManager:
         for i in data[filter_key].unique():
             plt_data = data[data[filter_key] == i]
 
-            plt_data_pivot = plt_data.pivot(
-                index=index_key,
-                columns='implementation',
-                values='speedup'
-            )
-            plt_data_pivot.plot(color=[color_dict.get(x) for x in data['implementation']])
+            self.plot_speedup_single(plt_data, None, index_key, color_dict)
 
             plt.tight_layout(pad=3.)
             plt.legend()  # loc="upper left"
@@ -312,6 +366,14 @@ class PlotManager:
 
         # TODO
         # baseline_runtimes = data[data['implementation'] == baseline]
+
+    def plot_speedup_single(self, df: pd.DataFrame, ax: Axes, index_key: str, color_dict):
+        plt_data_pivot = df.pivot(
+            index=index_key,
+            columns='implementation',
+            values='speedup'
+        )
+        plt_data_pivot.plot(color=[color_dict.get(x) for x in df['implementation']], ax=ax)
 
     def plot_runtime_with_errorbars_subplots(self, df: pd.DataFrame,
                                              filter_key='implementation',
@@ -635,12 +697,11 @@ class PlotManager:
     def plot_and_save(self, name: str, width: float = 10, height: float = 5):
         if width is not None and height is not None:
             plt.gcf().set_size_inches(width, height)
-        plt.legend(bbox_to_anchor=(1, 1))
         plt.tight_layout()
         output_dir = self.output_dir if self.prefix is None else f'{self.output_dir}/{self.prefix}'
         pathlib.Path(output_dir).mkdir(parents=True, exist_ok=True)
         plt.savefig(f'{output_dir}/{name}.svg')
-        plt.savefig(f'{output_dir}/{name}.png')
+        plt.savefig(f'{output_dir}/{name}.png', dpi=300)
         plt.close()
 
     def plot_runtime(self, df: pd.DataFrame):
@@ -861,11 +922,11 @@ def plot(input_files: List[str], input_dir: str, output_dir: str):
     # Drop the first iteration because it is a warmup iteration
     df = df[df['iteration'] > 0]
 
-    pm.plot_all(df, prefix="all")
+    # pm.plot_all(df, prefix="all")
 
-    selected_impls = ['allgather', 'allreduce', 'allreduce-ring', 'g-rabenseifner-allgather']
-    df_filtered = df[df['implementation'].isin(selected_impls)]
-    pm.plot_all(df_filtered, prefix="filtered")
+    # selected_impls = ['allgather', 'allreduce', 'allreduce-ring', 'g-rabenseifner-allgather']
+    # df_filtered = df[df['implementation'].isin(selected_impls)]
+    # pm.plot_all(df_filtered, prefix="filtered")
 
 
 
