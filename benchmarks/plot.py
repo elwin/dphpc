@@ -455,17 +455,8 @@ class PlotManager:
                                              func_key='median',
                                              percentile=99.,
                                              CI_bound=0.95):
-        agg_func = get_agg_func(func_key, percentile)
         if func_key == 'percentile':
             func_key = f"percentile_{percentile}"
-
-        def CI(data):
-            data = (data,)
-            # data.to_numpy().reshape((-1, data.shape[0]))
-            # take agg_func as statistic
-            res = bootstrap(data, agg_func, confidence_level=CI_bound, n_resamples=1000, method='percentile',
-                            axis=0).confidence_interval
-            return res.low, res.high
 
         # define suplots
         subplot_vals = df[filter_key].unique()
@@ -475,23 +466,7 @@ class PlotManager:
         fig, axes = plt.subplots(nrows=nrows,
                                  ncols=ncols, sharex=True, sharey=True, figsize=(25, 7))
 
-        data = df
-        # aggregate the data in one repetition using the median
-        data_aggregated = data.groupby([filter_key, index_key, line_key, 'repetition']).agg(
-            {'runtime': np.median})
-        data = data_aggregated.reset_index()
-        data_CI = data.groupby([filter_key, index_key, line_key]).agg(
-            confidence_interval=pd.NamedAgg(column="runtime", aggfunc=CI),
-            agg_runtime=pd.NamedAgg(column="runtime", aggfunc=agg_func),
-            # median_runtime=pd.NamedAgg(column="runtime", aggfunc=np.median),
-            # mean_runtime=pd.NamedAgg(column="runtime", aggfunc=np.mean)
-        )
-        data = data_CI.reset_index()
-        data['CI_low'] = data.apply(lambda x: x.confidence_interval[0][0], axis=1)
-        data['CI_high'] = data.apply(lambda x: x.confidence_interval[1][0], axis=1)
-        data['yerr_low'] = data.apply(lambda x: np.abs(x.CI_low - x.agg_runtime), axis=1)
-        data['yerr_high'] = data.apply(lambda x: np.abs(x.CI_high - x.agg_runtime), axis=1)
-
+        data = self.CI_bootstrap(df, filter_key, index_key, line_key, percentile, CI_bound)
         color_dict = self.map_colors(data['implementation'].unique(), n_shades=len(data[line_key].unique()))
 
         # make multiple subplots
@@ -558,19 +533,8 @@ class PlotManager:
 
         return
 
-    def plot_runtime_with_errorbars(self,
-                                    df: pd.DataFrame,
-                                    filter_key='N',
-                                    index_key='numprocs',
-                                    func_key='median',
-                                    percentile=99.,
-                                    CI_bound=0.95,
-                                    powers_of_two=False):
-        agg_func = get_agg_func(func_key, percentile)
-
-        if func_key == 'percentile':
-            func_key = f"percentile_{percentile}"
-
+    def CI_bootstrap(self, df: pd.DataFrame, filter_key: str, index_key: str, line_key: str, percentile: float, CI_bound: float):
+        agg_func = get_agg_func('percentile', percentile)
         def CI(data):
             data = (data,)
             # data.to_numpy().reshape((-1, data.shape[0]))
@@ -581,10 +545,10 @@ class PlotManager:
 
         data = df
         # aggregate the data in one repetition using the median
-        data_aggregated = data.groupby([filter_key, index_key, 'implementation', 'repetition']).agg(
+        data_aggregated = data.groupby([filter_key, index_key, line_key, 'repetition']).agg(
             {'runtime': np.median})
         data = data_aggregated.reset_index()
-        data_CI = data.groupby([filter_key, index_key, 'implementation']).agg(
+        data_CI = data.groupby([filter_key, index_key, line_key]).agg(
             confidence_interval=pd.NamedAgg(column="runtime", aggfunc=CI),
             agg_runtime=pd.NamedAgg(column="runtime", aggfunc=agg_func),
             # median_runtime=pd.NamedAgg(column="runtime", aggfunc=np.median),
@@ -595,7 +559,20 @@ class PlotManager:
         data['CI_high'] = data.apply(lambda x: x.confidence_interval[1][0], axis=1)
         data['yerr_low'] = data.apply(lambda x: np.abs(x.CI_low - x.agg_runtime), axis=1)
         data['yerr_high'] = data.apply(lambda x: np.abs(x.CI_high - x.agg_runtime), axis=1)
+        return data
 
+    def plot_runtime_with_errorbars(self,
+                                    df: pd.DataFrame,
+                                    filter_key='N',
+                                    index_key='numprocs',
+                                    func_key='median',
+                                    percentile=99.,
+                                    CI_bound=0.95,
+                                    powers_of_two=False):
+        if func_key == 'percentile':
+            func_key = f"percentile_{percentile}"
+
+        data = self.CI_bootstrap(df, filter_key, index_key, 'implementation', percentile, CI_bound)
         color_dict = self.map_colors(data['implementation'].unique())
 
         for i in data[index_key].unique():
