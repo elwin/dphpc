@@ -81,7 +81,10 @@ class PlotManager:
         # self.plot_report_violin_cmp_all(df, 'numprocs', [16, 32, 48], 'N', selected_impls)
         # self.plot_report_violin_cmp_all(df, 'N', sizes, 'numprocs', selected_impls)
 
-        self.plot_report_speedup(df, 'numprocs', [16, 32, 48], 'N', selected_impls, 'allreduce')
+        # self.plot_report_speedup(df, 'numprocs', [16, 32, 48], 'N', selected_impls, 'allreduce')
+
+        for p in [50, 75, 90, 95]:
+            self.plot_runtime_with_errorbars_subplots(df, filter_key='implementation', index_key='N', line_key='numprocs', func_key='percentile', percentile=p)
 
     def plot_report_speedup(self, df: pd.DataFrame, filter_key: str, filter_values: List[int], index_key: str, impls: List[str], baseline: str):
         df = df[df['implementation'].isin(impls)]
@@ -470,7 +473,7 @@ class PlotManager:
         nrows = int(math.ceil(len(subplot_vals) / max_subplots_per_row))
         ncols = int(min(len(subplot_vals), max_subplots_per_row))
         fig, axes = plt.subplots(nrows=nrows,
-                                 ncols=ncols, sharex=True, sharey=True, figsize=(20, 12))
+                                 ncols=ncols, sharex=True, sharey=True, figsize=(25, 7))
 
         data = df
         # aggregate the data in one repetition using the median
@@ -502,8 +505,11 @@ class PlotManager:
             else:
                 axref = axes[i]
             axref.set_title(f"{i_val}")
-            axref.set_xlabel(index_key)
-            axref.set_ylabel('Runtime (s)')
+
+            if i == 0:
+                axref.set_ylabel('Runtime [s]')
+            else:
+                axref.set_ylabel(None)
 
             # make multiple lines in suplot
             for j, j_val in enumerate(plt_data[line_key].unique()):
@@ -518,16 +524,23 @@ class PlotManager:
                     axref.errorbar(x=data_filtered[index_key], y=data_filtered['agg_runtime'],
                                    yerr=data_filtered[
                                        ['yerr_low', 'yerr_high']].to_numpy().transpose(),
-                                   color=c, label=f"{j_val} {line_key}", fmt=':', alpha=0.9, capsize=3,
+                                   color=c, label=f"{line_key} = {j_val}", fmt=':', alpha=0.9, capsize=3,
                                    capthick=1)
                     axref.fill_between(x=data_filtered[index_key], y1=data_filtered['CI_low'],
                                        y2=data_filtered['CI_high'],
                                        color=c, alpha=0.25)
-            axref.legend()
+            axref.legend(loc="upper left")
+
+        if index_key == 'N':
+            if line_key == 'numprocs' and func_key.startswith('percentile'):
+                fig.suptitle(f"{int(CI_bound * 100)}% confidence interval over {percentile}th percentile")
+            fig.supxlabel('Number of vector elements N = M')
+        else:
+            fig.supxlabel(index_key)
 
         # plt.ylim((data['CI_low'].min(), data['CI_high'].max()))
         # plt.yscale('log', nonposy='clip')
-        plt.tight_layout(pad=3.)
+        plt.tight_layout()
         # plt.legend(bbox_to_anchor=(1,1)) # loc="upper left"
 
         output_dir = self.output_dir if self.prefix is None else f'{self.output_dir}/{self.prefix}'
@@ -537,6 +550,7 @@ class PlotManager:
             plt.savefig(
                 f'{output_dir}/runtime_subplots_{index_key}_{filter_key}_{line_key}_{func_key}_CI_{CI_bound}_with_errorbar.{format}')
         plt.yscale('log')
+        plt.tight_layout()
         for format in ["svg", "png"]:
             plt.savefig(
                 f'{output_dir}/runtime_subplots_{index_key}_{filter_key}_{line_key}_{func_key}_CI_{CI_bound}_with_errorbar_log_scale.{format}')
@@ -908,16 +922,16 @@ class PlotManager:
     def plot_all(self, df: pd.DataFrame, prefix=None):
         self.prefix = prefix
 
-        if prefix is None:
-            self.prefix = "stragglers"
-        else:
-            self.prefix = f"{prefix}/stragglers"
-        sizes = sorted(df['N'].unique().tolist(), reverse=True)
-        processes = sorted(df['numprocs'].unique().tolist(), reverse=True)
-        impls = df['implementation'].unique().tolist()
-        for N, num_procs, impl in product(sizes, processes, impls):
-            for key in ["runtimes", "runtimes_compute", "runtimes_mpi"]:
-                self.plot_straggler_violin(df, N, num_procs, impl, key, 95)
+        # if prefix is None:
+        #     self.prefix = "stragglers"
+        # else:
+        #     self.prefix = f"{prefix}/stragglers"
+        # sizes = sorted(df['N'].unique().tolist(), reverse=True)
+        # processes = sorted(df['numprocs'].unique().tolist(), reverse=True)
+        # impls = df['implementation'].unique().tolist()
+        # for N, num_procs, impl in product(sizes, processes, impls):
+        #     for key in ["runtimes", "runtimes_compute", "runtimes_mpi"]:
+        #         self.plot_straggler_violin(df, N, num_procs, impl, key, 95)
         self.prefix = prefix
 
         self.plot_runtime_with_errorbars_subplots(df, filter_key='implementation', index_key='numprocs', line_key='N',
