@@ -86,6 +86,35 @@ class PlotManager:
         for p in [50, 75, 90, 95]:
             self.plot_runtime_with_errorbars_subplots(df, filter_key='implementation', index_key='N', line_key='numprocs', func_key='percentile', percentile=p)
 
+        self.plot_report_runtime_errorbars(df, 'numprocs', [16, 32, 48], 'N', selected_impls, 50, 0.95)
+
+    def plot_report_runtime_errorbars(self, df: pd.DataFrame, filter_key: str, filter_values: List[int], index_key: str, impls: List[str], percentile: float, CI_bound: float):
+        fig, axs = plt.subplots(ncols=len(filter_values), sharey=True, figsize=(25, 7))
+        data = self.CI_bootstrap(df, filter_key, index_key, 'implementation', percentile, CI_bound)
+        color_dict = self.map_colors(impls)
+
+        for i, filter_value in enumerate(filter_values):
+            ax = axs[i]
+            plt_data = data[data[filter_key] == filter_value]
+
+            for algo in impls:
+                self.plot_runtime_with_errorbars_single(plt_data, ax, algo, index_key, color_dict)
+
+            ax.set_title(f'{filter_key} = {filter_value}')
+            ax.set_xlabel(None)
+            if i == 0:
+                ax.set_ylabel('Speedup')
+            else:
+                ax.set_ylabel(None)
+                ax.legend().remove()
+
+        
+        if index_key == 'N':
+            fig.supxlabel('Number of vector elements N = M')
+        fig.patch.set_alpha(0)
+        name = f"runtime_{filter_key}_{index_key}_percentile_{percentile}_CI_{CI_bound}_with_errorbar"
+        self.plot_and_save(name, None, None)
+
     def plot_report_speedup(self, df: pd.DataFrame, filter_key: str, filter_values: List[int], index_key: str, impls: List[str], baseline: str):
         df = df[df['implementation'].isin(impls)]
         # aggregate data
@@ -561,6 +590,19 @@ class PlotManager:
         data['yerr_high'] = data.apply(lambda x: np.abs(x.CI_high - x.agg_runtime), axis=1)
         return data
 
+    def plot_runtime_with_errorbars_single(self,
+                                    df: pd.DataFrame,
+                                    ax: Axes,
+                                    algo: str,
+                                    filter_key: str,
+                                    color_dict):
+        data_filtered = df[df['implementation'] == algo]
+
+        ax.errorbar(x=data_filtered[filter_key], y=data_filtered['agg_runtime'],
+                    yerr=data_filtered[['yerr_low', 'yerr_high']].to_numpy().transpose(),
+                    color=color_dict.get(algo), label=algo, fmt=':', alpha=0.9, capsize=3, capthick=1)
+        ax.fill_between(x=data_filtered[filter_key], y1=data_filtered['CI_low'], y2=data_filtered['CI_high'],
+                                color=color_dict.get(algo), alpha=0.25)
     def plot_runtime_with_errorbars(self,
                                     df: pd.DataFrame,
                                     filter_key='N',
@@ -583,18 +625,7 @@ class PlotManager:
             fig, ax = plt.subplots()
             # ax = plt.gca()
             for algo in plt_data['implementation'].unique():
-                data_filtered = plt_data[plt_data['implementation'] == algo]
-                # print(data_filtered[['CI_low', 'CI_high']].to_numpy().transpose())
-                # # ax.plot(data_filtered[filter_key], data_filtered['runtime'], marker='+', color=color_dict.get(algo))
-                # ax.errorbar(x=data_filtered[filter_key], y=data_filtered['runtime'],
-                #             yerr=data_filtered[['CI_low', 'CI_high']].to_numpy().transpose(),
-                #             color=color_dict.get(algo), label=algo, fmt='none', capsize=2.5)
-
-                ax.errorbar(x=data_filtered[filter_key], y=data_filtered['agg_runtime'],
-                            yerr=data_filtered[['yerr_low', 'yerr_high']].to_numpy().transpose(),
-                            color=color_dict.get(algo), label=algo, fmt=':', alpha=0.9, capsize=3, capthick=1)
-                ax.fill_between(x=data_filtered[filter_key], y1=data_filtered['CI_low'], y2=data_filtered['CI_high'],
-                                color=color_dict.get(algo), alpha=0.25)
+                self.plot_runtime_with_errorbars_single(plt_data, ax, algo, filter_key, color_dict)
 
             # plt.ylim((data['CI_low'].min(), data['CI_high'].max()))
             # plt.yscale('log', nonposy='clip')
