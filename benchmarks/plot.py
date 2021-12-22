@@ -40,7 +40,6 @@ class PlotManager:
 
     def plot_for_report(self, df: pd.DataFrame, func_key='median'):
         print("Plotting for report")
-        self.prefix = 'report'
 
         agg_func = get_agg_func(func_key)
 
@@ -57,36 +56,40 @@ class PlotManager:
         print(f"processes: {processes}")
         print(f"impls: {impls}")
 
-        # for N, num_procs in product(sizes, processes):
-        #     self.plot_report_all_node_configs(df, N, num_procs, impls, 95)
+        self.prefix = 'report/analysis'
+
+        for N, num_procs in product(sizes, processes):
+            self.plot_report_all_node_configs(df, N, num_procs, impls, 95)
 
         # All measurements within the same repetition are aggregated as a single measurement
         df = df.groupby(['N', 'numprocs', 'repetition', 'implementation']).agg(
             runtime=pd.NamedAgg(column="runtime", aggfunc=agg_func)
         )
         df = df.reset_index()
-        #
-        # self.plot_report_boxviolin('box', True, df, processes, impls, 95)
-        # self.plot_report_boxviolin('violin', False, df, processes, impls, 95)
-        #
-        # fig, (ax_left, ax_right) = plt.subplots(ncols=2, sharey=True, figsize=(24, 9))
-        # self.plot_report_boxviolin_comparison(True, df, ax_left, 8000, 48, impls, 95)
-        # self.plot_report_boxviolin_comparison(False, df, ax_right, 8000, 48, impls, 95)
-        # ax_left.set_ylabel('Runtime (s)', rotation=90, fontsize=12)
-        # fig.suptitle("Runtime plots for N = M = 8000 and num_procs = 48")
-        # self.plot_and_save('cmp', None, None)
-        #
-        # self.plot_report_runtime(df, processes, impls, 75)
 
-        # self.plot_report_violin_cmp_all(df, 'numprocs', [16, 32, 48], 'N', selected_impls)
-        # self.plot_report_violin_cmp_all(df, 'N', sizes, 'numprocs', selected_impls)
+        self.plot_report_boxviolin('box', True, df, processes, impls, 95)
+        self.plot_report_boxviolin('violin', False, df, processes, impls, 95)
 
-        # self.plot_report_speedup(df, 'numprocs', [16, 32, 48], 'N', selected_impls, 'allreduce')
+        fig, (ax_left, ax_right) = plt.subplots(ncols=2, sharey=True, figsize=(24, 9))
+        self.plot_report_boxviolin_comparison(True, df, ax_left, 8000, 48, impls, 95)
+        self.plot_report_boxviolin_comparison(False, df, ax_right, 8000, 48, impls, 95)
+        ax_left.set_ylabel('Runtime (s)', rotation=90, fontsize=12)
+        fig.suptitle("Runtime plots for N = M = 8000 and num_procs = 48")
+        self.plot_and_save('cmp', None, None)
+
+        self.plot_report_runtime(df, processes, impls, 75)
+        self.plot_report_violin_cmp_all(df, 'N', sizes, 'numprocs', selected_impls)
+
+        self.prefix = 'report'
+
+        self.plot_report_violin_cmp_all(df, 'numprocs', [16, 32, 48], 'N', selected_impls)
+        self.plot_report_speedup(df, 'numprocs', [16, 32, 48], 'N', selected_impls, 'allreduce')
 
         for p in [50, 75, 90, 95]:
             self.plot_runtime_with_errorbars_subplots(df, filter_key='implementation', index_key='N', line_key='numprocs', func_key='percentile', percentile=p)
 
         self.plot_report_runtime_errorbars(df, 'numprocs', [16, 32, 48], 'N', selected_impls, 50, 0.95)
+        self.plot_report_runtime_errorbars(df, 'numprocs', [16, 32, 48], 'N', selected_impls, 95, 0.95)
 
     def plot_report_runtime_errorbars(self, df: pd.DataFrame, filter_key: str, filter_values: List[int], index_key: str, impls: List[str], percentile: float, CI_bound: float):
         fig, axs = plt.subplots(ncols=len(filter_values), sharey=True, figsize=(25, 7))
@@ -103,7 +106,8 @@ class PlotManager:
             ax.set_title(f'{filter_key} = {filter_value}')
             ax.set_xlabel(None)
             if i == 0:
-                ax.set_ylabel('Speedup')
+                ax.set_ylabel('Runtime [s]')
+                ax.legend(loc="upper left")
             else:
                 ax.set_ylabel(None)
                 ax.legend().remove()
@@ -111,9 +115,10 @@ class PlotManager:
         
         if index_key == 'N':
             fig.supxlabel('Number of vector elements N = M')
-        fig.patch.set_alpha(0)
+            fig.suptitle(f"{int(CI_bound * 100)}% confidence interval over {percentile}th percentile")
+
         name = f"runtime_{filter_key}_{index_key}_percentile_{percentile}_CI_{CI_bound}_with_errorbar"
-        self.plot_and_save(name, None, None)
+        self.plot_and_save_with_log(name, None, None)
 
     def plot_report_speedup(self, df: pd.DataFrame, filter_key: str, filter_values: List[int], index_key: str, impls: List[str], baseline: str):
         df = df[df['implementation'].isin(impls)]
@@ -159,7 +164,6 @@ class PlotManager:
         
         fig.suptitle(f"Speedup against '{baseline}'")
         fig.supxlabel('Number of vector elements N = M')
-        fig.patch.set_alpha(0)
         name = f"speedup_plot_{index_key}_{filter_key}__baseline_{baseline}"
         self.plot_and_save(name, None, None)
 
@@ -168,7 +172,6 @@ class PlotManager:
 
         for i, filter_value in enumerate(filter_values):
             ax = axs[i]
-            ax.set(xscale="linear", yscale="log")
             ax.set_title(f'{filter_key} = {filter_value}')
             self.plot_report_violin_cmp_single(df[df[filter_key] == filter_value], ax, index_key, impls)
             ax.set_xlabel(None)
@@ -179,8 +182,7 @@ class PlotManager:
                 ax.legend().remove()
 
         fig.supxlabel('Number of vector elements N = M')
-        fig.patch.set_alpha(0)
-        self.plot_and_save(f'cmp_all_{filter_key}', None, None)
+        self.plot_and_save_with_log(f'cmp_all_{filter_key}', None, None)
 
     def plot_report_violin_cmp_single(self, df: pd.DataFrame, ax: Axes, index_key: str, impls: List[str],
                                       percentile: float = 95):
@@ -319,7 +321,6 @@ class PlotManager:
         box_whiskers = (violin_quantiles[0] * 100, violin_quantiles[1] * 100)
 
         data = df[(df['N'] == N) & (df['numprocs'] == num_procs)]
-        color_dict = self.map_colors(impls)  # TODO
         if boxplot:
             data.boxplot(column='runtime', by=['implementation'], ax=ax, whis=box_whiskers, notch=False,
                          showfliers=False)
@@ -351,12 +352,9 @@ class PlotManager:
         fig, axes = plt.subplots(nrows=num_rows, ncols=num_cols, sharex=True, sharey='row', figsize=(36, 13),
                                  squeeze=False)
 
-        color_dict = self.map_colors(impls)  # TODO
-
         for i, numprocs in enumerate(num_processes):
             for j, impl in enumerate(impls):
                 data = df[(df['implementation'] == impl) & (df['numprocs'] == numprocs)]
-                c = color_dict.get(impl)  # TODO
                 if boxplot:
                     data.boxplot(column='runtime', by=['N'], ax=axes[i, j], whis=box_whiskers, notch=False,
                                  showfliers=False)
@@ -785,7 +783,12 @@ class PlotManager:
 
         return percentile
 
-    def plot_and_save(self, name: str, width: float = 10, height: float = 5, subplot_adjust: bool = False):
+    def plot_and_save_with_log(self, name: str, width: float = 10, height: float = 5, subplot_adjust: bool = False):
+        self.plot_and_save(name, width, height, subplot_adjust, False)
+        plt.yscale('log')
+        self.plot_and_save(name + "_log_scale", width, height, subplot_adjust, False)
+
+    def plot_and_save(self, name: str, width: float = 10, height: float = 5, subplot_adjust: bool = False, close: bool = True):
         if width is not None and height is not None:
             plt.gcf().set_size_inches(width, height)
         if subplot_adjust:
@@ -794,15 +797,15 @@ class PlotManager:
             fig.subplots_adjust(top=0.95)
         else:
             plt.tight_layout()
-        plt.legend(bbox_to_anchor=(1, 1))
+        # plt.legend(bbox_to_anchor=(1, 1))
         output_dir = self.output_dir if self.prefix is None else f'{self.output_dir}/{self.prefix}'
         pathlib.Path(output_dir).mkdir(parents=True, exist_ok=True)
         plt.savefig(f'{output_dir}/{name}.png')
         plt.savefig(f'{output_dir}/{name}.svg')
-        plt.close()
+        if close:
+            plt.close()
 
     def plot_runtime(self, df: pd.DataFrame):
-        color_dict = self.map_colors(df['implementation'].unique())  # TODO
         for i in [2 ** i for i in range(1, 6)]:
             data = df[df['numprocs'] == i]
             if data.shape[0] == 0:
