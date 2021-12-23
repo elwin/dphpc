@@ -18,6 +18,16 @@ from matplotlib.axes import Axes
 
 agg_func = np.median
 
+IMPL_NAMES = {
+        'g-rabenseifner-allgather': 'g-rabenseifner-dsop'
+}
+
+def get_impl_label(impl: str):
+    return IMPL_NAMES.get(impl, impl)
+
+def impl_labels(impls: List[str]):
+    return list(map(get_impl_label, impls))
+
 
 def get_agg_func(func_key: str, percentile=99.):
     if func_key == 'mean':
@@ -43,10 +53,10 @@ class PlotManager:
 
         agg_func = get_agg_func(func_key)
 
-        selected_impls = ['allgather', 'allreduce', 'g-rabenseifner-allgather']
         selected_impls = ['allgather', 'allreduce', 'allreduce-ring', 'g-rabenseifner-allgather']
+        all_impls = ['allgather', 'allreduce', 'allreduce-ring', 'g-rabenseifner-allgather', "g-rabenseifner-subgroup-2", "g-rabenseifner-subgroup-4", "g-rabenseifner-subgroup-8"]
 
-        df = df[df['implementation'].isin(selected_impls)]
+        df = df[df['implementation'].isin(all_impls)]
 
         sizes = sorted(df['N'].unique().tolist())
         processes = sorted(df['numprocs'].unique().tolist())
@@ -58,8 +68,8 @@ class PlotManager:
 
         self.prefix = 'report/analysis'
 
-        for N, num_procs in product(sizes, processes):
-            self.plot_report_all_node_configs(df, N, num_procs, impls, 95)
+        # for N, num_procs in product(sizes, processes):
+        #     self.plot_report_all_node_configs(df, N, num_procs, impls, 95)
 
         # All measurements within the same repetition are aggregated as a single measurement
         df = df.groupby(['N', 'numprocs', 'repetition', 'implementation']).agg(
@@ -67,32 +77,45 @@ class PlotManager:
         )
         df = df.reset_index()
 
-        self.plot_report_boxviolin('box', True, df, processes, impls, 95)
-        self.plot_report_boxviolin('violin', False, df, processes, impls, 95)
-
-        fig, (ax_left, ax_right) = plt.subplots(ncols=2, sharey=True, figsize=(24, 9))
-        self.plot_report_boxviolin_comparison(True, df, ax_left, 8000, 48, impls, 95)
-        self.plot_report_boxviolin_comparison(False, df, ax_right, 8000, 48, impls, 95)
-        ax_left.set_ylabel('Runtime (s)', rotation=90, fontsize=12)
-        fig.suptitle("Runtime plots for N = M = 8000 and num_procs = 48")
-        self.plot_and_save('cmp', None, None)
-
-        self.plot_report_runtime(df, processes, impls, 75)
-        self.plot_report_violin_cmp_all(df, 'N', sizes, 'numprocs', selected_impls)
-
+        # self.plot_report_boxviolin('box', True, df, processes, impls, 95)
+        # self.plot_report_boxviolin('violin', False, df, processes, impls, 95)
+        #
+        # fig, (ax_left, ax_right) = plt.subplots(ncols=2, sharey=True, figsize=(24, 9))
+        # self.plot_report_boxviolin_comparison(True, df, ax_left, 8000, 48, impls, 95)
+        # self.plot_report_boxviolin_comparison(False, df, ax_right, 8000, 48, impls, 95)
+        # ax_left.set_ylabel('Runtime (s)', rotation=90, fontsize=12)
+        # fig.suptitle("Runtime plots for N = M = 8000 and num_procs = 48")
+        # self.plot_and_save('cmp', None, None)
+        #
+        # self.plot_report_runtime(df, processes, impls, 75)
+        # self.plot_report_violin_cmp_all(df, 'N', sizes, 'numprocs', selected_impls)
+        #
         self.prefix = 'report'
 
         self.plot_report_violin_cmp_all(df, 'numprocs', [16, 32, 48], 'N', selected_impls)
+        self.plot_report_violin_cmp_all(df, 'numprocs', [48], 'N', selected_impls)
         self.plot_report_speedup(df, 'numprocs', [16, 32, 48], 'N', selected_impls, 'allreduce')
 
         for p in [50, 75, 90, 95]:
-            self.plot_runtime_with_errorbars_subplots(df, filter_key='implementation', index_key='N', line_key='numprocs', func_key='percentile', percentile=p)
+            data = df[df['implementation'].isin(selected_impls)]
+            self.plot_runtime_with_errorbars_subplots(data, filter_key='implementation', index_key='N', line_key='numprocs', func_key='percentile', percentile=p)
+            self.plot_runtime_with_errorbars_subplots(data, filter_key='implementation', index_key='numprocs', line_key='N', func_key='percentile', percentile=p)
 
-        self.plot_report_runtime_errorbars(df, 'numprocs', [16, 32, 48], 'N', selected_impls, 50, 0.95)
-        self.plot_report_runtime_errorbars(df, 'numprocs', [16, 32, 48], 'N', selected_impls, 95, 0.95)
+        for p in [50, 90]:
+            self.plot_report_runtime_errorbars(df, 'numprocs', [16, 32, 48], 'N', selected_impls, p, 0.95)
+            self.plot_report_runtime_errorbars(df, 'numprocs', [48], 'N', selected_impls, p, 0.95)
+
+        self.prefix = 'report/subgroup'
+
+        for p in [50, 75, 90, 95]:
+            data = df[df['implementation'].isin(['g-rabenseifner-allgather', "g-rabenseifner-subgroup-2", "g-rabenseifner-subgroup-4", "g-rabenseifner-subgroup-8"])]
+            self.plot_runtime_with_errorbars_subplots(data, filter_key='implementation', index_key='N', line_key='numprocs', func_key='percentile', percentile=p)
+            self.plot_runtime_with_errorbars_subplots(data, filter_key='implementation', index_key='numprocs', line_key='N', func_key='percentile', percentile=p)
 
     def plot_report_runtime_errorbars(self, df: pd.DataFrame, filter_key: str, filter_values: List[int], index_key: str, impls: List[str], percentile: float, CI_bound: float):
-        fig, axs = plt.subplots(ncols=len(filter_values), sharey=True, figsize=(25, 7))
+        ncols = len(filter_values)
+        fig, axs = plt.subplots(ncols=ncols, sharey=True, figsize=(8.3 * ncols, 7), squeeze=False)
+        axs = axs.flat
         data = self.CI_bootstrap(df, filter_key, index_key, 'implementation', percentile, CI_bound)
         color_dict = self.map_colors(impls)
 
@@ -107,7 +130,7 @@ class PlotManager:
             ax.set_xlabel(None)
             if i == 0:
                 ax.set_ylabel('Runtime [s]')
-                ax.legend(loc="upper left")
+                ax.legend()
             else:
                 ax.set_ylabel(None)
                 ax.legend().remove()
@@ -117,7 +140,7 @@ class PlotManager:
             fig.supxlabel('Number of vector elements N = M')
             fig.suptitle(f"{int(CI_bound * 100)}% confidence interval over {percentile}th percentile")
 
-        name = f"runtime_{filter_key}_{index_key}_percentile_{percentile}_CI_{CI_bound}_with_errorbar"
+        name = f"runtime_{filter_key}_{'_'.join(map(str, filter_values))}_{index_key}_percentile_{percentile}_CI_{CI_bound}_with_errorbar"
         self.plot_and_save_with_log(name, None, None)
 
     def plot_report_speedup(self, df: pd.DataFrame, filter_key: str, filter_values: List[int], index_key: str, impls: List[str], baseline: str):
@@ -145,7 +168,9 @@ class PlotManager:
         data['speedup'] = 1.0
         data['speedup'] = data.apply(lambda x: compute_speedup(x[filter_key], x[index_key], x["runtime"]), axis=1)
 
-        fig, axs = plt.subplots(ncols=len(filter_values), sharey=True, figsize=(25, 7))
+        fig, axs = plt.subplots(ncols=len(filter_values), sharey=True, figsize=(25, 7), squeeze=False)
+        axs = axs.flat
+        impl_names = impl_labels(impls)
 
         for i, filter_value in enumerate(filter_values):
             ax = axs[i]
@@ -157,19 +182,21 @@ class PlotManager:
             ax.set_xlabel(None)
             if i == 0:
                 ax.set_ylabel('Speedup')
+                ax.legend(labels=impl_names)
             else:
                 ax.set_ylabel(None)
                 ax.legend().remove()
 
         
-        fig.suptitle(f"Speedup against '{baseline}'")
+        fig.suptitle(f"Speedup against '{get_impl_label(baseline)}'")
         fig.supxlabel('Number of vector elements N = M')
         name = f"speedup_plot_{index_key}_{filter_key}__baseline_{baseline}"
         self.plot_and_save(name, None, None)
 
     def plot_report_violin_cmp_all(self, df: pd.DataFrame, filter_key: str, filter_values: List[int], index_key: str, impls: List[str]):
-        fig, axs = plt.subplots(ncols=len(filter_values), sharey=True, figsize=(25, 7))
-
+        ncols = len(filter_values)
+        fig, axs = plt.subplots(ncols=ncols, sharey=True, figsize=(8.3 * ncols, 7), squeeze=False)
+        axs = axs.flat
         for i, filter_value in enumerate(filter_values):
             ax = axs[i]
             ax.set_title(f'{filter_key} = {filter_value}')
@@ -182,11 +209,12 @@ class PlotManager:
                 ax.legend().remove()
 
         fig.supxlabel('Number of vector elements N = M')
-        self.plot_and_save_with_log(f'cmp_all_{filter_key}', None, None)
+        self.plot_and_save_with_log(f'cmp_{filter_key}_{"_".join(map(str, filter_values))}', None, None)
 
     def plot_report_violin_cmp_single(self, df: pd.DataFrame, ax: Axes, index_key: str, impls: List[str],
                                       percentile: float = 95):
         data = df[df['implementation'].isin(impls)]
+        impl_names = impl_labels(impls)
 
         outlier_cutoff = 40
         outliers = data[data['runtime'] >= outlier_cutoff]
@@ -197,7 +225,7 @@ class PlotManager:
         sns.violinplot(x=index_key, y='runtime', hue='implementation', data=data, ax=ax, inner='box', scale_hue=True, cut=0, scale='width', palette=self.map_colors(impls), saturation=0.7, linewidth=0.75)
         handles, labels = ax.get_legend_handles_labels()
         sns.boxplot(x=index_key, y='runtime', hue='implementation', data=data, ax=ax, showfliers=False, showbox=False, whis=[100 - percentile, percentile], palette=self.map_colors(impls))
-        ax.legend(handles, labels, loc="upper left")
+        ax.legend(handles, impl_names, loc="upper left")
 
     def plot_report_all_node_configs(self, df: pd.DataFrame, N: int, num_procs: int, impls: List[str],
                                      percentile: float = 95):
@@ -508,7 +536,11 @@ class PlotManager:
                 axref = axes[subplot_row, subplot_col]
             else:
                 axref = axes[i]
-            axref.set_title(f"{i_val}")
+
+            if filter_key == 'implementation':
+                axref.set_title(get_impl_label(i_val))
+            else:
+                axref.set_title(i_val)
 
             if i == 0:
                 axref.set_ylabel('Runtime [s]')
@@ -534,11 +566,14 @@ class PlotManager:
                                        y2=data_filtered['CI_high'],
                                        color=c, alpha=0.25)
             axref.legend(loc="upper left")
+            axref.set_xticks(sorted(data_filtered[index_key].unique().tolist()))
 
+        if func_key.startswith('percentile'):
+            fig.suptitle(f"{int(CI_bound * 100)}% confidence interval over {percentile}th percentile")
         if index_key == 'N':
-            if line_key == 'numprocs' and func_key.startswith('percentile'):
-                fig.suptitle(f"{int(CI_bound * 100)}% confidence interval over {percentile}th percentile")
             fig.supxlabel('Number of vector elements N = M')
+        elif index_key == 'numprocs':
+            fig.supxlabel('Number of processes')
         else:
             fig.supxlabel(index_key)
 
@@ -600,7 +635,7 @@ class PlotManager:
 
         ax.errorbar(x=data_filtered[filter_key], y=data_filtered['agg_runtime'],
                     yerr=data_filtered[['yerr_low', 'yerr_high']].to_numpy().transpose(),
-                    color=color_dict.get(algo), label=algo, fmt=':', alpha=0.9, capsize=3, capthick=1)
+                    color=color_dict.get(algo), label=get_impl_label(algo), fmt=':', alpha=0.9, capsize=3, capthick=1)
         ax.fill_between(x=data_filtered[filter_key], y1=data_filtered['CI_low'], y2=data_filtered['CI_high'],
                                 color=color_dict.get(algo), alpha=0.25)
     def plot_runtime_with_errorbars(self,
