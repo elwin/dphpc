@@ -236,13 +236,15 @@ class PlotManager:
         violin_quantiles = [perc_low, perc_high]
         box_whiskers = (violin_quantiles[0] * 100, violin_quantiles[1] * 100)
 
-        ncols = 10
+        ncols = 7
         nrows = math.ceil(num_reps / ncols)
 
-        fig, axes = plt.subplots(nrows=nrows, ncols=ncols, sharex=True, sharey=True, figsize=(45, 30))
+        standard_figsize = (45, 30)
+        smaller_figsize = (18, 10)
+        fig, axes = plt.subplots(nrows=nrows, ncols=ncols, sharex=True, sharey=True, figsize=smaller_figsize)
         axs = axes.flat
 
-        fig.suptitle(f"{impl}, N={N}, numprocs={num_procs}, {key}", fontsize=20)
+        fig.suptitle(f"{impl}, N={N}, numprocs={num_procs}, {key}", fontsize=15)
 
         for i, rep in enumerate(repetitions):
             ax = axs[i]
@@ -794,7 +796,7 @@ class PlotManager:
         if subplot_adjust:
             plt.tight_layout(pad=2.)
             fig = plt.gcf()
-            fig.subplots_adjust(top=0.95)
+            fig.subplots_adjust(top=0.9)
         else:
             plt.tight_layout()
         # plt.legend(bbox_to_anchor=(1, 1))
@@ -933,16 +935,17 @@ class PlotManager:
     def plot_all(self, df: pd.DataFrame, prefix=None):
         self.prefix = prefix
 
-        # if prefix is None:
-        #     self.prefix = "stragglers"
-        # else:
-        #     self.prefix = f"{prefix}/stragglers"
-        # sizes = sorted(df['N'].unique().tolist(), reverse=True)
-        # processes = sorted(df['numprocs'].unique().tolist(), reverse=True)
-        # impls = df['implementation'].unique().tolist()
-        # for N, num_procs, impl in product(sizes, processes, impls):
-        #     for key in ["runtimes", "runtimes_compute", "runtimes_mpi"]:
-        #         self.plot_straggler_violin(df, N, num_procs, impl, key, 95)
+        if prefix is None:
+            self.prefix = "stragglers"
+        else:
+            self.prefix = f"{prefix}/stragglers"
+        sizes = [8000]
+        processes = [48, 32]
+        impls = df['implementation'].unique().tolist()
+        straggler_df = df[df['repetition'] < 8]
+        for N, num_procs, impl in product(sizes, processes, impls):
+            for key in ["runtimes", "runtimes_compute", "runtimes_mpi"]:
+                self.plot_straggler_violin(straggler_df, N, num_procs, impl, key, 95)
         self.prefix = prefix
 
         self.plot_runtime_with_errorbars_subplots(df, filter_key='implementation', index_key='numprocs', line_key='N',
@@ -1034,13 +1037,25 @@ def plot(input_files: List[str], input_dir: str, output_dir: str):
     # Drop the first iteration because it is a warmup iteration
     df = df[df['iteration'] > 0]
 
-    # pm.plot_all(df, prefix="all")
 
-    # selected_impls = ['allgather', 'allreduce', 'allreduce-ring', 'g-rabenseifner-allgather']
-    # df_filtered = df[df['implementation'].isin(selected_impls)]
-    # pm.plot_all(df_filtered, prefix="filtered")
+    # size_df = df.groupby(["N", "implementation", "numprocs", "repetition"]).size()
+    # size_df = size_df.reset_index()
+    # n_runs = size_df.groupby(["N", "implementation", "numprocs"]).size()
+    # print(n_runs)
 
     pm.plot_for_report(df)
+
+
+    pm.plot_all(df, prefix="all")
+
+
+    selected_impls = ['allgather', 'allreduce', 'allreduce-ring', 'g-rabenseifner-allgather']
+    df_filtered = df[df['implementation'].isin(selected_impls)]
+    pm.plot_all(df_filtered, prefix="filtered")
+
+
+
+
 
     # pm.plot_for_analysis(df)
 

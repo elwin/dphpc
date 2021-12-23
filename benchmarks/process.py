@@ -12,10 +12,15 @@ import plot
 
 folder_offsets = {  # sorry but i have no easier Idea to collect them easily
     "mixed/dave": 0 * 17,
+    "mixed/dave2": (4 * 17) + (0 * 15),
     "mixed/elwin": 1 * 17,
+    "mixed/elwin2": (4 * 17) + (1 * 15),
     "mixed/noe": 2 * 17,
+    "mixed/noe2": (4 * 17) + (2 * 15),
     "mixed/patrick": 3 * 17,
+    "mixed/patrick2": (4 * 17) + (3 * 15),
     "mixed/roysc": 0,
+    "mixed/roysc2": (4 * 17),
     "raw": 0,
 }
 
