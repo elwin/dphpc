@@ -94,7 +94,8 @@ class PlotManager:
 
         self.plot_report_violin_cmp_all(df, 'numprocs', [16, 32, 48], 'N', selected_impls)
         self.plot_report_violin_cmp_all(df, 'numprocs', [48], 'N', selected_impls)
-        self.plot_report_speedup(df, 'numprocs', [16, 32, 48], 'N', selected_impls, 'allreduce')
+        self.plot_report_speedup(df, 'numprocs', [16, 32, 48], 'N', selected_impls, 'allreduce', False)
+        self.plot_report_speedup(df, 'numprocs', [16, 32, 48], 'N', selected_impls, 'allreduce', True)
 
         for p in [50, 75, 90, 95]:
             data = df[df['implementation'].isin(selected_impls)]
@@ -179,17 +180,18 @@ class PlotManager:
 
         return data
 
-    def plot_report_speedup(self, df: pd.DataFrame, filter_key: str, filter_values: List[int], index_key: str, impls: List[str], baseline: str):
+    def plot_report_speedup(self, df: pd.DataFrame, filter_key: str, filter_values: List[int], index_key: str, impls: List[str], baseline: str, violin: bool):
         impls = [impl for impl in impls if impls != baseline]
 
         data = self.calculate_speedup(df, impls, baseline)
         color_dict = self.map_colors(impls)
 
-        # Take the median over all speedups
-        data = data.groupby([filter_key, index_key, 'implementation']).agg(
-            speedup=pd.NamedAgg(column="speedup", aggfunc=agg_func)
-        )
-        data.reset_index(inplace=True)
+        if not violin:
+            # Take the median over all speedups
+            data = data.groupby([filter_key, index_key, 'implementation']).agg(
+                speedup=pd.NamedAgg(column="speedup", aggfunc=agg_func)
+            )
+            data.reset_index(inplace=True)
 
         fig, axs = plt.subplots(ncols=len(filter_values), sharey=True, figsize=(25, 7), squeeze=False)
         axs = axs.flat
@@ -198,7 +200,10 @@ class PlotManager:
             ax = axs[i]
             plt_data = data[data[filter_key] == filter_value]
 
-            self.plot_speedup_single(plt_data, ax, baseline, index_key, color_dict)
+            if not violin:
+                self.plot_speedup_single(plt_data, ax, baseline, index_key, color_dict)
+            else:
+                self.plot_speedup_single_violin(plt_data, ax, baseline, index_key)
 
             ax.set_title(f'{filter_key} = {filter_value}')
             ax.set_xlabel(None)
@@ -211,7 +216,8 @@ class PlotManager:
         
         fig.suptitle(f"Speedup against '{get_impl_label(baseline)}'")
         fig.supxlabel('Number of vector elements N = M')
-        name = f"speedup_plot_{index_key}_{filter_key}__baseline_{baseline}"
+        violin_infix = '_violin' if violin else ''
+        name = f"speedup_plot{violin_infix}_{index_key}_{filter_key}__baseline_{baseline}"
         self.plot_and_save(name, None, None)
 
     def plot_report_violin_cmp_all(self, df: pd.DataFrame, filter_key: str, filter_values: List[int], index_key: str, impls: List[str]):
@@ -233,20 +239,25 @@ class PlotManager:
         self.plot_and_save_with_log(f'cmp_{filter_key}_{"_".join(map(str, filter_values))}', None, None)
 
     def plot_report_violin_cmp_single(self, df: pd.DataFrame, ax: Axes, index_key: str, impls: List[str],
-                                      percentile: float = 95):
+            percentile: float = 95, y_key: str='runtime'):
         data = df[df['implementation'].isin(impls)]
         impl_names = impl_labels(impls)
 
-        outlier_cutoff = 40
-        outliers = data[data['runtime'] >= outlier_cutoff]
-        if not outliers.empty:
-            print(f"Outliers ({len(outliers.index)}):")
-            print(outliers.to_string())
-        data = data[data['runtime'] < outlier_cutoff]
-        sns.violinplot(x=index_key, y='runtime', hue='implementation', data=data, ax=ax, inner='box', scale_hue=True, cut=0, scale='width', palette=self.map_colors(impls), saturation=0.7, linewidth=0.75)
+        if y_key == 'runtime':
+            outlier_cutoff = 40
+            outliers = data[data['runtime'] >= outlier_cutoff]
+            if not outliers.empty:
+                print(f"Outliers ({len(outliers.index)}):")
+                print(outliers.to_string())
+            data = data[data['runtime'] < outlier_cutoff]
+        sns.violinplot(x=index_key, y=y_key, hue='implementation', data=data, ax=ax, inner='box', scale_hue=True, cut=0, scale='width', palette=self.map_colors(impls), saturation=0.7, linewidth=0.75)
+
         handles, labels = ax.get_legend_handles_labels()
-        sns.boxplot(x=index_key, y='runtime', hue='implementation', data=data, ax=ax, showfliers=False, showbox=False, whis=[100 - percentile, percentile], palette=self.map_colors(impls))
-        ax.legend(handles, impl_names, loc="upper left")
+        sns.boxplot(x=index_key, y=y_key, hue='implementation', data=data, ax=ax, showfliers=False, showbox=False, whis=[100 - percentile, percentile], palette=self.map_colors(impls))
+        
+        # Replace legend with state before boxplot to avoid duplicates
+        # We also replace the algo names with the proper names from IMPL_NAMES
+        ax.legend(handles, labels[:-len(impl_names)] + impl_names, loc="upper left")
 
     def plot_report_all_node_configs(self, df: pd.DataFrame, N: int, num_procs: int, impls: List[str],
                                      percentile: float = 95):
@@ -532,6 +543,15 @@ class PlotManager:
         base = ax if ax else plt
         base.axhline(1, linestyle='--', color='grey', linewidth=1, label=get_impl_label(baseline))
         base.legend(labels=impl_names)
+
+    def plot_speedup_single_violin(self, df: pd.DataFrame, ax: Axes, baseline: str, index_key: str):
+        df = df[df['implementation'] != baseline]
+        impls = df['implementation'].unique().tolist()
+
+        ax.axhline(1, linestyle='--', color='grey', linewidth=1, label=get_impl_label(baseline))
+        ax.legend()
+
+        self.plot_report_violin_cmp_single(df, ax, index_key, impls, 95, 'speedup')
 
     def plot_runtime_with_errorbars_subplots(self, df: pd.DataFrame,
                                              filter_key='implementation',
@@ -874,6 +894,8 @@ class PlotManager:
         plt.savefig(f'{output_dir}/{name}.svg')
         if close:
             plt.close()
+
+        print(f"\033[32mFinished plotting '{name}'\033[0m")
 
     def plot_runtime(self, df: pd.DataFrame):
         for i in [2 ** i for i in range(1, 6)]:
