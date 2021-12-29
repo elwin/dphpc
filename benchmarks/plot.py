@@ -143,30 +143,53 @@ class PlotManager:
         name = f"runtime_{filter_key}_{'_'.join(map(str, filter_values))}_{index_key}_percentile_{percentile}_CI_{CI_bound}_with_errorbar"
         self.plot_and_save_with_log(name, None, None)
 
-    def plot_report_speedup(self, df: pd.DataFrame, filter_key: str, filter_values: List[int], index_key: str, impls: List[str], baseline: str):
-        df = df[df['implementation'].isin(impls)]
+    def calculate_speedup(self, df: pd.DataFrame, impls: List[str], baseline: str):
+        """
+        Calculates the speedup for all datapoints against the given baseline.
+
+        For this it aggregates over all iterations in a repetition with the median to get a single observation.
+
+        For each observation, the speedup is calculated.
+
+        The resulting DataFrame does not contain the baseline but contains the speedup for each observation.
+        """
+        df = df[df['implementation'].isin(impls + [baseline])]
         # Take median inside each repetition
-        data = df.groupby([filter_key, index_key, 'implementation', 'repetition']).agg(
+        data = df.groupby(['N', 'numprocs', 'implementation', 'repetition']).agg(
             {'runtime': np.median})
         data.reset_index(inplace=True)
-        data = data.groupby([filter_key, index_key, 'implementation']).agg(
-            runtime=pd.NamedAgg(column="runtime", aggfunc=agg_func)
-        )
-        data.reset_index(inplace=True)
-
-        color_dict = self.map_colors(data['implementation'].unique())
 
         baseline_df = data[data['implementation'] == baseline]
+        data = data[data['implementation'] != baseline]
 
-        def compute_speedup(filter_key_value, index_key_value, runtime):
-            baseline_runtime = baseline_df[
-                (baseline_df[filter_key] == filter_key_value) & (baseline_df[index_key] == index_key_value)]
-            speedup = list(baseline_runtime['runtime'])[0] / runtime
-            return speedup
+        def compute_speedup(baseline_runtimes, vec_size, num_procs, runtime):
+            baseline_runtime = baseline_runtimes[(baseline_runtimes['N'] == vec_size) & (baseline_runtimes['numprocs'] == num_procs)]
+            if baseline_runtime.empty:
+                return math.nan
+            else:
+                return list(baseline_runtime['runtime'])[0] / runtime
 
         # compute the speedups
-        data['speedup'] = 1.0
-        data['speedup'] = data.apply(lambda x: compute_speedup(x[filter_key], x[index_key], x["runtime"]), axis=1)
+        repetitions = sorted(data['repetition'].unique().tolist())
+
+        for rep in repetitions:
+            baseline_runtimes = baseline_df.query('`repetition` == @rep')
+            rep_df = data[data['repetition'] == rep]
+            data.loc[data['repetition'] == rep, 'speedup'] = rep_df.apply(lambda x: compute_speedup(baseline_runtimes, x['N'], x['numprocs'], x["runtime"]), axis=1)
+
+        return data
+
+    def plot_report_speedup(self, df: pd.DataFrame, filter_key: str, filter_values: List[int], index_key: str, impls: List[str], baseline: str):
+        impls = [impl for impl in impls if impls != baseline]
+
+        data = self.calculate_speedup(df, impls, baseline)
+        color_dict = self.map_colors(impls)
+
+        # Take the median over all speedups
+        data = data.groupby([filter_key, index_key, 'implementation']).agg(
+            speedup=pd.NamedAgg(column="speedup", aggfunc=agg_func)
+        )
+        data.reset_index(inplace=True)
 
         fig, axs = plt.subplots(ncols=len(filter_values), sharey=True, figsize=(25, 7), squeeze=False)
         axs = axs.flat
