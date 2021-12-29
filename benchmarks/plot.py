@@ -145,7 +145,7 @@ class PlotManager:
 
     def plot_report_speedup(self, df: pd.DataFrame, filter_key: str, filter_values: List[int], index_key: str, impls: List[str], baseline: str):
         df = df[df['implementation'].isin(impls)]
-        # aggregate data
+        # Take median inside each repetition
         data = df.groupby([filter_key, index_key, 'implementation', 'repetition']).agg(
             {'runtime': np.median})
         data.reset_index(inplace=True)
@@ -170,19 +170,17 @@ class PlotManager:
 
         fig, axs = plt.subplots(ncols=len(filter_values), sharey=True, figsize=(25, 7), squeeze=False)
         axs = axs.flat
-        impl_names = impl_labels(impls)
 
         for i, filter_value in enumerate(filter_values):
             ax = axs[i]
             plt_data = data[data[filter_key] == filter_value]
 
-            self.plot_speedup_single(plt_data, ax, index_key, color_dict)
+            self.plot_speedup_single(plt_data, ax, baseline, index_key, color_dict)
 
             ax.set_title(f'{filter_key} = {filter_value}')
             ax.set_xlabel(None)
             if i == 0:
                 ax.set_ylabel('Speedup')
-                ax.legend(labels=impl_names)
             else:
                 ax.set_ylabel(None)
                 ax.legend().remove()
@@ -482,7 +480,7 @@ class PlotManager:
         for i in data[filter_key].unique():
             plt_data = data[data[filter_key] == i]
 
-            self.plot_speedup_single(plt_data, None, index_key, color_dict)
+            self.plot_speedup_single(plt_data, None, baseline, index_key, color_dict)
 
             plt.tight_layout(pad=3.)
             plt.legend()  # loc="upper left"
@@ -497,13 +495,20 @@ class PlotManager:
         # TODO
         # baseline_runtimes = data[data['implementation'] == baseline]
 
-    def plot_speedup_single(self, df: pd.DataFrame, ax: Axes, index_key: str, color_dict):
+    def plot_speedup_single(self, df: pd.DataFrame, ax: Axes, baseline: str, index_key: str, color_dict):
+        df = df[df['implementation'] != baseline]
         plt_data_pivot = df.pivot(
             index=index_key,
             columns='implementation',
             values='speedup'
         )
         plt_data_pivot.plot(color=[color_dict.get(x) for x in df['implementation']], ax=ax, marker='.', markersize=16)
+
+        impl_names = impl_labels(df['implementation'].unique().tolist() + [baseline])
+
+        base = ax if ax else plt
+        base.axhline(1, linestyle='--', color='grey', linewidth=1, label=get_impl_label(baseline))
+        base.legend(labels=impl_names)
 
     def plot_runtime_with_errorbars_subplots(self, df: pd.DataFrame,
                                              filter_key='implementation',
