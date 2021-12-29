@@ -791,18 +791,23 @@ class PlotManager:
         brightness = list(np.linspace(0.5, 1.5, num=n_shades))
         # colors = ['red', 'blue', 'green', 'purple', 'yellow', 'pink', 'gray', 'orange']
 
+        # Always assign the same color to the same algorithm
+        base_dict = {impl:colors[i] for (i, impl) in enumerate(base_algorithms)}
+
         color_dict = {}
-        for i in range(len(implementation_types)):
+        for impl in implementation_types:
+            color = base_dict[impl]
             if n_shades == 1:
-                color_dict[implementation_types[i]] = colors[i]
+                color_dict[impl] = color
             else:
                 colors_list = []
                 for j in range(n_shades):
-                    r = min(1., colors[i][0] * brightness[j])
-                    g = min(1., colors[i][1] * brightness[j])
-                    b = min(1., colors[i][2] * brightness[j])
+                    bright = brightness[j]
+                    r = min(1., color[0] * bright)
+                    g = min(1., color[1] * bright)
+                    b = min(1., color[2] * bright)
                     colors_list.append((r, g, b))
-                color_dict[implementation_types[i]] = colors_list
+                color_dict[impl] = colors_list
         return color_dict
 
     @staticmethod
