@@ -99,6 +99,7 @@ class PlotManager:
 
         for p in [5, 10, 25, 50, 75, 90, 95]:
             self.plot_report_speedup_errorbars(df, 'numprocs', [16, 32, 48], 'N', selected_impls, 'allreduce', p, 0.95)
+            self.plot_report_speedup_errorbars(df, 'N', [1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000], 'numprocs', selected_impls, 'allreduce', p, 0.95)
 
         for p in [50, 75, 90, 95]:
             data = df[df['implementation'].isin(selected_impls)]
