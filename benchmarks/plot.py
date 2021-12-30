@@ -97,7 +97,7 @@ class PlotManager:
         self.plot_report_speedup(df, 'numprocs', [16, 32, 48], 'N', selected_impls, 'allreduce', False)
         self.plot_report_speedup(df, 'numprocs', [16, 32, 48], 'N', selected_impls, 'allreduce', True)
 
-        for p in [50, 75, 90, 95]:
+        for p in [5, 10, 25, 50, 75, 90, 95]:
             self.plot_report_speedup_errorbars(df, 'numprocs', [16, 32, 48], 'N', selected_impls, 'allreduce', p, 0.95)
 
         for p in [50, 75, 90, 95]:
