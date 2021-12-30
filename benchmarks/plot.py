@@ -92,30 +92,32 @@ class PlotManager:
         #
         self.prefix = 'report'
 
-        # self.plot_report_violin_cmp_all(df, 'numprocs', [16, 32, 48], 'N', selected_impls)
-        # self.plot_report_violin_cmp_all(df, 'numprocs', [48], 'N', selected_impls)
-        # self.plot_report_speedup(df, 'numprocs', [16, 32, 48], 'N', selected_impls, 'allreduce', False)
-        # self.plot_report_speedup(df, 'numprocs', [16, 32, 48], 'N', selected_impls, 'allreduce', True)
+        self.plot_report_violin_cmp_all(df, 'numprocs', [16, 32, 48], 'N', selected_impls)
+        self.plot_report_violin_cmp_all(df, 'numprocs', [48], 'N', selected_impls)
+        self.plot_report_speedup(df, 'numprocs', [16, 32, 48], 'N', selected_impls, 'allreduce', False)
+        self.plot_report_speedup(df, 'numprocs', [16, 32, 48], 'N', selected_impls, 'allreduce', True)
 
         for p in [10, 50, 90]:
             self.plot_report_speedup_errorbars(df, 'numprocs', [16, 32, 48], 'N', selected_impls, 'allreduce', p, 0.95)
             self.plot_report_speedup_errorbars(df, 'N', [1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000], 'numprocs', selected_impls, 'allreduce', p, 0.95)
+            for numprocs in [16, 32, 48]:
+                self.plot_report_speedup_errorbars(df, 'numprocs', [numprocs], 'N', selected_impls, 'allreduce', p, 0.95)
 
-        # for p in [10, 50, 75, 90, 95]:
-        #     data = df[df['implementation'].isin(selected_impls)]
-        #     self.plot_runtime_with_errorbars_subplots(data, filter_key='implementation', index_key='N', line_key='numprocs', func_key='percentile', percentile=p)
-        #     self.plot_runtime_with_errorbars_subplots(data, filter_key='implementation', index_key='numprocs', line_key='N', func_key='percentile', percentile=p)
+        for p in [10, 50, 75, 90, 95]:
+            data = df[df['implementation'].isin(selected_impls)]
+            self.plot_runtime_with_errorbars_subplots(data, filter_key='implementation', index_key='N', line_key='numprocs', func_key='percentile', percentile=p)
+            self.plot_runtime_with_errorbars_subplots(data, filter_key='implementation', index_key='numprocs', line_key='N', func_key='percentile', percentile=p)
 
-        # for p in [10, 50, 90]:
-        #     self.plot_report_runtime_errorbars(df, 'numprocs', [16, 32, 48], 'N', selected_impls, p, 0.95)
-        #     self.plot_report_runtime_errorbars(df, 'numprocs', [48], 'N', selected_impls, p, 0.95)
+        for p in [10, 50, 90]:
+            self.plot_report_runtime_errorbars(df, 'numprocs', [16, 32, 48], 'N', selected_impls, p, 0.95)
+            self.plot_report_runtime_errorbars(df, 'numprocs', [48], 'N', selected_impls, p, 0.95)
 
-        # self.prefix = 'report/subgroup'
-        #
-        # for p in [10, 50, 75, 90, 95]:
-        #     data = df[df['implementation'].isin(['g-rabenseifner-allgather', "g-rabenseifner-subgroup-2", "g-rabenseifner-subgroup-4", "g-rabenseifner-subgroup-8"])]
-        #     self.plot_runtime_with_errorbars_subplots(data, filter_key='implementation', index_key='N', line_key='numprocs', func_key='percentile', percentile=p)
-        #     self.plot_runtime_with_errorbars_subplots(data, filter_key='implementation', index_key='numprocs', line_key='N', func_key='percentile', percentile=p)
+        self.prefix = 'report/subgroup'
+
+        for p in [10, 50, 75, 90, 95]:
+            data = df[df['implementation'].isin(['g-rabenseifner-allgather', "g-rabenseifner-subgroup-2", "g-rabenseifner-subgroup-4", "g-rabenseifner-subgroup-8"])]
+            self.plot_runtime_with_errorbars_subplots(data, filter_key='implementation', index_key='N', line_key='numprocs', func_key='percentile', percentile=p)
+            self.plot_runtime_with_errorbars_subplots(data, filter_key='implementation', index_key='numprocs', line_key='N', func_key='percentile', percentile=p)
 
     def plot_report_runtime_errorbars(self, df: pd.DataFrame, filter_key: str, filter_values: List[int], index_key: str, impls: List[str], percentile: float, CI_bound: float):
         ncols = len(filter_values)
@@ -945,6 +947,7 @@ class PlotManager:
         pathlib.Path(output_dir).mkdir(parents=True, exist_ok=True)
         plt.savefig(f'{output_dir}/{name}.png')
         plt.savefig(f'{output_dir}/{name}.svg')
+        plt.savefig(f'{output_dir}/{name}.pdf')
         if close:
             plt.close()
 
