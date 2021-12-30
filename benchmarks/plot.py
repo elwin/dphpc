@@ -98,6 +98,9 @@ class PlotManager:
         self.plot_report_speedup(df, 'numprocs', [16, 32, 48], 'N', selected_impls, 'allreduce', True)
 
         for p in [50, 75, 90, 95]:
+            self.plot_report_speedup_errorbars(df, 'numprocs', [16, 32, 48], 'N', selected_impls, 'allreduce', p, 0.95)
+
+        for p in [50, 75, 90, 95]:
             data = df[df['implementation'].isin(selected_impls)]
             self.plot_runtime_with_errorbars_subplots(data, filter_key='implementation', index_key='N', line_key='numprocs', func_key='percentile', percentile=p)
             self.plot_runtime_with_errorbars_subplots(data, filter_key='implementation', index_key='numprocs', line_key='N', func_key='percentile', percentile=p)
@@ -117,7 +120,9 @@ class PlotManager:
         ncols = len(filter_values)
         fig, axs = plt.subplots(ncols=ncols, sharey=True, figsize=(8.3 * ncols, 7), squeeze=False)
         axs = axs.flat
-        data = self.CI_bootstrap(df, filter_key, index_key, 'implementation', percentile, CI_bound)
+
+        aggregated = self.aggregate_iterations(df)
+        data = self.CI_bootstrap(aggregated, filter_key, index_key, 'implementation', percentile, CI_bound)
         color_dict = self.map_colors(impls)
 
         for i, filter_value in enumerate(filter_values):
@@ -136,7 +141,7 @@ class PlotManager:
                 ax.set_ylabel(None)
                 ax.legend().remove()
 
-        
+
         if index_key == 'N':
             fig.supxlabel('Number of vector elements N = M')
             fig.suptitle(f"{int(CI_bound * 100)}% confidence interval over {percentile}th percentile")
@@ -178,10 +183,13 @@ class PlotManager:
             rep_df = data[data['repetition'] == rep]
             data.loc[data['repetition'] == rep, 'speedup'] = rep_df.apply(lambda x: compute_speedup(baseline_runtimes, x['N'], x['numprocs'], x["runtime"]), axis=1)
 
+        # Drop all lines with a NaN speedup
+        data.dropna(axis=0, subset=['speedup'], inplace=True)
+
         return data
 
     def plot_report_speedup(self, df: pd.DataFrame, filter_key: str, filter_values: List[int], index_key: str, impls: List[str], baseline: str, violin: bool):
-        impls = [impl for impl in impls if impls != baseline]
+        impls = [impl for impl in impls if impl != baseline]
 
         data = self.calculate_speedup(df, impls, baseline)
         color_dict = self.map_colors(impls)
@@ -213,12 +221,47 @@ class PlotManager:
                 ax.set_ylabel(None)
                 ax.legend().remove()
 
-        
+
         fig.suptitle(f"Speedup against '{get_impl_label(baseline)}'")
         fig.supxlabel('Number of vector elements N = M')
         violin_infix = '_violin' if violin else ''
         name = f"speedup_plot{violin_infix}_{index_key}_{filter_key}__baseline_{baseline}"
-        self.plot_and_save(name, None, None)
+        self.plot_and_save_with_log(name, None, None)
+
+    def plot_report_speedup_errorbars(self, df: pd.DataFrame, filter_key: str, filter_values: List[int], index_key: str, impls: List[str], baseline: str, percentile: float=95, CI_bound=0.95):
+        impls = [impl for impl in impls if impl != baseline]
+
+        data = self.calculate_speedup(df, impls, baseline)
+        color_dict = self.map_colors(impls)
+
+        CI_data = self.CI_bootstrap(data, filter_key, index_key, 'implementation', percentile, CI_bound, 'speedup')
+
+        fig, axs = plt.subplots(ncols=len(filter_values), sharey=True, figsize=(25, 7), squeeze=False)
+        axs = axs.flat
+
+        for i, filter_value in enumerate(filter_values):
+            ax = axs[i]
+            plt_data = CI_data[CI_data[filter_key] == filter_value]
+
+            for algo in impls:
+                self.plot_runtime_with_errorbars_single(plt_data, ax, algo, index_key, color_dict)
+
+            ax.axhline(1, linestyle='--', color='grey', linewidth=1, label=get_impl_label(baseline))
+            ax.legend()
+
+            ax.set_title(f'{filter_key} = {filter_value}')
+            ax.set_xlabel(None)
+            if i == 0:
+                ax.set_ylabel('Speedup')
+            else:
+                ax.set_ylabel(None)
+                ax.legend().remove()
+
+
+        fig.suptitle(f"Speedup against '{get_impl_label(baseline)}' - {int(CI_bound * 100)}% confidence interval over {percentile}th percentile")
+        fig.supxlabel('Number of vector elements N = M')
+        name = f'speedup_plot_{index_key}_{filter_key}__baseline_{baseline}_percentile_{percentile}_CI_{CI_bound}_with_errorbar'
+        self.plot_and_save_with_log(name, None, None)
 
     def plot_report_violin_cmp_all(self, df: pd.DataFrame, filter_key: str, filter_values: List[int], index_key: str, impls: List[str]):
         ncols = len(filter_values)
@@ -254,7 +297,7 @@ class PlotManager:
 
         handles, labels = ax.get_legend_handles_labels()
         sns.boxplot(x=index_key, y=y_key, hue='implementation', data=data, ax=ax, showfliers=False, showbox=False, whis=[100 - percentile, percentile], palette=self.map_colors(impls))
-        
+
         # Replace legend with state before boxplot to avoid duplicates
         # We also replace the algo names with the proper names from IMPL_NAMES
         ax.legend(handles, labels[:-len(impl_names)] + impl_names, loc="upper left")
@@ -544,14 +587,14 @@ class PlotManager:
         base.axhline(1, linestyle='--', color='grey', linewidth=1, label=get_impl_label(baseline))
         base.legend(labels=impl_names)
 
-    def plot_speedup_single_violin(self, df: pd.DataFrame, ax: Axes, baseline: str, index_key: str):
+    def plot_speedup_single_violin(self, df: pd.DataFrame, ax: Axes, baseline: str, index_key: str, percentile: float=95):
         df = df[df['implementation'] != baseline]
         impls = df['implementation'].unique().tolist()
 
         ax.axhline(1, linestyle='--', color='grey', linewidth=1, label=get_impl_label(baseline))
         ax.legend()
 
-        self.plot_report_violin_cmp_single(df, ax, index_key, impls, 95, 'speedup')
+        self.plot_report_violin_cmp_single(df, ax, index_key, impls, percentile, 'speedup')
 
     def plot_runtime_with_errorbars_subplots(self, df: pd.DataFrame,
                                              filter_key='implementation',
@@ -571,7 +614,8 @@ class PlotManager:
         fig, axes = plt.subplots(nrows=nrows,
                                  ncols=ncols, sharex=True, sharey=True, figsize=(25, 7))
 
-        data = self.CI_bootstrap(df, filter_key, index_key, line_key, percentile, CI_bound)
+        aggregated = self.aggregate_iterations(df)
+        data = self.CI_bootstrap(aggregated, filter_key, index_key, line_key, percentile, CI_bound)
         color_dict = self.map_colors(data['implementation'].unique(), n_shades=len(data[line_key].unique()))
 
         # make multiple subplots
@@ -645,7 +689,17 @@ class PlotManager:
 
         return
 
-    def CI_bootstrap(self, df: pd.DataFrame, filter_key: str, index_key: str, line_key: str, percentile: float, CI_bound: float):
+    def aggregate_iterations(self, df: pd.DataFrame):
+        aggregated = df.groupby(['N', 'numprocs', 'implementation', 'repetition']).agg({'runtime': np.median})
+        aggregated.reset_index(inplace=True)
+        return aggregated
+
+    def CI_bootstrap(self, df: pd.DataFrame, filter_key: str, index_key: str, line_key: str, percentile: float, CI_bound: float, column: str = 'runtime'):
+        """
+        Calculates bootstrap confidence interval.
+
+        Data must already be aggregated within a repetition
+        """
         agg_func = get_agg_func('percentile', percentile)
         def CI(data):
             data = (data,)
@@ -655,16 +709,11 @@ class PlotManager:
                             axis=0).confidence_interval
             return res.low, res.high
 
-        data = df
-        # aggregate the data in one repetition using the median
-        data_aggregated = data.groupby([filter_key, index_key, line_key, 'repetition']).agg(
-            {'runtime': np.median})
-        data = data_aggregated.reset_index()
-        data_CI = data.groupby([filter_key, index_key, line_key]).agg(
-            confidence_interval=pd.NamedAgg(column="runtime", aggfunc=CI),
-            agg_runtime=pd.NamedAgg(column="runtime", aggfunc=agg_func),
-            # median_runtime=pd.NamedAgg(column="runtime", aggfunc=np.median),
-            # mean_runtime=pd.NamedAgg(column="runtime", aggfunc=np.mean)
+        data_CI = df.groupby([filter_key, index_key, line_key]).agg(
+            confidence_interval=pd.NamedAgg(column=column, aggfunc=CI),
+            agg_runtime=pd.NamedAgg(column=column, aggfunc=agg_func),
+            # median_runtime=pd.NamedAgg(column=column, aggfunc=np.median),
+            # mean_runtime=pd.NamedAgg(column=column, aggfunc=np.mean)
         )
         data = data_CI.reset_index()
         data['CI_low'] = data.apply(lambda x: x.confidence_interval[0][0], axis=1)
@@ -697,7 +746,8 @@ class PlotManager:
         if func_key == 'percentile':
             func_key = f"percentile_{percentile}"
 
-        data = self.CI_bootstrap(df, filter_key, index_key, 'implementation', percentile, CI_bound)
+        aggregated = self.aggregate_iterations(df)
+        data = self.CI_bootstrap(aggregated, filter_key, index_key, 'implementation', percentile, CI_bound)
         color_dict = self.map_colors(data['implementation'].unique())
 
         for i in data[index_key].unique():
@@ -1136,12 +1186,12 @@ def plot(input_files: List[str], input_dir: str, output_dir: str):
     pm.plot_for_report(df)
 
 
-    pm.plot_all(df, prefix="all")
-
-
-    selected_impls = ['allgather', 'allreduce', 'allreduce-ring', 'g-rabenseifner-allgather']
-    df_filtered = df[df['implementation'].isin(selected_impls)]
-    pm.plot_all(df_filtered, prefix="filtered")
+    # pm.plot_all(df, prefix="all")
+    #
+    #
+    # selected_impls = ['allgather', 'allreduce', 'allreduce-ring', 'g-rabenseifner-allgather']
+    # df_filtered = df[df['implementation'].isin(selected_impls)]
+    # pm.plot_all(df_filtered, prefix="filtered")
 
 
 
