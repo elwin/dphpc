@@ -100,7 +100,7 @@ const int phase_count = block_count / num_phases;
  *
  *     phase_count ADDs
  *
- * P rounds
+ * P - 1 rounds
  *
  *     o + L + (block_count * 8 - 1) * G + g
  */
@@ -305,7 +305,7 @@ int allreduce_ring_segmented(const void *sbuf, void *rbuf, int count) {
     /* Distribution loop - variation of ring allgather */
     send_to = (rank + 1) % size;
     recv_from = (rank + size - 1) % size;
-    // #### P rounds
+    // #### P -1 rounds
     for (k = 0; k < size - 1; k++) {
         const int recv_data_from = (rank + size - k) % size;
         const int send_data_from = (rank + 1 + size - k) % size;
