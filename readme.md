@@ -12,13 +12,6 @@ model for their algorithms, and benchmark them on real systems. The algorithms c
 the interconnection network (i.e., different links might have a different bandwidth), and/or the sparsity of the input
 vectors Ai and Bi.
 
-## Meetings
-
-Mondays, 16:15 until finished. We often reserved CHN H 43.2 or alternatively
-on [Zoom](https://ethz.zoom.us/j/69785702508).
-
-For meetings with our supervisors, use this [Link](https://ethz.zoom.us/my/sashkboos).
-
 ## Code
 
 All code related to solving DSOP, including a `readme.md`, is located in the folder [`/code`](code).
@@ -30,6 +23,7 @@ There's a bunch of scripts in the [`/euler`](euler) folder, and a `readme.md` ex
 ## Results
 
 Some (ongoing) benchmark results can be found in the [`/results`](https://github.com/elwin/dphpc_results/) folder.
+The results used for our report are located in [`/results/20_benchmark_euler`](https://github.com/elwin/dphpc_results/tree/master/20_benchmark_euler).
 
 ## Etiquette rules
 

@@ -68,8 +68,8 @@ class PlotManager:
 
         self.prefix = 'report/analysis'
 
-        # for N, num_procs in product(sizes, processes):
-        #     self.plot_report_all_node_configs(df, N, num_procs, impls, 95)
+        for N, num_procs in product(sizes, processes):
+            self.plot_report_all_node_configs(df, N, num_procs, impls, 95)
 
         # All measurements within the same repetition are aggregated as a single measurement
         df = df.groupby(['N', 'numprocs', 'repetition', 'implementation']).agg(
@@ -77,30 +77,31 @@ class PlotManager:
         )
         df = df.reset_index()
 
-        # self.plot_report_boxviolin('box', True, df, processes, impls, 95)
-        # self.plot_report_boxviolin('violin', False, df, processes, impls, 95)
-        #
-        # fig, (ax_left, ax_right) = plt.subplots(ncols=2, sharey=True, figsize=(24, 9))
-        # self.plot_report_boxviolin_comparison(True, df, ax_left, 8000, 48, impls, 95)
-        # self.plot_report_boxviolin_comparison(False, df, ax_right, 8000, 48, impls, 95)
-        # ax_left.set_ylabel('Runtime (s)', rotation=90, fontsize=12)
-        # fig.suptitle("Runtime plots for N = M = 8000 and num_procs = 48")
-        # self.plot_and_save('cmp', None, None)
-        #
-        # self.plot_report_runtime(df, processes, impls, 75)
-        # self.plot_report_violin_cmp_all(df, 'N', sizes, 'numprocs', selected_impls)
-        #
+        self.plot_report_boxviolin('box', True, df, processes, impls, 95)
+        self.plot_report_boxviolin('violin', False, df, processes, impls, 95)
+
+        fig, (ax_left, ax_right) = plt.subplots(ncols=2, sharey=True, figsize=(24, 9))
+        self.plot_report_boxviolin_comparison(True, df, ax_left, 8000, 48, impls, 95)
+        self.plot_report_boxviolin_comparison(False, df, ax_right, 8000, 48, impls, 95)
+        ax_left.set_ylabel('Runtime (s)', rotation=90, fontsize=12)
+        fig.suptitle("Runtime plots for N = M = 8000 and num_procs = 48")
+        self.plot_and_save('cmp', None, None)
+
+        self.plot_report_runtime(df, processes, impls, 75)
+        self.plot_report_violin_cmp_all(df, 'N', sizes, 'numprocs', selected_impls)
+
         self.prefix = 'report'
 
         self.plot_report_violin_cmp_all(df, 'numprocs', [16, 32, 48], 'N', selected_impls)
-        self.plot_report_violin_cmp_all(df, 'numprocs', [48], 'N', selected_impls)
+        for numprocs in [8, 16, 32, 48]:
+            self.plot_report_violin_cmp_all(df, 'numprocs', [numprocs], 'N', selected_impls)
         self.plot_report_speedup(df, 'numprocs', [16, 32, 48], 'N', selected_impls, 'allreduce', False)
         self.plot_report_speedup(df, 'numprocs', [16, 32, 48], 'N', selected_impls, 'allreduce', True)
 
         for p in [10, 50, 90]:
             self.plot_report_speedup_errorbars(df, 'numprocs', [16, 32, 48], 'N', selected_impls, 'allreduce', p, 0.95)
             self.plot_report_speedup_errorbars(df, 'N', [1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000], 'numprocs', selected_impls, 'allreduce', p, 0.95)
-            for numprocs in [16, 32, 48]:
+            for numprocs in [8, 16, 32, 48]:
                 self.plot_report_speedup_errorbars(df, 'numprocs', [numprocs], 'N', selected_impls, 'allreduce', p, 0.95)
 
         for p in [10, 50, 75, 90, 95]:
@@ -110,7 +111,8 @@ class PlotManager:
 
         for p in [10, 50, 90]:
             self.plot_report_runtime_errorbars(df, 'numprocs', [16, 32, 48], 'N', selected_impls, p, 0.95)
-            self.plot_report_runtime_errorbars(df, 'numprocs', [48], 'N', selected_impls, p, 0.95)
+            for numprocs in [8, 16, 32, 48]:
+                self.plot_report_runtime_errorbars(df, 'numprocs', [numprocs], 'N', selected_impls, p, 0.95)
 
         self.prefix = 'report/subgroup'
 
