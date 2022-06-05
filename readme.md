@@ -12,6 +12,10 @@ model for their algorithms, and benchmark them on real systems. The algorithms c
 the interconnection network (i.e., different links might have a different bandwidth), and/or the sparsity of the input
 vectors Ai and Bi.
 
+## Final Report
+- [Document Source](https://github.com/elwin/dphpc_report)
+- [Compiled Document](https://github.com/elwin/dphpc_report/releases/download/v1.0.0/report.pdf)
+
 ## Code
 
 All code related to solving DSOP, including a `readme.md`, is located in the folder [`/code`](code).
