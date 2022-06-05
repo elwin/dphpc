@@ -14,7 +14,7 @@ vectors Ai and Bi.
 
 ## Final Report
 - [Document Source](https://github.com/elwin/dphpc_report)
-- [Compiled Document](https://github.com/elwin/dphpc_report/releases/download/v1.0.0/report.pdf)
+- [Compiled Document](https://github.com/elwin/dphpc_report/blob/master/report.pdf)
 
 ## Code
 
